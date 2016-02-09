@@ -16,9 +16,12 @@ Then generate your new project:
 yo fido-release
 ```
 
-## Getting To Know Yeoman
+## Usage
 
-Yeoman has a heart of gold. He&#39;s a person with feelings and opinions, but he&#39;s very easy to work with. If you think he&#39;s too opinionated, he can be easily convinced. Feel free to [learn more about him](http://yeoman.io/).
+## Adding new specs
+- Add new questions in `generators/app/templates/questions-<new spec>.js`
+- Be sure to include `questions-<new spec>.js` in `generators/app/templates/questions.js` (search for UAF or U2F as examples)
+- Update repos `writing.js` to include GitHub repo
 
 ## License
 
