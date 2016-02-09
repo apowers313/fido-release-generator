@@ -1,40 +1,92 @@
-'use strict';
+//'use strict';
 var yeoman = require('yeoman-generator');
 var chalk = require('chalk');
 var yosay = require('yosay');
 
+/****
+ * This is the general framework of a Yeoman generator
+ * See this URL for details:
+ *   http://yeoman.io/authoring/running-context.html
+ *
+ * Each part of our generator has been broken out into a separate file to help with read-ability
+ */
 module.exports = yeoman.generators.Base.extend({
-  prompting: function () {
-    var done = this.async();
 
-    // Have Yeoman greet the user.
-    this.log(yosay(
-      'Welcome to the shining ' + chalk.red('generator-fido-release') + ' generator!'
-    ));
+  initializing: require("./initializing"),
 
-    var prompts = [{
-      type: 'confirm',
-      name: 'someOption',
-      message: 'Would you like to enable this option?',
-      default: true
-    }];
-
-    this.prompt(prompts, function (props) {
-      this.props = props;
-      // To access props later use this.props.someOption;
-
-      done();
-    }.bind(this));
+  prompting: {
+    welcome: welcome,
+    main: require("./questions"),
+    uaf: require("./questions-uaf"),
+    u2f: require("./questions-u2f"),
+    fido2: require("./questions-fido-2"),
   },
+  configuring: require("./configure"),
+  default: function() {},
 
-  writing: function () {
-    this.fs.copy(
-      this.templatePath('dummyfile.txt'),
-      this.destinationPath('dummyfile.txt')
-    );
-  },
+  writing: require ("./writing"),
 
-  install: function () {
-    this.installDependencies();
+  install: function() {},
+  end: function() {
+    // TODO: delete template directory
   }
 });
+
+function welcome() {
+  this.log(fido_banner());
+  this.log("Welcome to the FIDO Specification Release Tool!");
+  this.log("This is the welcome message. TODO.\n\n");
+}
+
+function fido_banner() {
+  return "                                                                                    \n" +
+    "                                                                                    \n" +
+    "                                                                                    \n" +
+    "                                                                                    \n" +
+    "                                                                                    \n" +
+    "                                                                                    \n" +
+    "                                                                                    \n" +
+    "                                                                                    \n" +
+    "               ;+++++++++`                 .,,,,,                                   \n" +
+    "             `+++++++++++.                 .,,,,,                                   \n" +
+    "            `++++++++++++                  .,,,,,                                   \n" +
+    "            +++++++++++++                  .,,,,,                                   \n" +
+    "           ;++++++.    '+                  .,,,,,                                   \n" +
+    "           ++++++                          .,,,,,                                   \n" +
+    "           ++++++                          .,,,,,                                   \n" +
+    "           +++++'                          .,,,,,                      (R)          \n" +
+    "         ,,,,,,,,,,,,,,,,,,        ,,,,,,, .,,,,,        ;++++++++                  \n" +
+    "         ,,,,,,,,,,,,,,,,,,       ,,,,,,,,,.,,,,,      `++++++++++++                \n" +
+    "         ,,,,,,,,,,,,,,,,,,      ,,,,,,,,,,,,,,,,     .++++++++++++++               \n" +
+    "         ,,,,,,,,,,,,,,,,,,     ,,,,,,,,,,,,,,,,,     +++++++++++++++;              \n" +
+    "           +++++'     ,,,,,    `,,,,,,    ,,,,,,,    ++++++'   `++++++              \n" +
+    "           +++++'     ,,,,,    ,,,,,,      ,,,,,,    ++++++     ;+++++:             \n" +
+    "           +++++'     ,,,,,    ,,,,,,      ,,,,,,   .+++++:      ++++++             \n" +
+    "           +++++'     ,,,,,    ,,,,,.      .,,,,,   '+++++       ++++++             \n" +
+    "           +++++'     ,,,,,    ,,,,,`      .,,,,,   ++++++       ++++++             \n" +
+    "           +++++'     ,,,,,    ,,,,,`      .,,,,,   ++++++       ++++++             \n" +
+    "           +++++'     ,,,,,    ,,,,,.      .,,,,,   '+++++       ++++++             \n" +
+    "           +++++'     ,,,,,    ,,,,,,      ,,,,,,   ,+++++:      ++++++             \n" +
+    "           +++++'     ,,,,,    ,,,,,,`     ,,,,,,    ++++++     '+++++.             \n" +
+    "           +++++'     ,,,,,    .,,,,,,.  `,,,,,,,    ++++++'   `++++++              \n" +
+    "           +++++'     ,,,,,     ,,,,,,,,,,,,,,,,,     +++++++++++++++,              \n" +
+    "           +++++'     ,,,,,     `,,,,,,,,,,,,,,,,     ,+++++++++++++'               \n" +
+    "           +++++'     ,,,,,      `,,,,,,,,, ,,,,,      .+++++++++++;                \n" +
+    "           +++++'     ,,,,,        ,,,,,,,  ,,,,,        '++++++++                  \n" +
+    "                                                                                    \n" +
+    "                     +     +    ,+                                                  \n" +
+    "                     +     +                                                        \n" +
+    "           '+++`     +     +     +     +++;     ++++`     '+++     +++`             \n" +
+    "              `+     +     +     +        +     +` .+    :+  .    +   +             \n" +
+    "            ++++     +     +     +     ++++     +   +    +.       +++++             \n" +
+    "           +   +     +     +     +    +;  +     +   +    +.       +                 \n" +
+    "           +  .+     +     +     +    +`  +     +   +    :+  .    +.  .             \n" +
+    "           '++;+     +     +     +    `++++     +   +     ++++     ++++             \n" +
+    "                                                                                    \n" +
+    "                                                                                    \n" +
+    "                                                                                    \n" +
+    "                                                                                    \n" +
+    "                                                                                    \n" +
+    "                                                                                    \n" +
+    "                                                                                    ";
+}
