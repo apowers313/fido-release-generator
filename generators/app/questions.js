@@ -100,7 +100,8 @@ function main_questions() {
 			{
 				message: "Add any additional tag descriptors (leave blank for none)",
 				type: "input",
-				name: "tagaddon"
+				name: "tagaddon",
+				default: ""
 			},
 
 			// TODO: select files from directory; defaults based on manifest
