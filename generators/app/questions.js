@@ -104,6 +104,13 @@ function main_questions() {
 				default: ""
 			},
 
+			{
+				message: "Will this be published to public fidoalliance.org website? (Use global URLs or local paths)",
+				type: "confirm",
+				name: "public",
+				default: false
+			},
+
 			// TODO: select files from directory; defaults based on manifest
 			// TODO: public release?
 
