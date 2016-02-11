@@ -1,0 +1,14 @@
+{
+	"files": [
+		"fido-uaf-README.txt",
+		"fido-uaf-overview.html",
+		"fido-uaf-protocol.html",
+		"fido-uaf-client-api-transport.html",
+		"fido-uaf-asm-api.html",
+		"fido-uaf-authnr-cmds.html",
+		"fido-uaf-reg.html",
+		"fido-uaf-apdu.html"
+	],
+	"templates": [],
+	"config": {}
+}

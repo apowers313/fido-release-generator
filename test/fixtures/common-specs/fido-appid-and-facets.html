@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>FIDO AppID and Facet Specification</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <script src='resources/respec-fido-common.js' class='remove' async></script>
+    <script type="text/javascript" class="remove">
+        var respecConfig = {
+            // specification status (e.g. WD, RD, ID, etc.). If in doubt use WD.
+            specStatus: "WD",
+            specVersion: "v1.3",
+            specFamily: "uaf",    // specFamily is here for common-specs due to release-tool publishing
+                                          // and their being placed in to a release dir with whichever specFamily
+                                          // at release build time -- so the value of this var in the .html files in 
+                                          // common-specs repo will depend upon whichever spec family last 
+                                          // built a release snapshot
+
+            // shortName is what is termed specInRepoStemFN in..
+            // https://confluence.fidoalliance.org/display/ALL/FIDO+Alliance+filenaming+and+version+labeling+conventions
+            shortName: "fido-appid-and-facets",
+            
+
+            // if your specification has a subtitle that goes below the main
+            // formal title, define it here
+            // subtitle   :  "an excellent document",
+
+      // if you wish the publication date to be other than today, set this
+      // NOTE: UNCOMMENT THIS PRIOR TO RUNNING release-tool/release.pl for a release, 
+      //       whether internal or external (TODO: release-tool should take care of this)...
+      //publishDate: "2015-09-02",
+
+
+            // if the specification's copyright date is a range of years, specify
+            // the start date here:
+            copyrightStart: "2013",
+
+            // if there is a previously published draft, uncomment this and set its YYYY-MM-DD date
+            // and its maturity status
+            //previousPublishDate: "2014-02-09",
+            //previousMaturity: "",
+            prevVersion: "http://fidoalliance.org/specs/fido-uaf-v1.0-ps-20141208/fido-appid-and-facets-v1.0-ps-20141208.html",
+
+
+            // if there a publicly available Editor's Draft, this is the link
+            edDraftURI: "",
+
+            // if this is a LCWD, uncomment and set the end of its review period
+            // lcEnd: "2009-08-05",
+
+            // editors, add as many as you like
+            // only "name" is required
+            authors: [
+               
+                
+                {
+                    name: "Brad Hill",
+                    url: "mailto://hillbrad@gmail.com",
+                    company: "PayPal, Inc.",
+                    companyURL: "https://www.paypal.com"
+                },
+                {
+                    name: "Dirk Balfanz",
+                    url: "",
+                    company: "Google, Inc.",
+                    companyURL: "https://www.google.com/"
+                },
+                {
+                    name: "Davit Baghdasaryan",
+                    url: "",
+                    company: "Nok Nok Labs, Inc.",
+                    companyURL: "https://www.noknok.com/"
+                }
+                
+        ],
+
+            // authors, add as many as you like. 
+            // This is optional, uncomment if you have authors as well as editors.
+            // only "name" is required. Same format as editors.
+
+            editors: [
+                 {
+                    name: "Rolf Lindemann",
+                    url: "mailto://rolf@noknok.com",
+                    company: "Nok Nok Labs, Inc.",
+                    companyURL: "https://www.noknok.com/"
+                }
+        ],
+
+            // name of the WG
+            wg: "FIDO Alliance",
+
+            // URI of the public WG page
+            wgURI: "http://www.fidoalliance.org/",
+
+            // name (with the @w3c.org) of the public mailing to which comments are due
+            //wgPublicList: "public-webappsec",
+
+
+            // local bibliography
+
+
+        };
+    </script>
+    <script src='resources/fido-refs.js' class='remove'></script>
+
+
+</head>
+
+<body>
+    <!-- only modify this if a custom Status of this Document is needed -->
+    <section id='sotd'></section>
+
+    <section id='abstract'>
+        <p>The FIDO family of protocols introduce a new security concept, <em>Application Facets</em>, to describe the scope of user credentials and how a trusted computing base which supports application isolation may make access control decisions about which keys can be used by which applications and web origins.</p>
+
+        <p>This document describes the motivations for and requirements for implementing the Application Facet concept and how it applies to the FIDO protocols.</p>
+
+
+    </section>
+
+    <section>
+        <h2>Notation</h2>
+
+        <p>Type names, attribute names and element names are written as <code>code</code>.
+
+            <p>String literals are enclosed in “”, e.g. “UAF-TLV”.
+
+                <p>In formulas we use “|” to denote byte wise concatenation operations.
+
+                    <p>This document applies to both the U2F protocol and the UAF protocol. UAF specific terminology used in this document is defined in [[!FIDOGlossary]].
+
+                    <p>All diagrams, examples, notes in this specification are non-normative.</p>
+
+                        <section>
+                            <h3>Key Words</h3>
+
+                            <p>The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “MAY”, and “OPTIONAL” in this document are to be interpreted as described in [[!RFC2119]].</p>
+                        </section>
+    </section>
+
+    <section class='informative'>
+        <h2>Overview</h2>
+
+	<p>Modern networked applications typically present several ways that a user can interact with them.  
+	  This document introduces the concept of an <em>Application Facet</em> to describe the identities 
+	  of a single logical application across various platforms. For example, the application MyBank may 
+	  have an Android app, an iOS app, and a Web app accessible from a browser. These are all facets of 
+	  the MyBank application.</p>
+
+        <p>The FIDO architecture provides for simpler and stronger authentication than traditional username 
+	  and password approaches while avoiding many of the shortfalls of alternative authentication 
+	  schemes. At the core of the FIDO protocols are challenge and response operations performed with a 
+	  public/private keypair that serves as a user's credential.</p>
+
+        <p>To minimize frequently-encountered issues around privacy, entanglements with concepts of "identity", 
+	  and the necessity for trusted third parties, keys in FIDO are tightly scoped and dynamically 
+	  provisioned between the user and each Relying Party and only optionally associated with a 
+	  server-assigned username. This approach contrasts with, for example, traditional PKIX client certificates 
+	  as used in TLS, which introduce a trusted third party, mix in their implementation details identity 
+	  assertions with holder-of-key cryptographic proofs, lack audience restrictions, and may even be sent 
+	  in the cleartext portion of a protocol handshake without the user's notification or consent.</p>
+
+        <p>While the FIDO approach is preferable for many reasons, it introduces several challenges.</p>
+        <uL>
+            <li>What set of Web origins and native applications (facets) make up a single logical application and how 
+	      can they be reliably identified?</li>
+            <li>How can we avoid making the user register a new key for each web browser or application on 
+	      their device that accesses services controlled by the same target entity?</li>
+            <li>How can access to registered keys be shared without violating the security guarantees around 
+	      application isolation and protection from malicious code that users expect on their devices?</li>
+            <li>How can a user roam credentials between multiple devices, each with a user-friendly 
+	      Trusted Computing Base for FIDO?</li>
+        </uL>
+
+        <p>This document describes how FIDO addresses these goals (where adequate platform mechanisms 
+	  exist for enforcement) by allowing an application to declare a credential scope that crosses 
+	  all the various facets it presents to the user.</p>
+
+        <section>
+            <h3>Motivation</h3>
+            <p>FIDO conceptually sets a scope for registered keys to the tuple of (Username, Authenticator, Relying Party). 
+	      But what constitutes a Relying Party? It is quite common for a user to access the 
+	      same set of services from a Relying Party, on the same device, in one or more web 
+	      browsers as well as one or more dedicated apps. As the Relying Party may require 
+	      the user to perform a costly ceremony in order to prove her identity and register 
+	      a new FIDO key, it is undesirable that the user should have to repeat this ceremony 
+	      multiple times on the same device, once for each browser or app.
+            </p>
+        </section>
+
+        <section>
+            <h3>Avoiding App-Phishing</h3>
+
+            <p>FIDO provides for user-friendly verification ceremonies to allow access to registered keys, 
+	      such as entering a simple PIN code and touching a device, or scanning a finger. It should 
+	      not matter for security purposes if the user re-uses the same verification inputs across 
+	      Relying Parties, and in the case of a biometric, she may have no choice.</p>
+
+            <p>Modern operating systems that use an "app store" distribution model often make a promise 
+	      to the user that it is "safe to try" any app. They do this by providing strong isolation 
+	      between applications, so that they may not read each others' data or mutually interfere, 
+	      and by requiring explicit user permission to access shared system resources.</p>
+
+            <p>If a user were to download a maliciously constructed game that instructs her to activate 
+	      her FIDO authenticator in order to "save your progress" but actually unlocks her banking 
+	      credential and takes over her account, FIDO has failed, because the risk of phishing has 
+	      only been moved from the password to an app download. FIDO must not violate a platform's 
+	      promise that any app is "safe to try" by keeping good custody of the high-value shared 
+	      state that a registered key represents.</p>
+
+        </section>
+
+
+        <section>
+            <h3>Comparison to OAuth and OAuth2</h3>
+            <p>The OAuth and OAuth2 of protocols were designed for a server-to-server security model 
+	      with the assumption that each application instance can be issued, and keep, an "application secret". 
+	      This approach is ill-suited to the "app store" security model. Although it is common for services 
+	      to provision an OAuth-style application secret into their apps in an attempt to allow only 
+	      authorized/official apps to connect, any such "secret" is in fact shared among everyone 
+	      with access to the app store and can be trivially recovered thorough basic reverse engineering.</p>
+
+            <p>In contrast, FIDO's facet concept is designed for the "app store" model from the start. 
+	      It relies on client-side platform isolation features to make sure that a key registered 
+	      by a user with a member of a well-behaved "trusted club" stays within that trusted club, 
+	      even if the user later installs a malicious app, and does not require any secrets hard-coded 
+	      into a shared package to do so. The user must, however, still make good decisions about which 
+	      apps and browsers they are willing to preform a registration ceremony with. App store policing 
+	      can assist here by removing applications which solicit users to register FIDO keys to for Relying 
+	      Parties in order to make illegitmate or fraudulent use of them.</p>
+        </section>
+
+        <section>
+            <h3>Non-Goals</h3>
+            <p>The <em>Application Facet</em> concept does not attempt to strongly identify the calling 
+	      application to a service across a network. Remote attestation of an application identity 
+	      is an explicit non-goal.</p>
+
+            <p>If an unauthorized app can convince a user to provide all the information to it required 
+	      to register a new FIDO key, the Relying Party cannot use FIDO protocols or the Facet concept 
+	      to recognize as unauthorized, or deny such an application from performing FIDO operations, 
+	      and an application that a user has chosen to trust in such a manner can also share access 
+	      to a key outside of the mechanisms described in this document.</p>
+
+            <p>The facet mechanism provides a way for registered keys to maintain their proper scope when 
+	      created and accessed from a <em>Trusted Computing Base</em> (TCB) that provides isolation of malicious 
+	      apps. A user can also roam their credentials between multiple devices with user-friendly TCBs 
+	      and credentials will retain their proper scope if this mechanism is correctly implemented by 
+	      each. However, no guarantees can be made in environments where the TCB is user-hostile, such 
+	      as a device with malicious code operating with "root" level permissions. On environments that
+	      do not provide application isolation but run all code with the privileges of the user, (e.g. traditional 
+	      desktop operating systems) an intact TCB, including web browsers, may successfully enforce 
+	      scoping of credentials for web origins only, but cannot meaningfully enforce application scoping.</p>
+        </section>
+
+    </section>
+
+
+    <section>
+        <h5>The AppID and FacetID Assertions</h5>
+
+
+        <p>When a user performs a Registration operation [[UAFArchOverview]] a new private key is created 
+	  by their authenticator, and the public key is sent to the Relying Party. As part of this process, 
+	  each key is associated with an <code>AppID</code>. The <code>AppID</code> is a URL carried as part 
+	  of the protocol message sent by the server and indicates the target for this credential. By default, 
+	  the audience of the credential is restricted to the <em>Same Origin</em> of the <code>AppID</code>. 
+	  In some circumstances, a Relying Party may desire to apply a larger scope to a key. If 
+	  that <code>AppID</code> URL has the <code>https</code> scheme, a FIDO client may be able to 
+	  dereference and process it as a <code>TrustedFacetList</code> that designates a scope or audience 
+	  restriction that includes multiple facets, such as other web origins within the same DNS zone of 
+	  control of the AppID's origin, or URLs indicating the identity of other types of trusted facets 
+	  such as mobile apps.</p>
+
+        <p class='note'>Users may also register multiple keys on a single authenticator for an
+            <code>AppID</code>, such as for cases where they have multiple accounts. Such registrations may 
+	    have a Relying Party assigned username or local nicknames associated to allow them to be distinguished 
+	    by the user, or they may not (e.g. for 2nd factor use cases, the user account associated with a key 
+	    may be communicated out-of-band to what is specified by FIDO protocols).  All registrations 
+	    that share an <code>AppID</code>, also share these same audience restriction.</p>
+
+
+        <section>
+          <h3>Processing Rules for AppID and FacetID Assertions </h3>
+	  
+	  <section>
+	    <h4>Determining the FacetID of a Calling Application</h4>
+	    <p>In the Web case, the FacetID MUST be the Web Origin [[!RFC6454]] of the
+	      web page triggering the FIDO operation, written as a URI with
+	      an empty path. Default ports are omitted and any path component is ignored.</p>
+
+	    <p>An example FacetID is shown below:</p>
+	      
+              <pre>https://login.mycorp.com/</pre>
+	      
+            <p>In the Android [[ANDROID]] case, the FacetID MUST be a URI derived from the SHA-1 hash
+	      of the APK signing certificate [[APK-Signing]], such as:
+	      
+	      <pre>android:apk-key-hash:&lt;sha1_hash-of-apk-signing-cert&gt;</pre>
+	      
+ 	    <p>The SHA-1 hash can be computed as follows:
+	      
+              <pre class="example" title="Computing an APK signing certificate hash">
+# Export the signing certificate in DER format, hash, base64 encode and trim '='
+
+keytool -exportcert -alias androiddebugkey -keystore \
+	&lt;path-to-apk-signing-keystore&gt; &amp;&gt;2 /dev/null | openssl sha1 \
+	-binary | openssl base64 | sed 's/=//g'
+              </pre>
+
+	    <p>In the iOS [[iOS]] case, the FacetID MUST be the BundleID [[BundleID]] URI of the application:
+	      
+              <pre>ios:bundle-id:&lt;ios-bundle-id-of-app&gt;</pre>
+	      
+	  </section>
+	  
+	  <section>
+	    <h4>Determining if a Caller's FacetID is Authorized for an AppID</h4>
+            <div>
+              <ol>
+                <li>If the AppID is not an HTTPS URL, and matches the FacetID of the caller, 
+		  no additional processing is necessary and the operation may proceed.</li>
+                <li>If the AppID is null or empty, the client MUST set the AppID to be the FacetID 
+		  of the caller, and the operation may proceed without additional processing.</li>
+                <li>If the caller's FacetID is an <code>https://</code> Origin sharing the same host as the AppID, 
+		  (e.g. if an application hosted at <code>https://fido.example.com/myApp</code> set 
+		  an AppID of <code>https://fido.example.com/myAppId</code>), no additional processing 
+		  is necessary and the operation may proceed.  This algorithm MAY be continued 
+		  asynchronously for purposes of caching the Trusted Facet List, if desired.</li>
+                <li>Begin to fetch the Trusted Facet List using the HTTP GET method.  
+		  The location MUST be identified with an HTTPS URL.</li>
+
+                <li>The URL MUST be dereferenced with an 
+		  <a href='http://www.whatwg.org/specs/web-apps/current-work/multipage/fetching-resources.html#attr-crossorigin-anonymous'>anonymous 
+		    fetch</a>. That is, the HTTP GET MUST include no cookies, authentication, 
+		  Origin or Referer headers, and present no TLS certificates or other forms of credentials.
+                </li>
+                <li>The response MUST set a MIME Content-Type of "application/fido.trusted-apps+json".</li>
+                <li>The caching related HTTP header fields in the HTTP response (e.g. “Expires”) SHOULD be 
+		  respected when fetching a Trusted Facets List.</li>
+                <li>The server hosting the Trusted Facets List MUST respond uniformly to all clients. 
+		  That is, it MUST NOT vary the contents of the response body based on any credential 
+		  material, including ambient authority such as originating IP address, supplied with the request.</li>
+                <li>If the server returns an HTTP redirect (status code 3xx) the server MUST also send 
+		  the HTTP header <code>FIDO-AppID-Redirect-Authorized: true</code> and the client MUST verify the presence 
+		  of such a header before following the redirect. This protects against abuse of open 
+		  redirectors within the target domain by unauthorized parties. If this check has passed, 
+		  restart this algorithm from step 4.</li>
+                <li>A Trusted Facet List MAY contain an unlimited number of entries, but clients MAY truncate 
+		  or decline to process large responses.</li>
+		<li>From among the objects in the <code>trustedFacet</code> array, select the one with 
+		  the <code>version</code> matching that of the protocol message version.</li>
+                <li>The scheme of URLs in <code>ids</code> MUST identify either an application 
+		  identity (e.g. using the <code>apk:</code>, <code>ios:</code> or similar scheme) or an <code>https:</code> Web Origin [[RFC6454]].</li>
+                <li>Entries in <code>ids</code> using the <code>https://</code> scheme MUST contain only scheme, 
+		  host and port components, with an optional trailing /. Any path, query string, username/password, 
+		  or fragment information MUST be discarded.</li>
+                <li>All Web Origins listed MUST have host names under the scope of the same least-specific 
+		  private label in the DNS, using the following algorithm:
+                  <ol>
+                    <li>Obtain the list of public DNS suffixes 
+		      from <a href='https://publicsuffix.org/list/effective_tld_names.dat'>https://publicsuffix.org/list/effective_tld_names.dat</a> 
+		      (the client MAY cache such data), or equivalent functionality as available on the platform.</li>
+                    <li>Extract the host portion of the original AppID URL, before following any redirects.</li>
+                    <li>The least-specific private label is the portion of the host portion of the AppID URL that 
+		      matches a public suffix plus one additional label to the left.</li>
+                    <li>For each Web Origin in the TrustedFacets list, the calculation of the least-specific 
+		      private label in the DNS MUST be a case-insensitive match of that of the AppID URL itself. 
+		      Entries that do not match MUST be discarded.</li>
+                  </ol>
+		</li>
+                <li>If the TrustedFacets list cannot be retrieved and successfully parsed according to 
+		  these rules, the client MUST abort processing of the requested FIDO operation.</li>
+		<li>After processing the <code>trustedFacets</code> entry of the correct 
+		  <code>version</code> and removing any invalid entries, if the
+		  caller's FacetID matches one listed in <code>ids</code>, the operation is allowed.</li>
+              </ol>
+            </div>
+	    </section>
+	    <section>
+	    	<h3>TrustedFacets structure</h3>
+		<p>The JSON resource hosted at the AppID URL consists of a dictionary containing 
+		  a single member, <code>trustedFacets</code> which is an
+		  array of <code>TrustedFacets</code> dictionaries.</p>
+		<dl title='dictionary TrustedFacets' class='idl'>
+			<dt>Version version</dt>
+			<dd>The protocol version to which this set of trusted facets applies.  
+			  See [[!UAFProtocol]] for the definition of the <code>version</code> structure.
+			  <dt>DOMString[] ids</dt>
+			<dd>An array of URLs identifying authorized facets for this AppID.</dd>
+		</dl>
+	    </section>
+            <section>
+              <h4>AppID Example 1:</h4>
+
+                <div>
+                    ".com" is a public suffix. "https://www.example.com/appID" is provided as an AppID. 
+		    The body of the resource at this location contains:
+                    <pre class='example'>
+{
+  "trustedFacets" : [{
+    "version": { "major": 1, "minor" : 0 },
+    "ids": [
+	   "https://register.example.com", // VALID, shares "example.com" label
+	   "https://fido.example.com",     // VALID, shares "example.com" label
+	   "http://www.example.com",       // DISCARD, scheme is not https:
+	   "http://www.example-test.com",  // DISCARD, "example-test.com" does not match
+	   "https://www.example.com:444"   // VALID, port is not significant
+    ]
+  }]
+}
+</pre>
+                    For this policy, "https://www.example.com" and "https://register.example.com" 
+		    would have access to the keys registered for this AppID, and "https://user1.example.com" would not.
+                </div>
+            </section>
+            <section>
+              <h4>AppID Example 2:</h4>
+              <div >
+                "hosting.example.com" is a public suffix, operated under "example.com" and 
+		used to provide hosted cloud services for many companies. 
+		"https://companyA.hosting.example.com/appID" is provided as an AppID. The body of the resource at this location contains:
+                <pre class='example'>
+{
+  "trustedFacets" : [{
+    "version": { "major": 1, "minor" : 0 },
+    "ids": [
+        "https://register.example.com",              // DISCARD, does not share  "companyA.hosting.example.com" label
+        "https://fido.companyA.hosting.example.com", // VALID, shares "companyA.hosting.example.com" label
+        "https://xyz.companyA.hosting.example.com",  // VALID, shares "companyA.hosting.example.com" label
+        "https://companyB.hosting.example.com"       // DISCARD, "companyB.hosting.example.com" does not match 
+     ]
+  }]
+}
+		</pre>
+                For this policy, "https://fido.companyA.hosting.example.com" would have 
+		access to the keys registered for this AppID, and "https://register.example.com" 
+		and "https://companyB.hosting.example.com" would not as a public-suffix exists between these DNS names and the AppID's.
+                </div>
+            </section>
+
+	    <section class='informative'>
+              <h4>Obtaining FacetID of Android Native App</h4>
+              The following code demonstrates how a FIDO Client can obtain and construct
+              the FacetID of a calling Android native application.
+	      
+              <pre>
+                <div class='example' title="AndroidFacetID">
+private String getFacetID(Context aContext, int callingUid) {
+
+    String packageNames[] = aContext.getPackageManager().getPackagesForUid(callingUid);
+
+    if (packageNames == null) {
+        return null;
+    }
+
+    try {
+        PackageInfo info = aContext.getPackageManager().getPackageInfo(packageNames[0], PackageManager.GET_SIGNATURES);
+
+        byte[] cert = info.signatures[0].toByteArray();
+        InputStream input = new ByteArrayInputStream(cert);
+
+        CertificateFactory cf = CertificateFactory.getInstance("X509");
+        X509Certificate c = (X509Certificate) cf.generateCertificate(input);
+
+        MessageDigest md = MessageDigest.getInstance("SHA1");
+
+        return "android:apk-key-hash:" +
+                  Base64.encodeToString(md.digest(c.getEncoded()), Base64.DEFAULT | Base64.NO_WRAP | Base64.NO_PADDING);
+    }
+    catch (PackageManager.NameNotFoundException e) {
+        e.printStackTrace();
+    }
+    catch (CertificateException e) {
+        e.printStackTrace();
+    }
+    catch (NoSuchAlgorithmException e) {
+        e.printStackTrace();
+    }
+    catch (CertificateEncodingException e) {
+        e.printStackTrace();
+    }
+
+    return null;
+}
+              </div>
+            </pre>
+
+            </section>
+	    
+            <section>
+              <h4>Additional Security Considerations</h4> 
+              
+              <p>The UAF protocol supports passing FacetID to the FIDO Server and 
+		including the FacetID in the computation of the authentication response.</p>
+                
+                <p>Trusting a web origin facet implicitly trusts all subdomains under the named entity 
+		  because web user agents do not provide a security barrier between such origins. So, 
+		  in AppID Example 1, although not explicitly listed, "https://foobar.register.example.com" 
+		  would still have effective access to credentials registered for the AppID "https://www.example.com/appID" 
+		  because it can effectively act as "https://register.example.com".</p>
+
+              <p>The component implementing the controls described here must reliably identify 
+		callers to securely enforce the mechanisms.  Platform inter-process communication 
+		mechanisms which allow such identification SHOULD be
+		used when available.</p>
+                
+              <p>It is unlikely that the component implementing the controls described here can verify
+                the integrity and intent of the entries on a <code>TrustedFacetList</code>.  If a trusted
+                facet can be compromised or enlisted as a <em>confused deputy</em> [[FIDOGlossary]] by a malicious party, it may
+                be possible to trick a user into completing an authentication ceremony under the control
+                of that malicious party.</p>
+	      
+
+	      <section class='informative'>
+		<h5>Wildcards in TrustedFacet identifiers</h5>
+		<p>Wildcards are not supported in TrustedFacet identifiers.  This follows the advice of
+		  RFC6125 [[!RFC6125]], section 7.2.</p>
+		<p>FacetIDs are URIs that uniquely identify specific 
+		  security principals that are trusted to interact with a given registered credential. Wildcards introduce
+		  undesirable ambiguitiy in the defintion of the principal,
+		  as there is no consensus syntax for what wildcards mean, how they
+		  are expanded and where they can occur across different applications and protocols in common use.
+		  For schemes indicating application identities,
+		  it is not clear that wildcarding is appropriate in any fashion.  For Web Origins, it broadly increases
+		  the scope of the credential to potentially include rogue or buggy hosts.</p>
+		<p>Taken together, these ambiguities might introduce exploitable differences in
+      		  identity checking behavior among client implementations and would
+      		  necessitate overly complex and inefficient identity checking algorithms.</p>		
+		</section>
+
+            </section>
+        </section>
+    </section>
+</section>
+
+</body>
+
+</html>

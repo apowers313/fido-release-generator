@@ -1,0 +1,6 @@
+[submodule "resources"]
+	path = resources
+	url = https://github.com/fido-alliance/resources
+[submodule "testplans/resources"]
+	path = testplans/resources
+	url = https://github.com/fido-alliance/resources

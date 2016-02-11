@@ -1,4 +1,5 @@
 node_modules
 coverage
-.fidoTemplate
-fido-*
+.DS_Store
+.fido-template
+fido-uaf-v*

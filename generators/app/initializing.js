@@ -45,7 +45,7 @@ module.exports = {
     },
 
     defaultPaths: function() {
-      this.defaultSourcePath = "./.fidoTemplate";
+      this.defaultSourcePath = "./.fido-template";
       this.defaultDestinationPath = ".";
     }
   };

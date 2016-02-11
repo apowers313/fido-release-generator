@@ -1,0 +1,4311 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>FIDO UAF Protocol Specification</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <script src='resources/respec-fido-common.js' class='remove' async></script>
+    <script type="text/javascript" class="remove">
+      var respecConfig = {
+       // specification status (e.g. WD, RD, ID, etc.). If in doubt use WD.
+       specStatus: "WD",
+       specVersion: "v1.3",
+       specFamily: "uaf",
+
+      // shortName is what is termed specInRepoStemFN in..
+      // https://confluence.fidoalliance.org/display/ALL/FIDO+Alliance+filenaming+and+version+labeling+conventions
+        shortName:  "fido-uaf-protocol",
+
+      // if your specification has a subtitle that goes below the main
+      // formal title, define it here
+      // subtitle   :  "an excellent document",
+      
+      // if you wish the publication date to be other than today, set this
+      // NOTE: UNCOMMENT THIS PRIOR TO RUNNING release-tool/release.pl for a release, 
+      //       whether internal or external (TODO: release-tool should take care of this)...
+      //publishDate: "2015-09-02", 
+      
+      // if the specification's copyright date is a range of years, specify
+      // the start date here:
+      copyrightStart: "2013",
+      
+      // if there is a previously published draft, uncomment this and set its YYYY-MM-DD date
+      // and its maturity status, OR, comment the latter two items out, and add an 
+      // explicit prevVersion URI pointing to the previously publicly published version...
+      //previousPublishDate: "",
+      //previousMaturity: "",
+      prevVersion: "https://fidoalliance.org/specs/fido-uaf-v1.0-ps-20141208/fido-uaf-protocol-v1.0-ps-20141208.html",
+
+        // if there a publicly available Editor's Draft, this is the link
+        edDraftURI: "",
+
+        // if this is a LCWD, uncomment and set the end of its review period
+        // lcEnd: "2009-08-05",
+
+        // editors, add as many as you like
+        // only "name" is required
+        editors:  [
+          { name: "Dr. Rolf Lindemann", url: "mailto:rolf@noknok.com",
+            company: "Nok Nok Labs, Inc.", companyURL: "https://www.noknok.com/" },
+          { name: "Eric Tiffany", url: "",
+            company: "FIDO Alliance", companyURL: "https://fidoalliance.org/" }
+        ],
+
+        // authors, add as many as you like. 
+        // This is optional, uncomment if you have authors as well as editors.
+        // only "name" is required. Same format as editors.
+
+        authors:  [
+           { name: "Davit Baghdasaryan", url: "",
+                company: "Nok Nok Labs, Inc.", companyURL: "https://www.noknok.com/" },
+	   { name: "Dirk Balfanz", url: "", 
+	       	company: "Google, Inc.", companyURL: "https://www.google.com/" },
+ 	   { name: "Brad Hill", url: "mailto:hillbrad@gmail.com",
+		company: "PayPal, Inc.", companyURL: "https://www.paypal.com/" },
+           { name: "Jeff Hodges", url: "mailto:Jeff.Hodges@KingsMountain.com",
+		company: "PayPal, Inc.", companyURL: "https://www.paypal.com/" },
+           { name: "Ka Yang", url: "mailto:kyang@noknok.com",
+             company: "Nok Nok Labs, Inc.", companyURL: "https://www.noknok.com/" }
+        ],
+
+        // name of the WG
+        wg:           "FIDO Alliance",
+
+        // URI of the public WG page
+        wgURI:        "https://fidoalliance.org/",
+
+        // name (with the @w3c.org) of the public mailing to which comments are due
+        //wgPublicList: "public-webappsec",
+
+
+	// local bibliography
+
+
+      };
+    </script>
+    <script src='resources/fido-refs.js' class='remove'></script>
+
+
+  </head>
+
+ <body>
+    <!-- only modify this if a custom Status of this Document is needed -->
+    <section id='sotd'></section>
+
+    <section id='abstract'>
+	<p>The goal of the Universal Authentication Framework is to provide
+	  a unified and extensible authentication mechanism that supplants
+	  passwords while avoiding the shortcomings of current alternative
+	  authentication approaches.</p>
+	<p>This approach is designed to allow
+	  the relying party to choose the best available authentication
+	  mechanism for a particular end user or interaction, while
+	  preserving the option to leverage
+	  emerging device security capabilities in the future without
+	  requiring additional integration effort.</p>
+        <p>This document describes the FIDO architecture in detail, it
+	  defines the flow and content of all UAF protocol messages and
+	  presents the rationale behind the design choices.</p>
+    </section>
+
+    <section>
+      <h2>Notation</h2>
+      
+      <p>Type names, attribute names and element names are written as <code>code</code>.
+	
+      <p>String literals are enclosed in “”, e.g. “UAF-TLV”.
+	
+      <p>In formulas we use “|” to denote byte wise concatenation
+        operations.
+
+	<p>The notation base64url refers to "Base 64 Encoding with URL and Filename
+	  Safe Alphabet" [[!RFC4648]] <em>without padding</em>.  </p>
+
+        <p>Following [[!WebIDL-ED]], dictionary members are optional unless 
+	  they are explicitly marked as <code>required</code>.</p>
+
+        <p>WebIDL dictionary members MUST NOT have a value of null — i.e., 
+	  there are no declarations of nullable dictionary members in this specification. </p>
+
+        <p>Unless otherwise specified, if a WebIDL dictionary member 
+	  is DOMString, it MUST NOT be empty.</p>
+
+        <p>Unless otherwise specified, if a WebIDL dictionary member is a List, 
+	  it MUST NOT be an empty list.</p>
+
+        <p>UAF specific terminology used in this document is defined in
+          [[!FIDOGlossary]].</p>
+
+        <p>All diagrams, examples, notes in this specification are non-normative.</p>
+
+	<p class="note">
+	  Note: Certain dictionary members need to be present in order to
+	  comply with FIDO requirements. Such members are marked in the
+	  WebIDL definitions found in this document, as
+	  <code>required</code>. The keyword <code>required</code> has been
+	  introduced by [[WebIDL-ED]], which is a work-in-progress. If you
+	  are using a WebIDL parser which implements [[WebIDL]], then you
+	  may remove the keyword <code>required</code> from your WebIDL and
+	  use other means to ensure those fields are present.  
+	</p>
+	
+        <section>
+          <h3>Key Words</h3>
+	  
+          <p>The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL
+            NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “MAY”, and
+            “OPTIONAL” in this document are to be interpreted as described in [[!RFC2119]].</p>
+        </section>
+    </section>
+
+    <section class="informative">
+      <h2>Overview</h2>
+      <p>
+	The goal of this Universal Authentication Framework is to
+	provide a unified and extensible authentication mechanism that
+	supplants passwords while avoiding the shortcomings of current
+	alternative authentication approaches.</p>
+      <p>The design goal of the protocol is to enable Relying Parties
+	to leverage the diverse and heterogeneous set of security
+	capabilities available on end users' devices via a single,
+	unified protocol.</p>
+      <p>This approach is designed to allow the
+	FIDO Relying Parties to choose the best available authentication
+	mechanism for a particular end user or interaction, while
+	preserving the option for a relying party to leverage
+	emerging device security capabilities in the future, without
+	requiring additional integration effort.
+      </p>
+
+      <section>
+	<h3>Scope</h3>
+	<p>
+	  This document describes FIDO architecture in detail and defines
+	  the UAF protocol as a network protocol. It defines the flow and
+	  content of all UAF messages and presents the rationale behind
+	  the design choices.</p>
+	<p>
+	  Particular application-level bindings are outside the scope of
+	  this document. This document is not intended to answer
+	  questions such as:</p>
+	<ul>
+	  <li>
+	    What does an HTTP binding look like for UAF?
+	  </li>
+	  <li>
+	    How can a web application communicate to FIDO UAF Client?
+	  </li>
+	  <li>
+	    How can FIDO UAF Client communicate to FIDO enabled Authenticators?
+	  </li>
+	</ul>
+	<p>The answers to these questions can be found in other UAF
+	  specifications, e.g. [[UAFAppAPIAndTransport]] [[UAFASM]]
+	  [[UAFAuthnrCommands]].</p>
+      </section>
+
+	<section>
+	  <h3>Architecture</h3>
+	    <p>The following diagram depicts the entities involved in UAF
+	      protocol.</p>
+
+	    <figure>
+	      <img src="./img/fido-uaf-architecture.png" 
+		   onerror="./img/fido-uaf-architecture.png"
+		   alt="UAF Architecture"/>
+	      <figcaption>The UAF Architecture</figcaption>
+            </figure>
+
+	    <p>Of these entities, only these three directly create and/or
+	      process UAF protocol messages:</p>
+
+	    <ul>
+	      <li>FIDO Server, running on the relying party's infrastructure</li>
+	      <li>FIDO UAF Client, part of the user agent and running on the FIDO user
+	        device</li>
+	      <li>FIDO Authenticator, integrated into the FIDO user device</li>
+	    </ul>
+
+	    <p>It is assumed in this document that a FIDO Server has access to
+	      the UAF Authenticator Metadata [[FIDOMetadataStatement]] describing
+	      all the authenticators it will interact with.</p>
+	</section>
+
+        <section>
+	  <h3>Protocol Conversation</h3>
+	  <p>
+	    The core UAF protocol consists of four conceptual conversations
+	    between a FIDO UAF Client and FIDO Server.
+	  </p>
+	  <ul>
+	    <li>
+	      <p>
+		<strong>Registration:</strong> UAF allows the relying party to register a FIDO
+		Authenticator with the user's account at the relying party. The
+		relying party can specify a policy for supporting various FIDO
+		Authenticator types. A FIDO UAF Client will only register existing
+		authenticators in accordance with that policy.</p>
+	    </li>
+	    <li>
+	      <p>
+		<strong>Authentication:</strong> UAF allows the relying party to prompt the end
+		user to authenticate using a previously registered FIDO
+		Authenticator. This authentication can be invoked any time, at
+		the relying party's discretion.</p>
+	    </li>
+	    <li>
+	      <p>
+		<strong>Transaction Confirmation:</strong> In addition to providing a general
+		authentication prompt, UAF offers support for prompting the
+		user to confirm a specific transaction.</p>
+	      <p>This prompt includes
+		the ability to communicate additional information to the client
+		for display to the end user, using the client's transaction confirmation display. 
+		The goal of this additional authentication operation is to enable relying parties to ensure
+		that the user is confirming a specified set of the transaction
+		details (instead of authenticating a session to the user agent).</p>
+	    </li>
+	    <li>
+	      <p>
+		<strong>Deregistration:</strong> The relying party can trigger the deletion of
+		the account-related authentication key material.</p>
+	    </li>
+	  </ul>
+	<p>
+	  Although this document defines the FIDO Server as the initiator
+	  of requests, in a real world deployment the first UAF operation
+	  will always follow a user agent's (e.g. HTTP) request
+	  to a relying party.</p>
+	
+	<p>
+	  The following sections give a brief overview of the protocol
+	  conversation for individual operations. More detailed
+	  descriptions can be found in the sections <a href="#registration-operation">Registration
+	  Operation</a>, <a href="#authentication-operation">Authentication Operation</a>, 
+	  and <a href="#deregistration-operation">Deregistration Operation</a>.</p>
+	
+	<section>
+	  
+	  <h3>Registration</h3>
+	  <p>
+	    The following diagram shows the message flows for
+	    registration.</p>
+	  
+	  <figure>	  
+	    <img src="./img/fido-uaf-protocol-registration.png" 
+		 onerror="./img/fido-uaf-protocol-registration.png" 
+		 alt="UAF Registration Message Flow"/>
+	    <figcaption>UAF Registration Message Flow</figcaption>
+          </figure>
+	  
+	  <p class="note">The client application should use the appropriate API 
+	    to inform the FIDO UAF Client of the results of the 
+	    operation (see section 2.3.1 in [[UAFAppAPIAndTransport]]) in order 
+	    to allow the FIDO UAF Client to do some "housekeeping" tasks. 
+	  </p>
+
+	</section>
+	<section>
+	  <h3>Authentication</h3>
+	  
+	  <p>
+	    The following diagram depicts the message flows for the
+	    authentication operation.</p>
+	  
+	  <figure>	  
+	    <img src="./img/fido-uaf-protocol-authentication.png" 
+		 onerror="./img/fido-uaf-protocol-authentication.png"
+		 alt="Authentication Message Flow"/>
+	    <figcaption>Authentication Message Flow</figcaption>
+          </figure>
+	  
+	  <p class="note">The client application should use the appropriate API 
+	    to inform the FIDO UAF Client of the results of the 
+	    operation (see section 2.3.1 in [[UAFAppAPIAndTransport]]) in order 
+	    to allow FIDO UAF Client to do some "housekeeping" tasks. 
+	  </p>
+
+	</section>
+	
+	<section>
+	  <h3>Transaction Confirmation</h3>
+	  
+	  <p>
+	    The following figure depicts the transaction confirmation
+	    message flow.</p>
+	    
+	  <figure>	  
+	    <img src="./img/fido-uaf-protocol-transaction-confirm.png" 
+		 onerror="./img/fido-uaf-protocol-transaction-confirm.png" 
+		 alt="Transaction Confirmation Message Flow"/>
+	    <figcaption>Transaction Confirmation Message Flow</figcaption>
+          </figure>
+	  
+	  <p class="note">The client application should use the appropriate API 
+	    to inform the FIDO UAF Client of the results of the 
+	    operation (see section 2.3.1 in [[UAFAppAPIAndTransport]]) in order 
+	    to allow the FIDO UAF Client to do some "housekeeping" tasks. 
+	  </p>
+
+	</section>
+	
+	<section>
+	  <h3>Deregistration</h3>
+	  
+	  <p>
+	    The following diagram depicts the deregistration message flow.</p>
+	  
+	  <figure>	  
+	    <img src="./img/fido-uaf-protocol-deregistration.png" 
+		 onerror="./img/fido-uaf-protocol-deregistration.png" 
+		 alt="Deregistration Message Flow"/>
+	    <figcaption>Deregistration Message Flow</figcaption>
+          </figure>
+
+	  <p class="note">The client application should use the appropriate API 
+	    to inform the FIDO UAF Client of the results of the 
+	    operation (see section 2.3.1 in [[UAFAppAPIAndTransport]]) in order 
+	    to allow the FIDO UAF Client to do some "housekeeping" tasks. 
+	  </p>
+	  
+	</section>
+      </section>
+    </section>
+
+    <section class="normativeDisclaimer">
+      <h2>Protocol Details</h2>
+      
+      <p>
+	This section provides a detailed description of operations
+	supported by the UAF Protocol.
+      </p>
+      
+      <p class="conformance">Support of all protocol elements is
+	mandatory for conforming software, unless stated otherwise.
+      </p>
+      
+      <p>
+	All string literals in this specification are constructed from
+	Unicode codepoints within the set <code>U+0000</code>..<code>U+007F</code>.
+      </p>
+
+      <p>Unless otherwise specified, protocol messages are transferred
+	with a UTF-8 content encoding.</p>
+      
+      <p class="note certification">
+	All data used in this protocol must be exchanged using a secure
+	transport protocol (such as TLS/HTTPS) established between the FIDO UAF Client
+	and the relying party in order to follow the assumptions made in [[FIDOSecRef]]; 
+	details are specified in section <a href="#tls-protected-communication"></a>.</p>
+      
+      <p>
+	The notation <code>base64url(byte[8..64])</code>  reads as 8-64 bytes of data
+	encoded in base64url, "Base 64 Encoding with URL and Filename
+	Safe Alphabet" [[!RFC4648]] <i>without padding</i>.  
+      </p>
+
+      <p>
+	The notation <code>string[5]</code> reads as five unicode characters, represented as a
+	UTF-8 [[!RFC3629]] encoded string of the type indicated in the declaration, typically a
+	WebIDL [[!WebIDL-ED]] DOMString.</p>
+      <p>As the UTF-8 representation has variable length, the
+	<i>maximum</i> byte length of <code>string[5]</code> is <code>string[4*5]</code>.
+      </p>
+      
+      <p>
+	All strings are case-sensitive unless stated otherwise.</p>
+      
+      <p>
+	This document uses WebIDL [[!WebIDL-ED]]to define UAF protocol messages.
+      </p>
+
+      <p>
+	Implementations MUST serialize the UAF protocol messages for
+	transmission using UTF-8 encoded JSON [[!RFC4627]].
+      </p>
+      
+      <section>
+
+	<h3>Shared Structures and Types</h3>
+      
+	<p>
+	  This section defines types and structures shared by various
+	  operations.
+	</p>
+	
+	<section>
+	  <h4>Version Interface</h4>
+	  <p>
+	    Represents a generic version with major and minor fields.</p>
+	  
+	  <dl title='interface Version' class='idl'>
+	    <dt>readonly attribute unsigned short major</dt>
+	    <dd>Major version.</dd>
+	    <dt>readonly attribute unsigned short minor</dt>
+	    <dd>Minor version.</dd>
+	  </dl>
+
+	</section>
+
+	<section>
+
+	  <h4>Operation enumeration</h4>
+
+	  <p>Describes the operation type of a UAF message or request for a message.</p>
+	    <dl title='enum Operation' class='idl'>
+	      <dt>Reg</dt><dd>Registration</dd>
+	      <dt>Auth</dt><dd>Authentication or Transaction Confirmation</dd>
+	      <dt>Dereg</dt><dd>Deregistration</dd>
+	    </dl>
+
+	</section>
+	
+	<section> 
+	  <h4>OperationHeader dictionary</h4>
+	  
+	  <p>Represents a UAF message Request and Response header</p>
+	    
+	  <dl title='dictionary OperationHeader' class='idl'>
+	    <dt>required Version upv</dt>
+	    <dd>UAF protocol version (<code><dfn>upv</dfn></code>). To conform with this version 
+	      of the UAF spec set, the <code>major</code> value MUST be <code>1</code> 
+	      and the <code>minor</code> value MUST be <code>3</code>.
+	    </dd>
+	    
+	    <dt>required Operation op</dt>
+	    <dd>Name of FIDO operation (<code><dfn>op</dfn></code>) this message relates to.
+	      <p class="note">"Auth" is used for both authentication and transaction
+		confirmation.</p>
+	    </dd>
+	    
+	    <dt>DOMString appID</dt>
+	    <dd><code>string[0..512]</code>.
+
+	      <p>The application identifier that the relying party would like to assert. </p>
+	      <p>There are three ways to set the <code>AppID</code> [[!FIDOAppIDAndFacets]]:</p>
+
+	      <ol>
+
+		<li>If the element is missing or empty in the request,
+		  the FIDO UAF Client MUST set it to the<code>FacetID</code> of the caller.</li>
+
+		<li>If the <code>appID</code> present in the message is identical to
+		  the <code>FacetID</code> of the caller, the FIDO UAF Client 
+		  MUST accept it.</li>
+
+		<li>If it is an URI with HTTPS protocol scheme, the
+		  FIDO UAF Client MUST use it to load the list of
+		  trusted facet identifiers from the specified
+		  URI. The FIDO UAF Client MUST only accept the
+		  request, if the facet identifier of the caller
+		  matches one of the trusted facet identifiers in the
+		  list returned from dereferencing this URI.</li>
+
+	      </ol>
+
+	      <div class="note">
+
+		<p>The new key pair that the authenticator generates will be
+		  associated with this application identifier. </p>
+		<p><em>Security Relevance:</em> The application identifier is used
+		  by the FIDO UAF Client to verify the eligibility of an application
+		  to trigger the use of a specific <code>UAuth.Key</code>. See [[FIDOAppIDAndFacets]]
+		</p>
+
+	      </div>
+	    </dd>
+
+	    <dt>DOMString serverData</dt>
+	    <dd> <code>string[1..1536]</code>.
+	      <p> A session identifier created by the relying party. </p>
+	      <div class="note">
+		The relying party can opaquely store things like expiration times for the registration
+		session, protocol version used and other useful information
+		in <code>serverData</code>. This data is opaque to FIDO UAF Clients. FIDO Servers may
+		reject a response that is lacking this data or is containing unauthorized
+		modifications to it.
+		<p>Servers that depend on the integrity of <code>serverData</code> should apply 
+		  appropriate security measures, as described in
+		  <a href='#registration-request-generation-rules-for-fido-server'>Registration 
+		    Request Generation Rules for FIDO Server</a> and section
+		<a href='#serverdata-and-keyhandle'>ServerData and KeyHandle</a>.</p>
+	      </div>
+	    </dd>
+	    
+	    <dt>Extension[] exts</dt>
+	    <dd>List of UAF Message Extensions.</dd>
+	  </dl>
+	  
+	</section>
+
+	<section>
+	  <h4>Authenticator Attestation ID (AAID) typedef</h4>
+	  
+	  <div class='idl' title='typedef DOMString AAID'>
+            <code>string[9]</code>
+	    <p>
+	      Each authenticator MUST have an <code>AAID</code> to identify UAF
+	      enabled authenticator models globally. The <code>AAID</code> MUST uniquely identify 
+	      a specific authenticator model within the range of all UAF-enabled 
+	      authenticator models made by all authenticator vendors, 
+	      where authenticators of a specific model must share identical security 
+	      characteristics within the model (see 
+	      <a href='#security-considerations'>Security Considerations</a>).
+	    </p>	      
+	    <p>
+	      The <code>AAID</code> is a string with format "V#M", where</p>
+      
+	    <p>
+	      "#" is a separator</p>
+      
+	    <p>
+	      "V" indicates the authenticator Vendor Code. This code
+	      consists of 4 hexadecimal digits.</p>
+	    
+	    <p>
+	      "M" indicates the authenticator Model Code. This code consists
+	      of 4 hexadecimal digits.</p>
+      
+	    <p>
+	      The Augmented BNF [[!ABNF]] for the <code>AAID</code> is:</p>
+      
+	    <p class="code">AAID = 4(HEXDIG) "#" 4(HEXDIG)</p>
+
+	    <p class="note">
+	      <em>HEXDIG</em> is case insensitive, i.e. "03EF" and "03ef" are
+	      identical.</p>
+      
+	    <p>
+	      The FIDO Alliance is responsible for assigning authenticator
+	      vendor Codes. </p>
+      
+	    <p>
+	      Authenticator vendors are responsible for assigning authenticator model codes
+	      to their authenticators. Authenticator vendors MUST assign
+	      unique <code>AAIDs</code> to authenticators with different security
+	      characteristics.</p>
+	    <p>AAIDs are unique and each of them must relate to a distinct
+              authentication metadata file ([[!FIDOMetadataStatement]])</p>
+      
+	    <p class="note">
+	      Adding new firmware/software
+	      features, or changing the underlying hardware protection
+	      mechanisms will typically change the security characteristics
+	      of an authenticator and hence would require a new <code>AAID</code> to be used. 
+	      Refer to ([[!FIDOMetadataStatement]]) for more details.</p>
+	  </div>
+
+	</section> 
+       
+	<section>
+	  <h4>KeyID typedef</h4>
+	  
+	  <div class='idl' title='typedef DOMString KeyID'> 
+	    <code>base64url(byte[32...2048])</code>
+	    
+	    <p>
+	      <code>KeyID</code> is a unique identifier (within the scope of an <code>AAID</code>) used
+	      to refer to a specific <code>UAuth.Key</code>. It is generated by the
+	      authenticator and registered with a FIDO Server.</p>
+	      
+	    <p>
+	      The (<code>AAID</code>, <code>KeyID</code> ) tuple MUST uniquely identify an
+	      authenticator's registration for a relying party. Whenever a
+	      FIDO Server wants to provide specific information to a
+	      particular authenticator it MUST use the (<code>AAID</code>, <code>KeyID</code>) tuple.</p>
+	      
+	    <p>
+	      <code>KeyID</code> MUST be base64url encoded within the UAF message (see
+	      above).</p>
+      
+	    <p> 
+              During step-up authentication and deregistration operations, the FIDO Server SHOULD 
+	      provide the <code>KeyID</code> back to the authenticator for the latter to locate the appropriate 
+	      user authentication key, and perform the necessary operation with it. </p>
+
+	    <p>
+	      Roaming authenticators which don't have internal storage
+	      for, and cannot rely on any ASM to store, generated key
+	      handles SHOULD provide the key handle as part of the <code>AuthenticatorRegistrationAssertion.assertion.KeyID</code>
+              during the registration operation (see also
+	      section <a href='#serverdata-and-keyhandle'>ServerData and KeyHandle</a>) 
+	      and get the key handle back from the FIDO Server during the 
+	      step-up authentication (in the 
+	      <a href="#matchcriteria-dictionary"><code>MatchCriteria</code></a> dictionary which
+	      is part of the <a href="#policy-dictionary">policy</a>) or deregistration operations 
+	      (see [[!UAFAuthnrCommands]] for more details).</p>
+
+	    <p class="note">
+	      The exact structure and content of a <code>KeyID</code> is
+	      specific to the authenticator implementation.</p>
+
+	  </div>
+	</section>
+
+	<section>
+	  <h4>ServerChallenge typedef</h4>
+	  
+	  <div class='idl' title='typedef DOMString ServerChallenge'>
+	    <code>base64url(byte[8...64])</code>	       
+	    <p>
+	      <code>ServerChallenge</code> is a server-provided random challenge. <em>Security
+	      Relevance:</em> The challenge is used by the FIDO Server to verify
+	      whether an incoming response is new, or has already been
+	      processed. See section <a href='#replay-attack-protection'>Replay Attack Protection</a> for more
+	      details. </p>
+	    
+	    <p>
+	      The <code>ServerChallenge</code> SHOULD be mixed into the entropy pool of the
+	      authenticator. <em>Security Relevance:</em> The FIDO Server SHOULD
+	      provide a challenge containing strong cryptographic randomness
+	      whenever possible. See section <a href='#server-challenge-and-random-numbers'>Server Challenge
+	      and Random Numbers</a>.
+	    </p>
+	    
+	    <p class="note">
+	      The minimum challenge length of 8 bytes follows the requirement
+	      in [[SP800-63]] and is equivalent to the 20 decimal digits as
+	      required in [[RFC6287]].</p>	    
+	    <p class="note">
+	      The maximum length has been defined such that SHA-512 output can
+	      be used without truncation.</p>
+	    <p class="note">
+	      The mixing of multiple sources of randomness is
+	      recommended to improve the quality of the random numbers
+	      generated by the authenticator, as described in [[RFC4086]].</p>
+	  </div>
+	</section>
+
+	<section> 
+	  <h4>FinalChallengeParams dictionary</h4>
+	  
+	  <dl class='idl' title='dictionary FinalChallengeParams'>
+	    <dt>required DOMString appID</dt>
+	    <dd><code>string[1..512]</code>
+ 	      <p>
+		The value MUST be taken from the <code>appID</code> field 
+		of the <a title='OperationHeader'>OperationHeader</a></p>
+	    </dd>
+	    
+	    <dt>required ServerChallenge challenge</dt>
+	    <dd>
+   	      <p>
+              The value MUST be taken from the challenge field of the request
+	      (e.g. <a href='#registrationrequest-dictionary'>RegistrationRequest.challenge</a>,
+		<a href='#authenticationrequest-dictionary'>AuthenticationRequest.challenge</a>).</p>
+	    </dd>
+	    
+	    <dt>required DOMString facetID</dt>
+	    <dd><code>string[1..512]</code>
+	      <p>
+		The value is determined by the FIDO UAF Client and it depends on the
+		calling application. See [[FIDOAppIDAndFacets]] for more details.
+		<em>Security Relevance:</em> The <code>facetID</code> is determined 
+		by the FIDO UAF Client and
+		verified against the list of trusted facets retrieved by dereferencing the <code>appID</code> of
+		the calling application.</p>
+	    </dd>
+	    
+	    <dt>required ChannelBinding channelBinding</dt>
+	    <dd>
+ 	      <p>
+		Contains the TLS information to be sent by the FIDO
+		Client to the FIDO Server, binding the TLS channel to
+		the FIDO operation. </p>
+	    </dd>
+	  </dl>
+	  
+	</section>
+	<section>           
+	  <h4>TLS ChannelBinding dictionary</h4>
+	  <p>ChannelBinding contains channel binding information [[!RFC5056]].</p>
+	  <div class="note">
+	    <p><em>Security
+		Relevance:</em>The channel binding may be verified by the FIDO Server in order
+	      to detect and prevent MITM attacks.</p>
+	    <p>At this time, the following channel binding methods are supported:</p>
+	    <ul>
+	      <li>TLS ChannelID (<code>cid_pubkey</code>) [[ChannelID]]</li>
+	      <li>serverEndPoint [[RFC5929]]</li>
+	      <li>tlsServerCertificate</li>
+	      <li>tlsUnique [[RFC5929]]</li>
+	    </ul>
+	  </div>
+
+	  <p>Further requirements:
+	    <ol>
+	      <li>If data related to any of the channel binding
+		methods, described here, is available to the FIDO UAF
+		Client (i.e. included in this dictionary), it MUST be
+		used according to the relevant specification .</li>
+	      <li>All channel binding methods described here MUST be supported by the FIDO Server. The FIDO Server MAY 
+		reject operations if the channel binding cannot be verified successfully.
+	      </li>
+	    </ol>           
+	  </p>
+	  <div class="note certification">
+	    <ul>
+	      <li>If channel binding data is accessible to the web
+		browser or client application, it must be relayed to
+		the FIDO UAF Client in order to follow the assumptions
+		made in [[FIDOSecRef]].</li>
+	      <li>If channel binding data is accessible to the web server, 
+		it must be relayed to the FIDO Server in order to follow the 
+		assumptions made in [[FIDOSecRef]].  The FIDO Server 
+		relies on the web server to provide
+		accurate channel binding information.</li>
+	    </ul>
+	  </div>
+	  <dl class='idl' title='dictionary ChannelBinding'>
+	    <dt>DOMString serverEndPoint</dt>
+	    <dd>
+	      <p>The field <code>serverEndPoint</code> MUST be set
+		to the base64url-encoded hash of the TLS server
+		certificate if this is available. The hash function MUST be
+		selected as follows:</p>
+              <ol> 		
+      		<li>if the certificate's <code>signatureAlgorithm</code> uses a single hash
+		  function and that hash function is either MD5 [[!RFC1321]] or
+		  SHA-1 [[!RFC6234]], then use SHA-256 [[!FIPS180-4]];</li>
+		
+       		<li>if the certificate's  <code>signatureAlgorithm</code> uses
+		  a single hash function and that hash function is
+		  neither MD5 nor SHA-1, then use the hash function
+		  associated with the certificate's<code>signatureAlgorithm</code>;</li>
+		
+      		<li>if the certificate's <code>signatureAlgorithm</code> uses
+		  no hash functions, or uses multiple hash functions,
+		  then this channel binding type's channel bindings
+		  are undefined at this time (updates to this channel
+		  binding type may occur to address this issue if it
+		  ever arises)</li>
+              </ol>
+      	      <p>This field MUST be absent if the TLS server certificate is not available to the
+		processing entity (e.g., the FIDO UAF Client) or the hash function
+		cannot be determined as described.
+	      </p>
+	    </dd>
+	    
+	    <dt>DOMString tlsServerCertificate</dt>
+	    <dd>
+	      <p>This field MUST be absent if the TLS server
+		certificate is not available to the FIDO UAF Client.</p>
+	      
+      	      <p>This field MUST be set to the base64url-encoded,
+		DER-encoded TLS server certificate, if this data is
+		available to the FIDO UAF Client.</p>
+	    </dd>
+	    
+	    <dt>DOMString tlsUnique</dt>
+	    <dd>
+              MUST be set to the base64url-encoded TLS channel
+	      <code>Finished</code> structure. It MUST, however, be absent, if this
+	      data is not available to the FIDO UAF Client
+	      [[!RFC5929]].
+	      <p>The use of tlsUnique is deprecated as its security is broken, see [[TLSAUTH]].</p>
+	    </dd>
+	    
+	    <dt>DOMString cid_pubkey</dt>
+	    <dd>
+	      <p>MUST be absent if the client TLS stack doesn't provide TLS ChannelID
+		[[!ChannelID]] information to the processing entity (e.g., the web
+		browser or client application).</p>
+	      
+      	      <p>MUST be set to "unused" if TLS ChannelID information is supported by
+		the client-side TLS stack but has not been signaled by the TLS
+		(web) server.</p>
+	      
+              <p>Otherwise, it MUST be set to the base64url-encoded serialized
+		[[!RFC4627]] <a title='JwkKey'>JwkKey</a> structure using UTF-8 encoding.</p>	      
+	    </dd>
+	  </dl>
+	  
+	</section>
+	<section>
+	  <h4>JwkKey dictionary</h4>
+	  
+	  <p><code>JwkKey</code> is a dictionary representing a JSON Web Key encoding of
+	    an elliptic curve public key [[!JWK]].</p>
+	  <p>This public key is the ChannelID public
+	    key minted by the client TLS stack for the particular relying party.
+	    [[!ChannelID]] stipulates using only a particular elliptic curve, and the particular
+	    coordinate type.</p>
+	  
+	  <dl class='idl' title='dictionary JwkKey'>
+	    <dt>required DOMString kty = "EC"</dt>
+	    <dd>
+	      Denotes the key type used for Channel ID. At this
+	      time only elliptic curve is supported by [[ChannelID]], so it
+	      MUST be set to "EC" [[!JWA]].
+	    </dd>
+	    
+	    <dt>required DOMString crv = "P-256"</dt>
+	    <dd>
+	      Denotes the elliptic curve on which this public
+	      key is defined. At this time only the NIST curve <code>secp256r1</code> is supported by
+	      [[!ChannelID]], so the <code>crv</code> parameter MUST be set to "P-256".
+	    </dd>
+	    
+	    <dt>required DOMString x</dt>
+	    <dd>
+              Contains the base64url-encoding of the x coordinate
+	      of the public key (big-endian, 32-byte value).
+	    </dd>
+	    
+	    <dt>required DOMString y</dt>
+	    <dd>
+              Contains the base64url-encoding of the y coordinate
+	      of the public key (big-endian, 32-byte value).
+	    </dd>
+	  </dl>
+	  
+	  
+	</section>
+	<section> 
+	  <h4>Extension dictionary</h4>
+	  
+	  <p>FIDO extensions can appear in several places, including
+	    the UAF protocol messages, authenticator commands, or in the
+	    assertion signed by the authenticator.</p>
+
+	  <p>Each extension has an identifier, and the namespace for
+	    extension identifiers is FIDO UAF global (i.e. doesn't
+	    depend on the message where the extension is present).
+	  </p>
+
+	  <p>
+	    Extensions can be defined in a way such that a processing
+	    entity which doesn't understand the meaning of a specific
+	    extension MUST abort processing, or they can be specified
+	    in a way that unknown extension can (safely) be ignored.
+	  </p>
+	  <p>
+	    Extension processing rules are defined in each section
+	    where extensions are allowed.
+	  </p>
+	  
+ 	  <p>Generic extensions used in various operations.</p>
+	  
+	  <dl class='idl' title='dictionary Extension'>
+	    <dt>required DOMString id</dt>
+	    <dd>   <code>string[1..32]</code>.
+	      <p>Identifies the extension.</p>
+	    </dd>
+	    
+	    <dt>required DOMString data</dt>
+	    <dd>Contains arbitrary data with a semantics agreed
+	      between server and client. The data is base64url-encoded.
+	      <p>This field MAY be empty.</p>
+	    <dd>
+	      
+	    <dt>required boolean fail_if_unknown</dt>
+	    <dd> Indicates whether unknown extensions
+	      must be ignored (<code>false</code>) or must lead to an
+	      error (<code>true</code>).
+	      <ul>
+		<li>A value of <code>false</code> indicates that unknown extensions MUST be ignored</li>
+		<li>A value of <code>true</code> indicates that unknown extensions MUST result in an error.</li>
+	      </ul>
+	    </dd>
+	  </dl>
+	  
+	  <div class="note">
+	    <p>The FIDO UAF Client might (a) process an extension or (b) pass the 
+	      extension through to the ASM.  Unknown extensions must be passed through.
+	    </p>
+	    <p>The ASM might (a) process an extension or (b) pass the 
+	      extension through to the FIDO authenticator.  Unknown extensions must be passed through.
+	    </p>
+	    <p>The FIDO authenticator must handle the extension or ignore it 
+	      (only if it doesn't know how to handle it <em>and</em> 
+	      <code>fail_if_unknown</code> is not set).  If the FIDO authenticator doesn't understand the
+	      meaning of the extension and <code>fail_if_unknown</code> is set, it must generate an error
+	      (see definition of <code>fail_if_unknown</code> above).
+	    </p>
+	    <p>When passing through an extension to the next entity, the <code>fail_if_unknown</code> flag
+	      must be preserved (see [[UAFASM]] [[UAFAuthnrCommands]]).
+	    </p>
+	    <p>FIDO protocol messages are not signed.  If the security 
+	      depends on an extension being known or processed, then such extension 
+	      should be accompanied  by a related (and signed) extension in the authenticator 
+	      assertion (e.g. <code>TAG_UAFV1_REG_ASSERTION</code>, 
+	      <code>TAG_UAFV1_AUTH_ASSERTION</code>). If the security has been increased (e.g. 
+	      the FIDO authenticator according to the description in the metadata statement accepts
+	      multiple fingers but in this specific case indicates that the finger used at registration
+	      was also used for authentication) there is no need to mark the extension as 
+	      <code>fail_if_unknown</code> (i.e. tag 0x3E12 should be used [[UAFAuthnrCommands]]).
+	      If the security has been degraded (e.g. the FIDO authenticator according to the 
+	      description in the metadata statement accepts only the finger used at registration for 
+	      authentication but in this specific case indicates that a different finger was used 
+	      for authentication) the extension must be marked as <code>fail_if_unknown</code> 
+	      (i.e. tag 0x3E11 must be used [[UAFAuthnrCommands]]).
+	    </p>
+	  </div>
+	</section>
+
+	<section>
+	  <h4>MatchCriteria dictionary</h4>
+	  <p>
+	    Represents the matching criteria to
+	    be used in the server policy.
+	  </p>
+	  <p>The <code>MatchCriteria</code> object is considered to match an authenticator, if 
+	    <i>all</i> fields in the object are considered to match (as indicated
+	    in the particular fields).</p>
+	    
+	    <dl class='idl' title='dictionary MatchCriteria'>
+	      <dt>AAID[] aaid</dt>
+	      <dd>List of AAIDs, causing matching to be restricted to certain AAIDs.
+		<p>
+		  The field <code>m.aaid</code> MAY be combined with (one or more of) <code>m.keyIDs</code>, 
+		  <code>m.attachmentHint</code>, <code>m.authenticatorVersion</code>, 
+		  and <code>m.exts</code>, but <code>m.aaid</code> 
+		  MUST NOT be combined with any other match criteria field. 
+		</p>
+		<p>
+		  If <code>m.aaid</code> is not provided - 
+		  at least <code>m.authenticationAlgorithms</code> and
+		  <code>m.assertionSchemes</code> MUST be provided.
+		</p>
+		<p>The match succeeds if at least one AAID entry in this array 
+		  matches <code>AuthenticatorInfo.aaid</code> [[!UAFASM]].
+		</p>
+
+		<p class="note">This field corresponds to <code>MetadataStatement.aaid</code> [[!FIDOMetadataStatement]].
+		</p>
+
+	      </dd>
+	      
+	      <dt>DOMString[] vendorID</dt>
+	      <dd>The vendorID causing matching to be restricted to
+		authenticator models of the given vendor. The first 4 characters of 
+		the AAID are the vendorID (see <a title='AAID'>AAID</a>)). 
+		<p>The match succeeds if at least one entry 
+		  in this array matches the first 4 
+		  characters of the <code>AuthenticatorInfo.aaid</code> [[!UAFASM]].
+		</p>
+		<p class="note">This field corresponds to the first 4
+		  characters of<code>MetadataStatement.aaid</code> [[!FIDOMetadataStatement]].
+		</p> 
+	      </dd>
+	      
+	      <dt>KeyID[] keyIDs</dt>
+	      <dd>A list of authenticator KeyIDs causing matching to be
+		restricted to a given set of <code>KeyID</code> instances. (see TAG_KEYID in
+		[[!UAFRegistry]]).
+		<p>This match succeeds if at least one entry in this array matches.
+		</p>
+		<p class="note">This field corresponds to <code>AppRegistration.keyIDs</code> [[!UAFASM]].</p>
+	      </dd>
+	      
+	      <dt>unsigned long userVerification</dt>
+	      <dd>A set of 32 bit flags which may be set if
+		matching should be restricted by the user verification method (see
+		[[!FIDORegistry]]).
+		<div class="note">
+		  The match with <code>AuthenticatorInfo.userVerification</code>
+		  ([[!UAFASM]]) succeeds, if the following condition
+		  holds (written in Java):
+		  
+		  <p>
+		    <pre class="code">
+if (
+        // They are equal
+        (AuthenticatorInfo.userVerification == MatchCriteria.userVerification) ||
+
+        // USER_VERIFY_ALL is not set in both of them and they have at least one common bit set
+        (
+            ((AuthenticatorInfo.userVerification & USER_VERIFY_ALL) == 0) &&
+            ((MatchCriteria.userVerification & USER_VERIFY_ALL) == 0) &&
+            ((AuthenticatorInfo.userVerification & MatchCriteria.userVerification) != 0)
+        )
+   )
+		    </pre>
+		  </p>
+		</div>
+		<div class="note">
+		  This field value can be derived from <code>MetadataStatement.userVerificationDetails</code>
+		  as follows:
+		  <ol>
+		    <li>if <code>MetadataStatement.userVerificationDetails</code> contains 
+		      multiple entries, then:
+		      <ol>
+			<li>if one or more entries <code>MetadataStatement.userVerificationDetails[i]</code> 
+			  contain multiple entries, then: stop, direct derivation is not possible. Must generate
+			  <code>MatchCriteria</code> object by providing a list of matching AAIDs.
+			</li>
+			<li>if all entries <code>MetadataStatement.userVerificationDetails[i]</code> only contain 
+			  a single entry, then: combine all entries 
+			  <code>MetadataStatement.userVerificationDetails[0][0].userVerification</code> to 
+			  <code>MetadataStatement.userVerificationDetails[N-1][0].userVerification</code> into 
+			  a single value using a bitwise OR operation.
+			</li>
+		      </ol>
+		    </li>
+		    <li>if <code>MetadataStatement.userVerificationDetails</code> contains 
+		      a single entry, then: combine all entries 
+			  <code>MetadataStatement.userVerificationDetails[0][0].userVerification</code> to 
+			  <code>MetadataStatement.userVerificationDetails[0][N-1].userVerification</code> into 
+			  a single value using a bitwise OR operation and (if multiple bit flags have been set) additionally set the flag
+			  <code>USER_VERIFY_ALL</code>.
+		    </li>
+		  </ol>
+
+		  <p>
+		    This method doesn't allow matching authenticators
+		    implementing complex combinations of user verification methods, such as
+		    <code>PIN AND (Fingerprint OR Speaker Recognition)</code> (see above derivation rules).
+		    If such specific match rules are required, they need to be specified by providing
+		    the AAIDs of the matching authenticators.
+		  </p>
+		</div>
+
+	      </dd>
+	      
+	      <dt>unsigned short keyProtection</dt>
+	      <dd>A set of 16 bit flags which may be set if
+		matching should be restricted by the key protections used (see
+		[[!FIDORegistry]]).
+		<p>This match succeeds, if at least one of the bit flags matches the
+		  value of <code>AuthenticatorInfo.keyProtection</code> [[!UAFASM]].
+		</p>
+		<p class="note">This field corresponds to 
+		  <code>MetadataStatement.keyProtection</code> [[!FIDOMetadataStatement]].
+		</p> 
+	      </dd>
+	      
+	      <dt>unsigned short matcherProtection</dt>
+	      <dd>A set of 16 bit flags which may be set if
+		matching should be restricted by the matcher protection (see
+		[[!FIDORegistry]]).
+		<p>The match succeeds if at least one of the bit flags matches the
+		  value of <code>AuthenticatorInfo.matcherProtection</code> [[!UAFASM]].
+		</p>
+		<p class="note">This field corresponds to the
+		  <code>MetadataStatement.matcherProtection</code> metadata
+		  statement. See [[!FIDOMetadataStatement]].</p> 
+	      </dd>
+	      
+	      <dt>unsigned long attachmentHint</dt>
+	      <dd>A set of 32 bit flags which may be set if matching
+		should be restricted by the authenticator attachment
+		mechanism (see [[!FIDORegistry]]).
+		<p>This field is considered to match, if at least one
+		  of the bit flags matches the value of <code>AuthenticatorInfo.attachmentHint</code> [[!UAFASM]].
+		</p>
+		<p class="note">This field corresponds to the 
+		  <code>MetadataStatement.attachmentHint</code> metadata
+		  statement.</p>
+	      </dd>
+	      
+	      <dt>unsigned short tcDisplay</dt>
+	      <dd>A set of 16 bit flags which may be set if matching
+		should be restricted by the transaction confirmation
+		display availability and type. (see [[!FIDORegistry]]).
+
+		<p>This match succeeds if at least one of the bit flags matches the 
+		  value of <code>AuthenticatorInfo.tcDisplay</code> [[!UAFASM]].
+		</p>
+
+		<p class="note">This field corresponds to the
+		  <code>MetadataStatement.tcDisplay</code> metadata statement. See [[!FIDOMetadataStatement]]. 
+		</p>
+	      </dd>
+	      
+	      <dt>unsigned short[] authenticationAlgorithms</dt>
+	      <dd>An array containing values of
+		supported authentication algorithm TAG values (see
+		[[!FIDORegistry]], prefix <code>ALG_SIGN</code>) if
+		matching should be restricted by the supported
+		authentication algorithms.  This field MUST be present, 
+		if field <code>aaid</code> is missing.
+		<p>This match succeeds if at least one entry in this array matches
+		  the <code>AuthenticatorInfo.authenticationAlgorithm</code> [[!UAFASM]].
+		</p>
+		<p class="note">This field corresponds to the
+		  <code>MetadataStatement.authenticationAlgorithm</code> metadata statement. See [[!FIDOMetadataStatement]]. 
+		</p>
+	      </dd>
+	      
+	      <dt>DOMString[] assertionSchemes</dt>
+	      <dd>A list of supported assertion
+		schemes if matching should be restricted by the supported schemes.  This field MUST be present, 
+		if field <code>aaid</code> is missing.
+		<p>
+		  See section <a href='#uaf-supported-assertion-schemes'>UAF Supported 
+		  Assertion Schemes</a> for details.</p>
+		<p>This match succeeds if at least one entry in this array matches
+		  <code>AuthenticatorInfo.assertionScheme</code> [[!UAFASM]].
+		</p>
+		<p class="note">This field corresponds to the
+		  <code>MetadataStatement.assertionScheme</code> metadata
+		  statement. See [[!FIDOMetadataStatement]].</p>
+	      </dd>
+	      
+	      <dt>unsigned short[] attestationTypes</dt>
+	      <dd>An array containing the preferred attestation
+		TAG values (see [[!UAFRegistry]], prefix <code>TAG_ATTESTATION</code>). 
+		The order of items MUST 
+		be preserved. The most-preferred attestation type comes first. 
+		<p>This match succeeds if at least one entry in this array matches 
+		  one entry in <code>AuthenticatorInfo.attestationTypes</code> [[!UAFASM]].
+		</p>
+		<p class="note">This field corresponds to the 
+		  <code>MetadataStatement.attestationTypes</code> metadata statement. See [[!FIDOMetadataStatement]]. 
+		</p>
+	      </dd>
+
+              <dt>unsigned short authenticatorVersion</dt>
+              <dd>Contains an authenticator version number, if matching should be 
+		restricted by the authenticator version in use.
+		<p>This match succeeds if the value is <em>lower or equal</em> to 
+		  the field <code>AuthenticatorVersion</code> included
+		  in <code>TAG_UAFV1_REG_ASSERTION</code> or <code>TAG_UAFV1_AUTH_ASSERTION</code> or
+		  a corresponding value in the case of a different assertion scheme.
+		</p>
+		<div class="note">
+		  <p>Since the semantic of the <code>authenticatorVersion</code> depends
+		    on the AAID, the field <code>authenticatorVersion</code> should always be 
+		    combined with a single <code>aaid</code>
+		    in <code>MatchCriteria</code>.</p>
+		  <p>This field corresponds to the 
+		    <code>MetadataStatement.authenticatorVersion</code> metadata
+		    statement. See [[!FIDOMetadataStatement]].</p>
+		</div>
+		<p>The use of authenticatorVersion in the policy is deprecated since there is no standardized way 
+		  for the FIDO Client to learn the authenticatorVersion. 
+		  The authenticatorVersion is included in the auhentication assertion and hence 
+		  can still be evaluated in the FIDO Server.
+		</p>
+	      </dd>
+
+	      <dt>Extension[] exts</dt>
+	      <dd>Extensions for matching policy.</dd>
+	    </dl>
+	    
+	</section>
+	<section>
+	  <h4>Policy dictionary</h4>
+	  
+	  <p>Contains a specification of accepted
+	    authenticators and a specification of disallowed
+	    authenticators.</p>
+	    
+	    <dl class='idl' title='dictionary Policy'>
+	      <dt>required MatchCriteria[][] accepted</dt>
+	      <dd>
+		<p>This field is a two-dimensional array describing the
+		  required authenticator characteristics for the server to accept
+		  either a FIDO registration, or authentication operation for a particular purpose.
+		</p>
+		<p>This two-dimensional array can be seen as a list of sets. List elements
+		  (i.e. the sets) are alternatives (OR condition).</p>
+		<p>All elements
+		  within a set MUST be combined:</p>
+		
+		<p>The first array index indicates OR conditions (i.e. the list).
+		  Any set of authenticator(s) satisfying these <a title='MatchCriteria'>MatchCriteria</a>  in
+		  the first index is acceptable to the server for
+		  this operation.</p>
+		
+		<p>Sub-arrays of <a href='#matchcriteria-dictionary'>MatchCriteria</a> in the second index (i.e. the set)
+		  indicate that multiple authenticators (i.e. each set element)
+		  MUST be registered or authenticated to be accepted by the server.</p>
+		
+		<p>The <a href='#matchcriteria-dictionary'>MatchCriteria</a> array represents ordered preferences by the
+		  server. Servers MUST put their preferred authenticators
+		  first, and FIDO UAF Clients SHOULD respect those preferences,
+		  either by presenting authenticator
+		  options to the user in the same order, or by offering to
+		  perform the operation using only the highest-preference authenticator(s).</p>
+
+		<div class="note">
+		  This list may not be empty.  If the FIDO Server accepts any authenticator, it can follow the example below.
+		</div>
+		  <pre class="example" title="Example for an 'any' policy">
+{
+  "accepted": 
+  [ 
+	[{ "userVerification": 1023 }]
+  ]
+}
+		  </pre>		  
+
+	      </dd>
+	      
+	      <dt>MatchCriteria[] disallowed</dt>
+	      <dd>Any authenticator that matches
+		any of <a href='#matchcriteria-dictionary'>MatchCriteria</a> contained
+		in the field disallowed MUST be excluded from
+		eligibility for the operation, regardless of whether
+		it matches any <a href='#matchcriteria-dictionary'>MatchCriteria</a> present in the <code>accepted</code> list, or not.
+	      </dd>
+	    </dl>
+	</section>
+      </section>
+
+      <section class="normativeDisclaimer">
+
+	<h3>Processing Rules for the Server Policy</h3> 
+
+	<p>
+	  The FIDO UAF Client MUST follow the following rules while parsing server
+	  policy:
+	</p>
+
+	<ol> 
+	  <li>During registration:	  
+
+	    <ol> 
+	      <li><code>Policy.accepted</code> is a list of combinations. Each combination
+		indicates a list of criteria for authenticators that the server
+		wants the user to register.</li>
+	      
+	      <li>Follow the priority of items in <code>Policy.accepted[][]</code>. The lists
+		are ordered with highest priority first.</li>
+	      
+	      <li>Choose the combination whose criteria best match the features of the
+		currently available authenticators</li>
+	      
+	      <li>Collect information about available authenticators</li>
+	      
+	      <li>Ignore authenticators which match the <code>Policy.disallowed</code> criteria</li>
+	      
+	      <li>Match collected information with the matching criteria imposed
+		in the policy (see <a href="#matchcriteria-dictionary">MatchCriteria 
+		dictionary</a> for more details on matching)</li>
+	      
+	      <li>Guide the user to register the authenticators specified in the
+		chosen combination</li>
+	    </ol> 
+	  </li>
+	  
+	  <li>During authentication and transaction confirmation:
+	    <ol> 
+	      <p class='note'><code>Policy.accepted</code> is a list of combinations. Each
+		combination indicates a set of criteria which is enough to completely
+		authenticate the current pending operation</p>
+	      
+	      <li>Follow the priority of items in <code>Policy.accepted[][]</code>. The lists
+		are ordered with highest priority first.</li>
+	      
+	      <li>Choose the combination whose criteria best match the features of the
+		currently available authenticators</li>
+	      
+	      <li>Collect information about available authenticators</li>
+	      
+	      <li>Ignore authenticators which meet the <code>Policy.disallowed</code> criteria</li>
+	      
+	      <li>Match collected information with the matching criteria described
+		in the policy</li>
+	      
+	      <li>Guide the user to authenticate with the authenticators specified
+		in the chosen combination</li>
+	      
+	      <li>A pending operation will be approved by the server only after all
+		criteria of a single combination are entirely met</li>
+	    </ol>
+	  </li>
+	</ol>
+
+	<section class="informative">    
+	  <h4>Examples</h4> 
+	
+	  <pre class="example" title="Policy matching either a FPS-, or Face
+				      Recognition-based Authenticator">
+{
+  "accepted": 
+  [ 
+	[{ "userVerification": 2, "authenticationAlgorithms": [1, 2, 5, 6], "assertionSchemes": ["UAFV1TLV"]}],
+    	[{ "userVerification": 16, "authenticationAlgorithms": [1, 2, 5, 6], "assertionSchemes": ["UAFV1TLV"]}]
+  ]
+}
+	  </pre>
+
+	  <pre class="example" title="Policy matching authenticators
+				      implementing FPS and Face Recognition as alternative combination of
+				      user verification methods.">
+{
+  "accepted": 
+  [ 
+	[{ "userVerification": 18, "authenticationAlgorithms": [1, 2, 5, 6], "assertionSchemes": ["UAFV1TLV"]}]
+  ]
+}
+	  </pre>
+
+	  <p>
+	    Combining these two bit-flags and the flag <code>USER_VERIFY_ALL</code> (USER_VERIFY_ALL = 1024) into 
+	    a single <code>userVerification</code> value would
+	    match authenticators implementing FPS and Face Recognition as a <em>mandatory</em> combination of user 
+	    verification methods.
+	  </p>
+	  
+	  <pre class="example" title="Policy matching authenticators
+				      implementing FPS and Face Recognition as mandatory combination of
+				      user verification methods.">
+{
+  "accepted": [ [{ "userVerification": 1042, "authenticationAlgorithms": [1, 2, 5, 6], "assertionSchemes": ["UAFV1TLV"]}] ]
+}
+	  </pre>
+
+	  <p>The next example requires two authenticators to be used:</p>
+	
+	  <pre class="example" title="Policy matching the combination of a FPS based and a Face Recognition
+				      based authenticator">
+{
+  "accepted": 
+  [ 
+	[ 
+	  { "userVerification": 2, "authenticationAlgorithms": [1, 2, 5, 6], "assertionSchemes": ["UAFV1TLV"]}, 
+	  { "userVerification": 16, "authenticationAlgorithms": [1, 2, 5, 6], "assertionSchemes": ["UAFV1TLV"]}
+	]
+  ]
+}
+	  </pre>
+	  <p>
+	    Other criteria can be specified in addition to the
+	    <code>userVerification</code>:</p>
+      
+	  <pre class="example" title="Policy requiring the combination of a bound FPS based and 
+				      a bound Face Recognition based authenticator">
+{
+  "accepted": 
+  [ 
+	[
+	  { "userVerification": 2, "attachmentHint": 1, "authenticationAlgorithms": [1, 2, 5, 6], "assertionSchemes": ["UAFV1TLV"]},
+	  { "userVerification": 16, "attachmentHint": 1, "authenticationAlgorithms": [1, 2, 5, 6], "assertionSchemes": ["UAFV1TLV"]}
+        ]
+  ]
+}
+	  </pre>
+
+	  <p>The policy for accepting authenticators of vendor with ID <code>1234</code> only is as follows:
+      
+	    <pre class="example" title="Policy accepting all authenticators from vendor with ID 1234">
+{
+  "accepted": 
+  [ [{ "vendorID": "1234", "authenticationAlgorithms": [1, 2, 5, 6], "assertionSchemes": ["UAFV1TLV"]}] ]
+}
+	    </pre>
+
+	</section>
+      </section>
+
+      <section>
+	<h3>Version Negotiation</h3>
+	
+	<p>
+	  The UAF protocol includes multiple versioned constructs:
+	  UAF protocol version, the
+	  version of Key Registration Data and Signed Data objects
+	  (identified by their respective tags, see [[!UAFRegistry]]), and
+	  the ASM version, see [[!UAFASM]].
+	</p>
+	
+	<p class="note">
+	  The Key Registration Data and Signed Data objects have to be parsed
+	  and verified by the FIDO Server. This verification is only
+	  possible if the FIDO Server understands their encoding and the
+	  content. Each UAF protocol version supports a set of
+	  Key Registration Data and SignedData object versions (called Assertion Schemes). 
+	  Similarly each of the ASM versions supports a set Assertion Scheme versions.
+	</p>
+	<p>
+	  As a consequence the FIDO UAF Client MUST select the authenticators
+	  which will generate the appropriately versioned constructs.
+	</p>
+	<p>
+	  For version negotiation the FIDO UAF Client MUST perform the following steps:
+	</p>
+	<ol>	  
+	  <li>Create a set (<code>FC_Version_Set</code>) of version pairs,
+            ASM version (<code>asmVersion</code>) and UAF Protocol version (<code>upv</code>) and add all pairs
+            supported by the FIDO UAF Client into <code>FC_Version_Set</code> 
+	    <ul>
+              <li>e.g. <code>[{upv1, asmVersion1}, {upv2, asmVersion1}, ...]</code></li>
+	    </ul>
+	    <p class="note">
+	      The ASM versions are retrieved from the <code>AuthenticatorInfo.asmVersion</code> field.
+	      The UAF protocol version is derived from the related <code>AuthenticatorInfo.assertionScheme</code> field.
+	    </p>
+	  </li>
+	  <li>Intersect <code>FC_Version_Set</code> with the set of <code>upv</code> included in UAF
+	    Message (i.e. keep only those pairs where the <code>upv</code> value is also
+	    contained in the UAF Message).
+	  </li>
+	  
+	  <li>Select authenticators which are allowed by the UAF Message Policy.
+            For each authenticator:
+            <ul>
+              <li>Construct a set (<code>Authnr_Version_Set</code>) of version pairs 
+		including authenticator supported <code>asmVersion</code> and the 
+		compatible <code>upv(s)</code>.
+		<ul>
+		  <li>e.g. <code>[{upv1, asmVersion1}, {upv2, asmVersion1}, ...]</code></li>
+		</ul>
+              </li>
+	    
+              <li>Intersect <code>Authnr_Version_Set</code> with <code>FC_Version_Set</code> 
+		and select highest version pair from it.
+		<ul>
+		  <li>
+                    Take the pair where the <code>upv</code> is highest. In all these 
+		    pairs leave only the one with highest <code>asmVersion</code>.
+		  </li>
+		</ul>
+	      </li>	      
+              <li>Use the remaining version pair with this authenticator</li>
+            </ul>
+	  </li>	  
+	</ol>
+	
+	<div class="note">
+	  <p>Each version consists of <code>major</code> and <code>minor</code> fields.
+	    In order to compare two versions - compare the Major fields and if they are equal
+	    compare the Minor fields.
+	    
+          <p>Each UAF message contains a version field <code>upv</code>. UAF Protocol
+	    version negotiation is always between FIDO UAF Client and FIDO
+	    Server.
+	</div>	
+      </section>
+      
+      <section> 
+	<h3>Registration Operation</h3>
+	<div class="note">
+	  <p>The Registration operation allows the FIDO Server and the FIDO
+	    Authenticator to agree on an authentication key.</p>
+	  
+	  <figure>	  
+            <img src="./img/fido-uaf-protocol-reg-sequence-diagram.png"
+		 onerror="./img/fido-uaf-protocol-reg-sequence-diagram.png"
+		 alt="UAF Registration Sequence Diagram"/>
+	    <figcaption>UAF Registration Sequence Diagram</figcaption>
+	  </figure>
+	  <p>The steps 11a and 11b and 12 to 13 are not always necessary 
+	    as the related data could be cached.
+	  </p>
+
+	  <p>
+	    The following diagram depicts the cryptographic data flow for
+	    the registration sequence.</p>
+	  
+	  <figure>	  
+            <img src="./img/fido-uaf-protocol-reg-sequence-high-level.png" 
+		 onerror="./img/fido-uaf-protocol-reg-sequence-high-level.png"
+		 alt="UAF Registration Cryptographic Data Flow"/>
+	    <figcaption>UAF Registration Cryptographic Data Flow</figcaption>
+	  </figure>
+	  
+	  <p>
+	    The FIDO Server sends the <code>AppID</code> (see section <a href='#appid-and-facet-id-assertion'>AppID and FacetID
+	      Assertion</a>), the authenticator <a href="#policy-dictionary">Policy</a>,
+	    the <a title='ServerChallenge'><code>ServerChallenge</code></a> and the <code>Username</code> to the FIDO UAF Client.</p>
+	  
+	  <p>
+	    The FIDO UAF Client computes the <a title='FinalChallengeParams'>FinalChallengeParams</a> (FCH) from
+	    the <a title='ServerChallenge'>ServerChallenge</a> and some other values 
+	    and sends the <code>AppID</code>, the <code>FCH</code> and the
+	    <code>Username</code> to the authenticator.</p>
+	  
+	  <p>
+	    The authenticator creates a Key Registration Data object (e.g. <code>TAG_UAFV1_KRD</code>,
+	    see [[!UAFAuthnrCommands]]) containing the hash of <code>FCH</code>, the newly
+	    generated user public key (UAuth.pub) and some other values and
+	    signs it (see section <a href="#authenticator-attestation">Authenticator Attestation</a> 
+	    for more details). This KRD object is then
+	    cryptographically verified by the FIDO Server.</p>
+	</div>
+	<section>
+
+        <h4>Registration Request Message</h4>
+
+        <p>
+            UAF Registration request message is represented as an array of dictionaries. Each dictionary contains an
+            registration request for a specific protocol version. The array MUST NOT contain two dictionaries of the
+            same protocol version. The request is defined as
+            <a href="#idl-def-RegistrationRequest">RegistrationRequest</a> dictionary.
+        </p>
+
+	   <pre class="example" title="UAF Registration Request">
+[{
+    "header": {
+      "upv": {
+        "major": 1,
+        "minor": 3
+      },
+      "op": "Reg",
+ "appID": "https://uaf-test-1.noknoktest.com:8443/SampleApp/uaf/facets",
+      "serverData": "IjycjPZYiWMaQ1tKLrJROiXQHmYG0tSSYGjP5mgjsDaM17RQgq0
+dl3NNDDTx9d-aSR_6hGgclrU2F2Yj-12S67v5VmQHj4eWVseLulHdpk2v_hHtKSvv_DFqL4n
+2IiUY6XZWVbOnvg"
+    },
+    "challenge": "H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo",
+    "username": "apa",
+    "policy": {
+      "accepted": [
+        [
+          {
+            "userVerification": 512,
+            "keyProtection": 1,
+            "tcDisplay": 1,
+            "authenticationAlgorithms": [
+              1
+            ],
+            "assertionSchemes": [
+              "UAFV1TLV"
+            ]
+          }
+        ],
+        [
+          {
+            "userVerification": 4,
+            "keyProtection": 1,
+            "tcDisplay": 1,
+            "authenticationAlgorithms": [
+              1
+            ],
+            "assertionSchemes": [
+              "UAFV1TLV"
+            ]
+          }
+        ],
+        [
+          {
+            "userVerification": 4,
+            "keyProtection": 1,
+            "tcDisplay": 1,
+            "authenticationAlgorithms": [
+              2
+            ]
+          }
+        ],
+        [
+          {
+            "userVerification": 2,
+            "keyProtection": 4,
+            "tcDisplay": 1,
+            "authenticationAlgorithms": [
+              2
+            ]
+          }
+        ],
+        [
+          {
+            "userVerification": 4,
+            "keyProtection": 2,
+            "tcDisplay": 1,
+            "authenticationAlgorithms": [
+              1,
+              3
+            ]
+          }
+        ],
+        [
+          {
+            "userVerification": 2,
+            "keyProtection": 2,
+            "authenticationAlgorithms": [
+              2
+            ]
+          }
+        ],
+        [
+          {
+            "userVerification": 32,
+            "keyProtection": 2,
+            "assertionSchemes": [
+              "UAFV1TLV"
+            ]
+          },
+          {
+            "userVerification": 2,
+            "authenticationAlgorithms": [
+              1,
+              3
+            ],
+            "assertionSchemes": [
+              "UAFV1TLV"
+            ]
+          },
+          {
+            "userVerification": 2,
+            "authenticationAlgorithms": [
+              1,
+              3
+            ],
+            "assertionSchemes": [
+              "UAFV1TLV"
+            ]
+          },
+          {
+            "userVerification": 4,
+            "keyProtection": 1,
+            "authenticationAlgorithms": [
+              1,
+              3
+            ],
+            "assertionSchemes": [
+              "UAFV1TLV"
+            ]
+          }
+        ]
+      ],
+      "disallowed": [
+        {
+          "userVerification": 512,
+          "keyProtection": 16,
+          "assertionSchemes": [
+            "UAFV1TLV"
+          ]
+        },
+        {
+          "userVerification": 256,
+          "keyProtection": 16
+        },
+        {
+          "aaid": [
+            "ABCD#ABCD"
+          ],
+          "keyIDs": [
+            "RfY_RDhsf4z5PCOhnZExMeVloZZmK0hxaSi10tkY_c4"
+          ]
+        }
+      ]
+    }
+}]
+	   </pre>	   	   
+	</section>
+	
+	<section> 
+	  <h4>RegistrationRequest dictionary</h4>
+	  <p>RegistrationRequest contains a single, versioned, registration request.</p>
+	    
+	  <dl class='idl' title='dictionary RegistrationRequest'>
+	    <dt>required OperationHeader header</dt>
+	    <dd>Operation header.  <code>Header.op</code> MUST be "Reg"</dd>
+	    <dt>required ServerChallenge challenge</dt>
+	    <dd>Server-provided challenge value</dd>
+	    <dt>required DOMString username</dt>
+	    <dd><code>string[1..128]</code>
+	      <p>A human-readable user name intended to allow the
+		user to distinguish and select from among
+		different accounts at the same relying party</dd>
+	    <dt>required Policy policy</dt>
+	    <dd>Describes which types of authenticators are acceptable
+	      for this registration operation</dd>
+	  </dl>
+	  
+	</section>
+	<section>
+	  <h4>AuthenticatorRegistrationAssertion dictionary</h4>
+	  <p>
+	    Contains the authenticator's response to a RegistrationRequest message:
+	    
+	    <dl class='idl' title='dictionary AuthenticatorRegistrationAssertion'>
+	      <dt>required DOMString assertionScheme</dt>
+	      <dd>The name of the Assertion Scheme used to encode the <code>assertion</code>. See
+		<a href='#uaf-supported-assertion-schemes'>UAF Supported Assertion Schemes</a> for details.
+		<p class="note">This assertionScheme is not part of a signed object and hence considered 
+		  the <i>suspected</i> assertionScheme.</p>
+	      </dd>
+	      <dt>required DOMString assertion</dt>
+	      <dd><code>base64url(byte[1..4096])</code>
+		Contains the <code>TAG_UAFV1_REG_ASSERTION</code> object containing 
+		the assertion scheme specific 
+		KeyRegistrationData (KRD) object which in turn contains the newly 
+		generated <code>UAuth.pub</code> and is signed by the
+		Attestation Private Key. 
+		<p>This assertion MUST be generated by the
+		  authenticator and it MUST be used only in this Registration operation.
+		  The format of this assertion can vary from one assertion scheme to another
+		  (e.g. for "UAFV1TLV" assertion scheme it MUST be <code>TAG_UAFV1_KRD</code>).</p>
+	      </dd>
+	      
+	      <dt>DisplayPNGCharacteristicsDescriptor[] tcDisplayPNGCharacteristics</dt>
+	      <dd>Supported transaction PNG type [[!FIDOMetadataStatement]].
+		For the definition of the DisplayPNGCharacteristicsDescriptor structure See [[!FIDOMetadataStatement]].
+	      </dd>	      
+	      <dt>Extension[] exts</dt>
+	      <dd>Contains Extensions prepared by the authenticator</dd>
+	    </dl>
+	    
+	</section>
+	<section>
+          <h4>Registration Response Message</h4>
+
+          <p>
+            A UAF Registration response message is represented as an
+            array of dictionaries. Each dictionary contains a
+            registration response for a specific protocol version. The
+            array MUST NOT contain two dictionaries of the same
+            protocol version. The response is
+            defined as
+            <a href="#idl-def-RegistrationResponse">RegistrationResponse</a> dictionary.
+          </p>
+
+	  <pre class="example" title="Registration Response">
+[{
+    "assertions": [
+      {
+        "assertion": "AT7uAgM-sQALLgkAQUJDRCNBQkNEDi4HAAABAQEAAAEKLiAA9t
+BzZC64ecgVQBGSQb5QtEIPC8-Vav4HsHLZDflLaugJLiAAZMCPn92yHv1Ip-iCiBb6i4ADq6
+ZOv569KFQCvYSJfNgNLggAAQAAAAEAAAAMLkEABJsvEtUsVKh7tmYHhJ2FBm3kHU-OCdWiUY
+VijgYa81MfkjQ1z6UiHbKP9_nRzIN9anprHqDGcR6q7O20q_yctZAHPjUCBi5AACv8L7YlRM
+x10gPnszGO6rLFqZFmmRkhtV0TIWuWqYxd1jO0wxam7i5qdEa19u4sfpHFZ9RGI_WHxINkH8
+FfvAwFLu0BMIIB6TCCAY8CAQEwCQYHKoZIzj0EATB7MQswCQYDVQQGEwJVUzELMAkGA1UECA
+wCQ0ExCzAJBgNVBAcMAlBBMRAwDgYDVQQKDAdOTkwsSW5jMQ0wCwYDVQQLDAREQU4xMRMwEQ
+YDVQQDDApOTkwsSW5jIENBMRwwGgYJKoZIhvcNAQkBFg1ubmxAZ21haWwuY29tMB4XDTE0MD
+gyODIxMzU0MFoXDTE3MDUyNDIxMzU0MFowgYYxCzAJBgNVBAYTAlVTMQswCQYDVQQIDAJDQT
+EWMBQGA1UEBwwNU2FuIEZyYW5jaXNjbzEQMA4GA1UECgwHTk5MLEluYzENMAsGA1UECwwERE
+FOMTETMBEGA1UEAwwKTk5MLEluYyBDQTEcMBoGCSqGSIb3DQEJARYNbm5sQGdtYWlsLmNvbT
+BZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABCGBt3CIjnDowzSiF68C2aErYXnDUsWXOYxqIP
+im0OWg9FFdUYCa6AgKjn1R99Ek2d803sGKROivnavmdVH-SnEwCQYHKoZIzj0EAQNJADBGAi
+EAzAQujXnSS9AIAh6lGz6ydypLVTsTnBzqGJ4ypIqy_qUCIQCFsuOEGcRV-o4GHPBph_VMrG
+3NpYh2GKPjsAim_cSNmQ",
+        "assertionScheme": "UAFV1TLV"
+      }
+    ],
+    "fcParams": "eyJhcHBJRCI6Imh0dHBzOi8vdWFmLXRlc3QtMS5ub2tub2t0ZXN0LmN
+vbTo4NDQzL1NhbXBsZUFwcC91YWYvZmFjZXRzIiwiY2hhbGxlbmdlIjoiSDlpVzl5QTlhQVh
+GX2xlbFFvaV9EaFVrNTE0QWQ4VHF2MHpDbkNxS0RwbyIsImNoYW5uZWxCaW5kaW5nIjp7fSw
+iZmFjZXRJRCI6ImNvbS5ub2tub2suYW5kcm9pZC5zYW1wbGVhcHAifQ",
+    "header": {
+ "appID": "https://uaf-test-1.noknoktest.com:8443/SampleApp/uaf/facets",
+      "op": "Reg",
+      "serverData": "IjycjPZYiWMaQ1tKLrJROiXQHmYG0tSSYGjP5mgjsDaM17RQgq0
+dl3NNDDTx9d-aSR_6hGgclrU2F2Yj-12S67v5VmQHj4eWVseLulHdpk2v_hHtKSvv_DFqL4n
+2IiUY6XZWVbOnvg",
+      "upv": {
+        "major": 1,
+        "minor": 3
+      }
+    }
+}]
+	  </pre>
+	  <p class="note">Line breaks in fcParams have been inserted for improving readability.</p>
+	</section>
+	<section>
+	  <h4>RegistrationResponse dictionary</h4>
+	  <p>Contains all fields related to the registration response.</p>
+	    
+	    <dl class='idl' title='dictionary RegistrationResponse'> 
+	      <dt>required OperationHeader header</dt>
+	      <dd><code>Header.op</code> MUST be "Reg".</dd>
+	      <dt>required DOMString fcParams</dt>
+	      <dd>The base64url-encoded serialized [[!RFC4627]]
+		<a title='FinalChallengeParams'>FinalChallengeParams</a>
+		using UTF8 encoding (see <a href='#finalchallenge-dictionary'>FinalChallengeParams dictionary</a>) 
+		which contains all parameters required
+		for the server to verify the Final Challenge.</dd>
+	      <dt>required AuthenticatorRegistrationAssertion[] assertions</dt>
+	      <dd>Response data for each Authenticator being registered.</dd>
+	    </dl>	     
+	</section> 
+	<section>
+	  <h4>Registration Processing Rules</h4>
+	  <section>
+	    <h5>Registration Request Generation Rules for FIDO Server</h5>
+	    
+	    <p>
+	      The policy contains a two-dimensional array of allowed
+	      <a>MatchCriteria</a> (see <a href="#policy-dictionary">Policy</a>). This array can be
+	      considered a list (first dimension) of sets (second dimension)
+	      of authenticators (identified by <code>MatchCriteria</code>). All
+	      authenticators in a specific set MUST be registered
+	      simultaneously in order to match the policy. But any of those
+	      sets in the list are valid, as the list elements are
+	      alternatives.</p>
+	    
+            <p>The FIDO Server MUST follow the following steps:</p>
+	    <ol>
+	      <li>Construct appropriate authentication policy <code>p</code>
+		<ol>
+		  <li>for each set of alternative authenticators do
+		    <ol>
+		      <li>Create an array of
+			MatchCriteria objects, containing the set of
+			authenticators to be registered simultaneously
+			that need to be identified by <i>separate</i> MatchCriteria objects <code>m</code>.		    
+			<ol> 
+      			  <li>For each collection of authenticators <code>a</code> to
+      			    be registered simultaneously that can be
+      			    identified by the <i>same rule</i>, create a 
+			    MatchCriteria object <code>m</code>, where
+			    <ul>
+      			      <li><code>m.aaid</code> MAY be combined with (one or more of) <code>m.keyIDs</code>, 
+				<code>m.attachmentHint</code>, <code>m.authenticatorVersion</code>, 
+				and <code>m.exts</code>, but <code>m.aaid</code> 
+				MUST NOT be combined with any other match criteria field.
+			      </li>
+      			      <li>If <code>m.aaid</code> is not provided - 
+				at least <code>m.authenticationAlgorithms</code> and
+				<code>m.assertionSchemes</code> MUST be provided</li>
+			    </ul>
+			  </li>
+			  <li>Add <code>m</code> to <code>v</code>, e.g. <code>v[j+1]=m</code>.</li>
+			</ol> 
+		      </li>
+		      <li>Add <code>v</code> to <code>p.allowed</code>, e.g. <code>p.allowed[i+1]=v</code></li>
+		    </ol>
+		  </li>
+		  <li>Create MatchCriteria objects <code>m[]</code> for all disallowed Authenticators.
+		    <ol>
+                      <li>For each already registered AAID for the current user
+			<ol>
+			  <li>Create a MatchCriteria object <code>m</code> and
+			    add AAID and corresponding KeyIDs to 
+			    <code>m.aaid</code> and <code>m.KeyIDs</code>.</li>
+			  <p>The FIDO Server MUST include already registered
+			    AAIDs and KeyIDs into field <code>p.disallowed</code> to hint that the client 
+			    should not register these again.</p>
+			</ol>
+                      </li>
+                      <li>Create a MatchCriteria object <code>m</code> and
+			add the AAIDs of all disallowed Authenticators
+			to <code>m.aaid</code>.
+			<p>The status (as provided in the metadata 
+			  TOC (Table-of-Contents file) [[FIDOMetadataService]]) of
+			  some authenticators might be unacceptable. Such authenticators SHOULD
+			  be included in <code>p.disallowed</code>. </p>
+                      </li>
+                      <li>If needed - create MatchCriteria <code>m</code> for other disallowed criteria
+			(e.g. unsupported authenticationAlgs)</li>
+                      <li>Add all <code>m</code> to <code>p.disallowed</code>.</li>
+		    </ol>
+		  </li>
+		</ol>
+	      </li>
+      	      <li>Create a <code>RegistrationRequest</code> object <code>r</code> with 
+		appropriate <code>r.header</code> for each supported version, and
+		<ol>
+		  <li>FIDO Servers SHOULD NOT assume any implicit integrity protection 
+		    of <code>r.header.serverData</code>.
+
+		    <p>
+		      FIDO Servers that depend on the integrity of <code>r.header.serverData</code> SHOULD
+		      apply and verify a cryptographically secure Message
+		      Authentication Code (MAC) to serverData and they SHOULD also cryptographically bind serverData to 
+		      the related message, e.g. by re-including <code>r.challenge</code>, see also section
+		      <a href='#serverdata-and-keyhandle'>ServerData and KeyHandle</a>.
+		    </p>
+
+		    <p class="note">All other FIDO components (except the FIDO server) will treat
+		      <code>r.header.serverData</code> as an opaque value.  As a consequence
+		      the FIDO server can implement any suitable cryptographic protection method.</p>
+		  </li>
+      		  <li>Generate a random challenge and assign it to  <code>r.challenge</code></li>
+      		  <li>Assign the username of the user to be registered to  <code>r.username</code></li>
+      		  <li>Assign  <code>p</code> to  <code>r.policy</code>.</li>
+      		  <li>Append  <code>r</code> to the array  <code>o</code> of message with various versions 
+		    (<code>RegistrationRequest</code>)</li>
+		</ol>
+	      </li>
+      	      <li>Send <code>o</code> to the FIDO UAF Client</li>
+	    </ol>
+	  </section>
+
+	  <section> 
+	    <h5>Registration Request Processing Rules for FIDO UAF Clients</h5>
+      
+	    <p>The FIDO UAF Client MUST perform the following steps:</p>
+	    
+	    <ol> 
+	      <li>Choose the message <code>m</code> with <a>upv</a> set to the appropriate version number.</li>
+	      <li>Parse the message  <code>m</code></li>
+	      <li>If a mandatory field in UAF message is not present or a field
+		doesn't correspond to its type and value - reject the operation</li>
+	      <li>Filter the available authenticators with the given policy and
+		present the filtered authenticators to User. Make sure to not
+		include already registered authenticators for this user
+		specified in <code>RegRequest.policy.disallowed[].keyIDs</code></li>
+	      <li>Obtain <code>FacetID</code> of the requesting Application. If the <code>AppID</code> is missing or
+		empty, set the <code>AppID</code> to the <code>FacetID</code>.
+		<p>Verify that the <code>FacetID</code> is authorized for the <code>AppID</code> 
+		  according to the algorithms in [[FIDOAppIDAndFacets]].</p>
+  		<ul> 
+		  <li>If the <code>FacetID</code> of the requesting Application is not authorized, reject the operation</li>
+		</ul> 
+	      </li>
+	      <li>Obtain TLS data if it is available</li>
+	      <li>Create a <a title='FinalChallengeParams'>FinalChallengeParams</a> 
+		structure <code>fcp</code> and set <code>fcp.appID</code>,
+		<code>fcp.challenge</code>, <code>fcp.facetID</code>, and 
+		<code>fcp.channelBinding</code> appropriately.
+		Serialize [[!RFC4627]] fcp using UTF8 encoding and base64url
+		encode it.
+		<ul> 
+  		  <li><code>FinalChallenge = base64url(serialize(utf8encode(fcp)))</code></li>
+		</ul>
+	      </li>
+              <li>For each authenticator that matches UAF protocol version (see
+		section <a href='#version-negotiation'>Version Negotiation</a>) and user agrees to register:
+		<ol>
+		  <li>Add <code>AppID</code>, <code>Username</code>, <code>FinalChallenge</code>, <code>AttestationType</code>
+		    and all other required fields to the ASMRequest [[!UAFASM]].</li>
+		  <p>The FIDO UAF Client MUST follow the server policy and find the single preferred attestation type.
+		    A single attestation type MUST be provided to the ASM.</p>
+		  <li>Send the ASMRequest to the ASM.   If the ASM returns an error, handle that error appropriately.
+		    The status code returned by the ASM [[!UAFASM]] must be mapped to a
+		    status code defined in [[!UAFAppAPIAndTransport]] as specified in section 
+		    <a href='#mapping-asm-status-codes-to-errorcode'></a>.
+		  </li>
+		</ol>
+	      </li>
+	    </ol>
+
+	    <section>
+	      <h4>Mapping ASM Status Codes to ErrorCode</h4>
+	      <p>
+		ASMs are returning a status code in their responses to the FIDO Client.  The FIDO Client needs 
+		to act on those responses and also map the status code returned the ASM [[!UAFASM]] to an ErrorCode 
+		specified in [[!UAFAppAPIAndTransport]].
+	      </p>
+	      <p>The mapping of ASM status codes to ErrorCode is specified here: </p>
+	      <table class="tlv">
+		<thead>
+		  <tr>
+		    <th>ASM Status Code</th>
+		    <th>ErrorCode</th>
+		    <th>Comment</th>
+		  </tr>
+		</thead>
+		<tbody>
+		  <tr>
+		    <td><code>UAF_ASM_STATUS_OK</code></td>
+		    <td><code>NO_ERROR</code></td>
+		    <td>Pass-through success status.</td>
+		  </tr>
+		  <tr>
+		    <td><code>UAF_ASM_STATUS_ERROR</code></td>
+		    <td><code>UNKNOWN</code></td>
+		    <td>Map to <code>UNKNOWN</code>.</td>
+		  </tr>
+		  <tr>
+		    <td><code>UAF_ASM_STATUS_ACCESS_DENIED</code></td>
+		    <td><code>AUTHENTICATOR_ACCESS_DENIED</code></td>
+		    <td>Map to <code>AUTHENTICATOR_ACCESS_DENIED</code></td>
+		  </tr>
+		  <tr>
+		    <td><code>UAF_ASM_STATUS_USER_CANCELLED</code></td>
+		    <td><code>USER_CANCELLED</code></td>
+		    <td>Pass-through status code.</td>
+		  </tr>
+		  <tr>
+		    <td><code>UAF_ASM_STATUS_CANNOT_RENDER_TRANSACTION_CONTENT</code></td>
+		    <td><code>INVALID_TRANSACTION_CONTENT</code></td>
+		    <td>Map to <code>INVALID_TRANSACTION_CONTENT</code>.  This code indicates a problem 
+		      to be resolved by the entity providing the transaction text.
+		    </td>
+		  </tr>
+		  <tr>
+		    <td><code>UAF_ASM_STATUS_KEY_DISAPPEARED_PERMANENTLY</code></td>
+		    <td><code>KEY_DISAPPEARED_PERMANENTLY</code></td>
+		    <td>Pass-through status code.  It indicates that the Uauth key disappeared permanently and the 
+		      RP App might want to trigger re-registration of the authenticator.
+		    </td>
+		  </tr>
+		  <tr>
+		    <td><code>UAF_ASM_STATUS_AUTHENTICATOR_DISCONNECTED</code></td>
+		    <td><code>NO_SUITABLE_AUTHENTICATOR</code> or <code>WAIT_USER_ACTION</code></td>
+		    <td>Retry operation and map to <code>NO_SUITABLE_AUTHENTICATOR</code> if the problem persists.
+		      Return <code>WAIT_USER_ACTION</code> if being called while retrying.
+		    </td>
+		  </tr>
+		  <tr>
+		    <td><code>UAF_ASM_STATUS_USER_NOT_RESPONSIVE</code></td>
+		    <td><code>USER_NOT_RESPONSIVE</code></td>
+		    <td>Pass-through status code.  The RP App might want to retry the operation once the user
+		      pays attention to the application again.
+		    </td>
+		  </tr>
+		  <tr>
+		    <td><code>UAF_ASM_STATUS_INSUFFICIENT_AUTHENTICATOR_RESOURCES</code></td>
+		    <td><code>INSUFFICIENT_AUTHENTICATOR_RESOURCES</code></td>
+		    <td>The FIDO Client SHALL try other authenticators 
+		      matching the policy.  If none exist, pass-through status code.
+		    </td>
+		  </tr>
+		  <tr>
+		    <td>Any other status code</td>
+		    <td><code>UNKNOWN</code></td>
+		    <td>Map any unknown error code to <code>UNKNOWN</code>.
+		      This might happen when a FIDO Client communicates with an ASM implementing a newer 
+		      UAF specification than the FIDO Client.
+		    </td>
+		  </tr>
+		</tbody>
+	      </table>
+	    </section>	
+	  </section>
+
+	  <section>
+	    <h4>Registration Request Processing Rules for FIDO Authenticator</h4>
+      
+	    <p>See [[!UAFAuthnrCommands]], section "Register Command".
+	  </section>
+
+	  <section>
+	    <h4>Registration Response Generation Rules for FIDO UAF Client</h4>
+	    The FIDO UAF Client MUST follow the steps:
+	    <ol> 
+	      <li>Create a <code>RegistrationResponse</code> message</li>
+	      <li>Copy <code>RegistrationRequest.header</code> into <code>RegistrationResponse.header</code></li>
+	      <li>Set <code>RegistrationResponse.fcParams</code> to <code>FinalChallenge</code> (base64url
+		encoded serialized and utf8 encoded FinalChallengeParams)</li>
+	      <li>Append the response from each Authenticator into
+		<code>RegistrationResponse.assertions</code></li>
+	      <li>Send <code>RegistrationResponse</code> message to FIDO Server</li>
+	    </ol>
+	  </section>
+	  <section>
+	    <h4>Registration Response Processing Rules for FIDO Server</h4>
+	    
+	    <p class="note">
+              The following processing rules assume that Authenticator supports "UAFV1TLV" assertion scheme.
+              Currently "UAFV1TLV" is the only defined and supported assertion scheme. When a new 
+	      assertion scheme is added to UAF protocol - this section will be extended 
+	      with corresponding processing rules.
+	    </p>
+	    
+	    <p>The FIDO Server MUST follow the steps:
+	      <ol> 
+		<li>Parse the message
+		  <ol>
+      		    <li>If protocol version (<code>RegistrationResponse.header.upv</code>) is not
+		      supported – reject the operation</li>
+      		    <li>If a mandatory field in UAF message is not present or a field
+		      doesn't correspond to its type and value - reject the operation</li>
+		  </ol>
+		</li>
+		<li>Verify that <code>RegistrationResponse.header.serverData</code>, if used,
+		  passes any implementation-specific checks against its validity. See also section
+		  <a href='#serverdata-and-keyhandle'>ServerData and KeyHandle</a>.
+		</li>
+		<li>base64url decode <code>RegistrationResponse.fcParams</code> and convert it
+		  into an object (<code>fcp</code>)</li>
+		<li> Verify each field in fcp and make sure it is valid:
+		  <ol> 
+      		    <li>Make sure <code>fcp.appID</code> corresponds to the one stored by the FIDO Server
+		      <p class="note">When the <code>appID</code> provided in the request was empty, the
+			FIDO Client must set the <code>appID</code> to the facetID (see [[FIDOAppIDAndFacets]]).
+			In this case, the Uauth key cannot be used by other application facets.
+		      </p>
+		    </li>
+      		    <li>Make sure <code>fcp.facetID</code> is in the list of trusted FacetIDs [[FIDOAppIDAndFacets]]</li>
+      		    <li>Make sure <code>fcp.channelBinding</code> is as expected (see 
+		      section <a href="#channelbinding-dictionary">ChannelBinding dictionary</a>)
+		      <p class="note">
+			There might be legitimate situations in which some methods of 
+			channel binding fail (see section <a href='#tls-binding'></a>).
+		      </p>
+		    </li>
+      		    <li>Reject the response if any of these checks fails</li>
+      		    <li>Make sure <code>fcp.challenge</code> has really been generated by the FIDO Server
+		      for this operation and it is not expired</li>
+		  </ol>
+		</li>
+		<li>For each assertion <code>a</code> in <code>RegistrationResponse.assertions</code>
+		  <ol>
+      		    <li>Parse TLV data from <code>a.assertion</code> assuming it is encoded according to 
+		      the suspected assertion scheme <code>a.assertionScheme</code> and make sure it 
+		      contains all mandatory fields (indicated in Authenticator Metadata) it is supposed to
+		      have and has a valid syntax.
+		      <ul> 
+			<li>If it doesn't - continue with next assertion</li>
+		      </ul>
+		    </li>
+		    <li>Retrieve the AAID from the assertion. 
+		      <p class="note">The AAID in <code>TAG_UAFV1_KRD</code> is contained 
+			in <code>a.assertion.TAG_UAFV1_REG_ASSERTION.TAG_UAFV1_KRD.TAG_AAID</code>.</p>
+		    </li>
+		    <li>Verify that <code>a.assertionScheme</code> matches <code>Metadata(AAID).assertionScheme</code>
+		      <ul> 
+			<li>If it doesn't match - continue with next assertion</li>
+		      </ul>
+		    </li>
+		    <li>Verify that the AAID indeed matches the policy specified
+		      in the registration request.
+		      <p class="note">Depending on the policy (e.g. in the case of AND combinations), it 
+			might be required to evaluate other assertions included in this <code>RegistrationResponse</code> in 
+			order to determine whether this AAID matches the policy.</p>
+		      <ul> 
+			<li>If it doesn't match the policy - continue with next assertion</li>
+		      </ul> 
+		    </li>
+      		    <li>Locate authenticator-specific authentication algorithms from
+		      the authenticator metadata [[!FIDOMetadataStatement]] using the AAID.</li>
+      		    <li>Hash <code>RegistrationResponse.fcParams</code> using hashing algorithm
+		      suitable for this authenticator type. Look up the hash
+		      algorithm in authenticator metadata, field <code>AuthenticationAlgs</code>.
+		      It is the hash algorithm associated with the first entry
+		      related to a constant with prefix ALG_SIGN.
+		      <ul>
+			<li><code>FCHash = hash(RegistrationResponse.fcParams)</code></li>
+		      </ul> 
+		    </li>
+		    <li>if <code>a.assertion</code> contains an object of type <code>TAG_UAFV1_REG_ASSERTION</code>, then
+		      <ol>
+			<li>if <code>a.assertion.TAG_UAFV1_REG_ASSERTION</code> contains 
+			  <code>TAG_UAFV1_KRD</code> as first element:
+			  <ol>	      
+			    <li>Obtain <code>Metadata(AAID).AttestationType</code> for the AAID and make sure 
+			      that <code>a.assertion.TAG_UAFV1_REG_ASSERTION</code> contains the most preferred
+			      attestation tag specified in field <code>MatchCriteria.attestationTypes</code> 
+			      in <code>RegistrationRequest.policy</code> (if this field is present).
+			      <ul>
+				<li>If <code>a.assertion.TAG_UAFV1_REG_ASSERTION</code> doesn't contain the 
+				  preferred attestation - it is RECOMMENDED to skip this
+				  assertion and continue with next one</li>
+			      </ul>
+			    </li>
+			    <li>Make sure that <code>a.assertion.TAG_UAFV1_REG_ASSERTION.TAG_UAFV1_KRD.FinalChallengeHash</code> 
+			      == <code>FCHash</code>
+			      <ul> 
+				<li>If comparison fails - continue with next assertion</li>
+			      </ul> 
+			    </li>
+			    <li>Obtain <code>Metadata(AAID).AuthenticatorVersion</code> for the AAID 
+			      and make sure that it is lower or equal to 
+			      <code>a.assertion.TAG_UAFV1_REG_ASSERTION.TAG_UAFV1_KRD.AuthenticatorVersion</code>.
+			      <ul>
+				<li>If <code>Metadata(AAID).AuthenticatorVersion</code> is higher (i.e. the 
+				  authenticator firmware is outdated), 
+				  it is RECOMMENDED to assume increased risk.
+				  See sections "StatusReport dictionary" and "Metadata TOC object Processing Rules" 
+				  in [[FIDOMetadataService]] for more details on this.
+				</li>
+			      </ul>
+			    </li>
+			    <li>Check whether <code>a.assertion.TAG_UAFV1_REG_ASSERTION.TAG_UAFV1_KRD.RegCounter</code> 
+			      is acceptable, i.e. it is either not supported (value is 0) or it is not exceedingly high
+			      <ul>
+				<li>If <code>a.assertion.TAG_UAFV1_REG_ASSERTION.TAG_UAFV1_KRD.RegCounter</code> 
+				  is exceedingly high, this assertion might be skipped
+				  and processing will continue with next one</li>
+			      </ul>
+			    </li>
+			    <li>If <code>a.assertion.TAG_UAFV1_REG_ASSERTION</code> 
+			      contains <code>TAG_ATTESTATION_BASIC_FULL</code> tag
+			      <ol>
+				<li>If entry <code>AttestationRootCertificates</code> for the AAID in the
+				  metadata [[!FIDOMetadataStatement]] contains at least one element:
+				  <ol>
+				    <li>Obtain contents of all <code>TAG_ATTESTATION_CERT</code> tags from
+				      <code>a.assertion.TAG_UAFV1_REG_ASSERTION.TAG_ATTESTATION_BASIC_FULL</code> object. 
+				      The occurrences are ordered (see [[!UAFAuthnrCommands]])
+				      and represent the attestation certificate followed by the related 
+				      certificate chain.</li>
+				    <li>Obtain all entries of <code>AttestationRootCertificates</code>
+				      for the AAID in authenticator Metadata, field <code>AttestationRootCertificates</code>.</li>
+				    <li>Verify the attestation certificate and the entire certificate chain up to
+				      the Attestation Root Certificate using Certificate Path
+				      Validation as specified in [[!RFC5280]]</li>
+				    <ul>
+				      <li>If verification fails – continue with next assertion</li>
+				    </ul>
+				    <li>Verify 
+				      <code>a.assertion.TAG_UAFV1_REG_ASSERTION.TAG_UAFV1_KRD.TAG_ATTESTATION_BASIC_FULL.Signature</code> 
+				      using the attestation certificate (obtained before).</li>
+				    <ul>
+				      <li>If verification fails – continue with next assertion</li>
+				    </ul>
+				  </ol>
+				</li>
+				<li>If <code>Metadata(AAID).AttestationRootCertificates</code> for this AAID is
+				  empty - continue with next assertion</li>
+				<li>Mark assertion as positively verified</li>
+            		      </ol>
+			    </li>
+			    <li>If <code>a.assertion.TAG_UAFV1_REG_ASSERTION</code> 
+			      contains an object of type <code>TAG_ATTESTATION_BASIC_SURROGATE</code>
+            		      <ol>
+				<li>There is no real attestation for the AAID, so we just assume 
+				  the AAID is the real one.</li>
+				<li>If entry <code>AttestationRootCertificates</code> for the AAID in the
+				  metadata is empty
+				  <ul>
+				    <li>Verify 
+				      <code>a.assertion.TAG_UAFV1_REG_ASSERTION.TAG_ATTESTATION_BASIC_SURROGATE.Signature</code> 
+				      using <code>a.assertion.TAG_UAFV1_REG_ASSERTION.TAG_UAFV1_KRD.TAG_PUB_KEY</code>
+                    		      <ul>
+					<li>If verification fails – continue with next assertion</li>
+				      </ul>
+				    </li>
+				  </ul>
+				</li>
+				<li>If entry <code>AttestationRootCertificates</code> for the AAID in the
+				  metadata is not empty - continue with next assertion 
+				  (as the AAID obviously is expecting a different attestation method).</li>
+				<li>Mark assertion as positively verified</li>
+			      </ol>
+			    </li>
+			    <li>If <code>a.assertion.TAG_UAFV1_REG_ASSERTION</code> 
+			      contains an object of type <code>TAG_ATTESTATION_ECDAA</code>
+            		      <ol>
+				<li>If entry <code>ecdaaTrustAnchors</code> for the AAID in the
+				  metadata [[!FIDOMetadataStatement]] contains at least one element:
+				  <ol>
+				    <li>For each of the <code>ecdaaTrustAnchors</code> entries, perform the 
+				      ECDAA Verify operation as specified in [[!FIDOEcdaaAlgorithm]].
+				      <ul>
+					<li>If verification fails – continue with next <code>ecdaaTrustAnchors</code> entry</li>
+				      </ul>
+				    </li>
+				    <li>If no ECDAA Verify operation succeeded – continue with next assertion</li>
+				  </ol>
+				</li>
+				<li>If <code>Metadata(AAID).ecdaaTrustAnchors</code> for this AAID is
+				  empty - continue with next assertion</li>
+				<li>Mark assertion as positively verified and the authenticator indeed is of model
+				  as indicated by the AAID.</li>
+            		      </ol>
+			    </li>
+			    <li>If <code>a.assertion.TAG_UAFV1_REG_ASSERTION</code> contains 
+			      another <code>TAG_ATTESTATION</code> tag - verify the attestation by following
+			      appropriate processing rules applicable to that attestation.
+			      Currently this document defines the processing rules for Basic Attestation and 
+			      direct anonymous attestation (ECDAA).</li>
+			  </ol>
+			</li>
+			<li>if <code>a.assertion.TAG_UAFV1_REG_ASSERTION</code> contains a different object than
+			  <code>TAG_UAFV1_KRD</code> as first element, then follow the rules specific to that object.
+			</li>
+			<li>Extract <code>a.assertion.TAG_UAFV1_REG_ASSERTION.TAG_UAFV1_KRD.PublicKey</code> into PublicKey, 
+			  <code>a.assertion.TAG_UAFV1_REG_ASSERTION.TAG_UAFV1_KRD.KeyID</code> into KeyID, 
+			  <code>a.assertion.TAG_UAFV1_REG_ASSERTION.TAG_UAFV1_KRD.SignCounter</code> into SignCounter,
+			  <code>a.assertion.TAG_UAFV1_REG_ASSERTION.TAG_UAFV1_KRD.TAG_ASSERTION_INFO.authenticatorVersion</code> 
+			  into AuthenticatorVersion, 
+			  <code>a.assertion.TAG_UAFV1_REG_ASSERTION.TAG_UAFV1_KRD.TAG_AAID</code> into AAID.
+			</li>		  
+		      </ol>
+		    </li>
+		    <li>if <code>a.assertion</code> doesn't contain an object of type <code>TAG_UAFV1_REG_ASSERTION</code>, 
+		      then skip this assertion (as in this UAF v1 only <code>TAG_UAFV1_REG_ASSERTION</code> is defined).</li>
+		  </ol>
+		</li>
+		<li>For each positively verified assertion <code>a</code>
+		  <ul>
+		    <li>Store PublicKey, KeyID, SignCounter, AuthenticatorVersion, AAID
+		      and <code>a.tcDisplayPNGCharacteristics</code> into a record
+		      associated with the user's identity . If an entry with the same
+		      pair of AAID and KeyID already exists then fail (should never
+		      occur).</li>
+		  </ul>
+		</li>
+	      </ol>
+	  </section>
+	</section>
+     </section>
+
+     <section>
+
+      <h3>Authentication Operation</h3>
+      <div class="note">
+	<figure>	  
+          <img src="./img/fido-uaf-protocol-auth-sequence-diagram.png"
+               onerror="./img/fido-uaf-protocol-auth-sequence-diagram.png"
+               alt="UAF Authentication Sequence Diagram"/>
+	  <figcaption>UAF Authentication Sequence Diagram</figcaption>
+        </figure>
+	<p>
+	  The steps 7a and 7a and 8 to 9 are not always necessary 
+	  as the related data could be cached.
+	</p>
+	<p>
+	  The TransactionText (TranTxt) is only required in the case of 
+	  Transaction Confirmation (see section <a href='#transaction-dictionary'></a>), 
+	  it is absent in the case of a pure Authenticate operation.
+	</p>
+	
+	<p>
+	  During this operation, the FIDO Server asks the FIDO UAF Client to
+	  authenticate user with server-specified authenticators, and return an
+	  authentication response.
+	</p>
+
+	<p>In order for this operation to succeed,
+	  the authenticator and the relying party must have a previously
+	  shared registration.
+	</p>
+	
+	<figure>	  
+          <img src="./img/fido-uaf-protocol-authn-sequence-high-level.png" 
+	       onerror="./img/fido-uaf-protocol-authn-sequence-high-level.png"
+	       alt"UAF Authentication Cryptographic Data Flow"/>
+	  <figcaption>UAF Authentication Cryptographic Data Flow</figcaption>
+        </figure>
+	<p>
+	  Diagram of cryptographic flow:
+	</p>
+	<p>
+	  The FIDO Server sends the <code>AppID</code> (see [[FIDOAppIDAndFacets]]), the 
+	  authenticator <a href="#policy-dictionary">policy</a>
+          and the <a title='ServerChallenge'>ServerChallenge</a> to the FIDO UAF Client.
+	  
+	<p>
+	  The FIDO UAF Client computes the hash of the
+          <a title='FinalChallengeParams'>FinalChallengeParams</a>, produced
+	  from the <a title='ServerChallenge'>ServerChallenge</a>
+          and other values, as described in this document, and sends
+	  the <code>AppID</code> and hashed <code>FinalChallengeParams</code> to the Authenticator.</p>
+
+	<p>
+	  The authenticator creates the <code>SignedData</code> object (see
+	  <code>TAG_UAFV1_SIGNED_DATA</code> in [[!UAFAuthnrCommands]]) containing the hash of the final challenge parameters, and 
+	  some other values and signs it using the <code>UAuth.priv</code> key. This assertion
+	  is then cryptographically verified by the FIDO Server.</p>
+      </div>
+      
+      <section>
+	<h4>Transaction dictionary</h4>
+	<p>Contains the Transaction Content provided by the FIDO Server:
+	  
+	  <dl class='idl' title='dictionary Transaction'>
+	    <dt>required DOMString contentType</dt>
+	    <dd>Contains the MIME Content-Type supported by the authenticator 
+	      according its metadata statement (see [[!FIDOMetadataStatement]]).
+	      <p>This version of the specification only supports the values 
+		<code>text/plain</code> or <code>image/png</code>.
+	    </dd>
+	    
+	    <dt>required DOMString content</dt>
+	    <dd><code>base64url(byte[1...])</code>
+	      <p>Contains the base64-url encoded transaction content according 
+		to the <code>contentType</code> to be shown to the user.
+  	      <p>If <code>contentType</code> is "text/plain" then the content MUST be the base64-url encoding of the ASCII
+		encoded text with a maximum of 200 characters.
+	    </dd>
+	    
+	    <dt>DisplayPNGCharacteristicsDescriptor tcDisplayPNGCharacteristics</dt>
+            <dd>Transaction content PNG characteristics. For the definition of the
+                DisplayPNGCharacteristicsDescriptor structure See [[!FIDOMetadataStatement]].
+                This field MUST be present if the contentType is "image/png".
+            </dd>
+	  </dl>
+
+      </section>
+
+      <section>
+
+          <h4>Authentication Request Message</h4>
+	  
+          <p>
+            UAF Authentication request message is represented as an array of dictionaries. 
+	    Each dictionary contains an
+            authentication request for a specific protocol version. The array MUST NOT 
+	    contain two dictionaries of the
+            same protocol version. The request is defined as
+            <a href="#idl-def-AuthenticationRequest">AuthenticationRequest</a> dictionary.
+          </p>
+	  
+	  <pre class="example" title="UAF Authentication Request">
+[{
+    "header": {
+      "upv": {
+        "major": 1,
+        "minor": 3
+      },
+      "op": "Auth",
+ "appID": "https://uaf-test-1.noknoktest.com:8443/SampleApp/uaf/facets",
+      "serverData": "5s7n8-7_LDAtRIKKYqbAtTTOezVKCjl2mPorYzbpxRrZ-_3wWro
+MXsF_pLYjNVm_l7bplAx4bkEwK6ibil9EHGfdfKOQ1q0tyEkNJFOgqdjVmLioroxgThlj8Is
+tpt7q"
+    },
+    "challenge": "HQ1VkTUQC1NJDOo6OOWdxewrb9i5WthjfKIehFxpeuU",
+    "policy": {
+      "accepted": [
+        [
+          {
+            "userVerification": 512,
+            "keyProtection": 1,
+            "tcDisplay": 1,
+            "authenticationAlgorithms": [
+              1
+            ],
+            "assertionSchemes": [
+              "UAFV1TLV"
+            ]
+          }
+        ],
+        [
+          {
+            "userVerification": 4,
+            "keyProtection": 1,
+            "tcDisplay": 1,
+            "authenticationAlgorithms": [
+              1
+            ],
+            "assertionSchemes": [
+              "UAFV1TLV"
+            ]
+          }
+        ],
+        [
+          {
+            "userVerification": 4,
+            "keyProtection": 1,
+            "tcDisplay": 1,
+            "authenticationAlgorithms": [
+              2
+            ]
+          }
+        ],
+        [
+          {
+            "userVerification": 2,
+            "keyProtection": 4,
+            "tcDisplay": 1,
+            "authenticationAlgorithms": [
+              2
+            ]
+          }
+        ],
+        [
+          {
+            "userVerification": 4,
+            "keyProtection": 2,
+            "tcDisplay": 1,
+            "authenticationAlgorithms": [
+              1,
+              3
+            ]
+          }
+        ],
+        [
+          {
+            "userVerification": 2,
+            "keyProtection": 2,
+            "authenticationAlgorithms": [
+              2
+            ]
+          }
+        ],
+        [
+          {
+            "userVerification": 32,
+            "keyProtection": 2,
+            "assertionSchemes": [
+              "UAFV1TLV"
+            ]
+          },
+          {
+            "userVerification": 2,
+            "authenticationAlgorithms": [
+              1,
+              3
+            ],
+            "assertionSchemes": [
+              "UAFV1TLV"
+            ]
+          },
+          {
+            "userVerification": 2,
+            "authenticationAlgorithms": [
+              1,
+              3
+            ],
+            "assertionSchemes": [
+              "UAFV1TLV"
+            ]
+          },
+          {
+            "userVerification": 4,
+            "keyProtection": 1,
+            "authenticationAlgorithms": [
+              1,
+              3
+            ],
+            "assertionSchemes": [
+              "UAFV1TLV"
+            ]
+          }
+        ]
+      ],
+      "disallowed": [
+        {
+          "userVerification": 512,
+          "keyProtection": 16,
+          "assertionSchemes": [
+            "UAFV1TLV"
+          ]
+        },
+        {
+          "userVerification": 256,
+          "keyProtection": 16
+        }
+      ]
+    }
+}]
+	  </pre>
+
+
+      </section>
+      <section>
+	<h4>AuthenticationRequest dictionary</h4>
+	<p>Contains the UAF Authentication Request Message:
+	  
+	  <dl class='idl' title='dictionary AuthenticationRequest'>
+	    <dt>required OperationHeader header</dt>
+	    <dd><code>Header.op</code> MUST be "Auth"</dd>
+	    <dt>required ServerChallenge challenge</dt>
+	    <dd>Server-provided challenge value</dd>
+	    <dt>Transaction[] transaction</dt>
+	    <dd>Transaction data to be explicitly confirmed by the user.
+              <p>The list contains the same transaction content in various 
+		content types and various image sizes.
+		Refer to [[!FIDOMetadataStatement]] for more information about
+		Transaction Confirmation Display characteristics.</p>
+	    </dd>
+	    <dt>required Policy policy</dt>
+	    <dd>Server-provided policy defining what types of authenticators are
+	      acceptable for this authentication operation.</dd>
+	  </dl>	
+      </section>
+      <section>
+	
+	<h4>AuthenticatorSignAssertion dictionary</h4>
+	<p>Represents a response generated by a specific Authenticator:</p>
+	  
+	<dl class='idl' title='dictionary AuthenticatorSignAssertion'> 
+	  <dt>required DOMString assertionScheme</dt>
+	  <dd>The name of the Assertion Scheme used to encode <code>assertion</code>.
+	    See	<a href='#uaf-supported-assertion-schemes'>UAF Supported Assertion Schemes</a> for details.
+	    <p class="note">This assertionScheme is not part of a signed object and hence considered 
+	      the <i>suspected</i> assertionScheme.</p>
+	  </dd>
+	  <dt>required DOMString assertion</dt>
+	  <dd><code>base64url(byte[1..4096])</code>
+	    Contains the assertion containing a signature generated by <code>UAuth.priv</code>,
+	    i.e. <code>TAG_UAFV1_AUTH_ASSERTION</code>.
+	  </dd>
+	  <dt>Extension[] exts</dt>
+	  <dd>Any extensions prepared by the Authenticator</dd>
+	</dl>
+	
+      </section>
+      <section>
+	<h4>AuthenticationResponse dictionary</h4>
+	<p>Represents the response to a challenge, including the set of signed
+          assertions from registered authenticators.
+	  
+	  <dl class='idl' title='dictionary AuthenticationResponse'>
+	    <dt>required OperationHeader header</dt>
+	    <dd> <code>Header.op</code> MUST be "Auth" </dd>
+	    <dt>required DOMString fcParams    </dt>
+	    <dd>The field fcParams is the base64url-encoded serialized [[!RFC4627]]
+	      FinalChallengeParams in UTF8 encoding 
+	      (see <a href='#finalchallenge-dictionary'>FinalChallengeParams dictionary</a>) 
+	      which contains all parameters required
+	      for the server to verify the Final Challenge.
+	    </dd>
+	    <dt>required AuthenticatorSignAssertion[] assertions</dt>
+	    <dd>The list of authenticator responses related to this operation.</dd>
+	  </dl>
+      </section>
+      <section>
+	
+	<h4>Authentication Response Message</h4>
+
+      <p>
+        UAF Authentication response message is represented as an array of dictionaries. Each dictionary contains an
+        authentication response for a specific protocol version. The array MUST NOT contain two dictionaries of the
+        same protocol version. The response is defined as
+        <a href="#idl-def-AuthenticationResponse">AuthenticationResponse</a> dictionary.
+      </p>
+
+
+
+      <pre class="example" title="UAF Authentication Response">
+[{
+    "assertions": [
+      {
+        "assertion": "Aj7WAAQ-jgALLgkAQUJDRCNBQkNEDi4FAAABAQEADy4gAHwyJA
+EX8t1b2wOxbaKOC5ZL7ACqbLo_TtiQfK3DzDsHCi4gAFwCUz-dOuafXKXJLbkUrIzjAU6oDb
+P8B9iLQRmCf58fEC4AAAkuIABkwI-f3bIe_Uin6IKIFvqLgAOrpk6_nr0oVAK9hIl82A0uBA
+ACAAAABi5AADwDOcBvPslX2bRNy4SvFhAwhEAoBSGUitgMUNChgUSMxss3K3ukekq1paG7Fv
+1v5mBmDCZVPt2NCTnjUxrjTp4",
+        "assertionScheme": "UAFV1TLV"
+      }
+    ],
+    "fcParams": "eyJhcHBJRCI6Imh0dHBzOi8vdWFmLXRlc3QtMS5ub2tub2t0ZXN0LmN
+vbTo4NDQzL1NhbXBsZUFwcC91YWYvZmFjZXRzIiwiY2hhbGxlbmdlIjoiSFExVmtUVVFDMU5
+KRE9vNk9PV2R4ZXdyYjlpNVd0aGpmS0llaEZ4cGV1VSIsImNoYW5uZWxCaW5kaW5nIjp7fSw
+iZmFjZXRJRCI6ImNvbS5ub2tub2suYW5kcm9pZC5zYW1wbGVhcHAifQ",
+    "header": {
+ "appID": "https://uaf-test-1.noknoktest.com:8443/SampleApp/uaf/facets",
+      "op": "Auth",
+      "serverData": "5s7n8-7_LDAtRIKKYqbAtTTOezVKCjl2mPorYzbpxRrZ-_3wWro
+MXsF_pLYjNVm_l7bplAx4bkEwK6ibil9EHGfdfKOQ1q0tyEkNJFOgqdjVmLioroxgThlj8Is
+tpt7q",
+      "upv": {
+        "major": 1,
+        "minor": 3
+      }
+    }
+}]
+      </pre>
+      	<p class="note">Line breaks in fcParams have been inserted for improving readability.</p>
+	
+      </section>
+      <section>
+	<h4>Authentication Processing Rules</h4>
+	
+	<section> 
+	  <h5>Authentication Request Generation Rules for FIDO Server</h5>
+	    <p>
+	      The policy contains a 2-dimensional array of allowed
+	      MatchCriteria (see <a href="#policy-dictionary">Policy</a>). This array can be
+	      considered a list (first dimension) of sets (second dimension)
+	      of authenticators (identified by MatchCriteria). All
+	      authenticators in a specific set MUST be used for authentication
+	      simultaneously in order to match the policy. But any of those
+	      sets in the list are valid, i.e. the list elements are
+	      alternatives.</p>
+
+	  <p>The FIDO Server MUST follow the steps:</p>
+	    <ol> 
+	      <li>Construct appropriate authentication policy <code>p</code>
+		<ol>
+		  <li>for each set of alternative authenticators do
+		    <ol>
+		      <li>Create an 1-dimensional array of MatchCriteria objects v containing the set of authenticators 
+			to be used for authentication simultaneously that need to be identified by <i>separate</i> MatchCriteria objects <code>m</code>.
+			<ol> 
+      			  <li>For each collection of authenticators <code>a</code> to be used for authentication
+			    simultaneously that can be identified by the <i>same rule</i>, create a MatchCriteria object <code>m</code>, where
+			    <ul>
+      			      <li><code>m.aaid</code> MAY be combined with (one or more of) <code>m.keyIDs</code>, 
+				<code>m.attachmentHint</code>, <code>m.authenticatorVersion</code>, 
+				and <code>m.exts</code>, but <code>m.aaid</code> MUST NOT be combined with 
+				any other match criteria field.
+			      </li>
+      			      <li>If <code>m.aaid</code> is not provided - 
+				at least <code>m.authenticationAlgorithms</code> and
+				<code>m.assertionSchemes</code> MUST be provided</li>
+      			      <li>In case of step-up authentication (i.e. in the case where it is
+				expected the user is already known due to a previous
+				authentication step) every item in <code>Policy.accepted</code> MUST include
+				the <code>AAID</code> and <code>KeyID</code> of the authenticator registered for this
+				account in order to avoid ambiguities when having multiple
+				accounts at this relying party.</li>
+			    </ul>
+			  </li>
+			  <li>Add <code>m</code> to <code>v</code>, e.g. <code>v[j+1]=m</code>.</li>
+			</ol> 
+		      </li>
+		      <li>Add <code>v</code> to <code>p.allowed</code>, e.g. <code>p.allowed[i+1]=v</code></li>
+		    </ol>
+		  </li>
+            <li>Create MatchCriteria objects <code>m[]</code> for all disallowed authenticators.
+              <ol>
+                <li>Create a MatchCriteria object <code>m</code> and add AAIDs of all disallowed authenticators
+                  to <code>m.aaid</code>.
+                  <p>The status (as provided in the metadata TOC [[FIDOMetadataService]]) of
+                    some authenticators might be unacceptable. Such authenticators SHOULD
+                    be included in <code>p.disallowed</code>. </p>
+                </li>
+                <li>If needed - create MatchCriteria <code>m</code> for other disallowed criteria
+                  (e.g. unsupported authenticationAlgs)</li>
+                <li>Add all <code>m</code> to <code>p.disallowed</code>.</li>
+              </ol>
+	    </li>
+		</ol>
+	      </li>
+	      <li>Create an AuthenticationRequest object <code>r</code> with 
+		appropriate <code>r.header</code> for each supported version, and
+		<ol>
+		  <li>FIDO Servers SHOULD NOT assume any implicit integrity protection 
+		    of <code>r.header.serverData</code>.
+		    FIDO Servers that depend on the integrity of <code>r.header.serverData</code> SHOULD
+		    apply and verify a cryptographically secure Message
+		    Authentication Code (MAC) to serverData and they SHOULD also cryptographically bind serverData to 
+		    the related message, e.g. by re-including <code>r.challenge</code>, see also section
+		    <a href='#serverdata-and-keyhandle'>ServerData and KeyHandle</a>.
+		    <p class="note">All other FIDO components (except the FIDO server) will treat
+		      <code>r.header.serverData</code> as an opaque value.  As a consequence
+		      the FIDO server can implement any suitable cryptographic protection method.</p>
+		  </li>
+		  <li>Generate a random challenge and assign it to <code>r.challenge</code></li>
+		  <li>If this is a transaction confirmation operation - look up 
+		    TransactionConfirmationDisplayContentTypes/
+		    TransactionConfirmationDisplayPNGCharacteristics from authenticator metadata of every
+		    participating AAID, generate a list of corresponding transaction content and
+		    insert the list into <code>r.transaction</code>.
+		    <ul>
+		      <li>
+			If the authenticator reported (a dynamic) 
+			<code>AuthenticatorRegistrationAssertion.tcDisplayPNGCharacteristics</code> during
+			Registration - it MUST be preferred over the (static) value specified in 
+			the authenticator Metadata.
+		      </li>
+		    </ul>
+		  </li>
+		  <li>Set <code>r.policy</code> to our new policy object <code>p</code> created above, 
+		    e.g. <code>r.policy = p</code>.
+		  </li>
+		  <li>Add the authentication request message the array</li>		  
+		</ol>
+	      </li>
+	      <li>Send the array of authentication request messages to the FIDO UAF Client</li>
+	    </ol>
+	</section>
+
+	<section>
+	  <h5>Authentication Request Processing Rules for FIDO UAF Client</h5>
+	  <p>The FIDO UAF Client MUST follow the steps:
+	    <ol> 
+	      <li>Choose the message <code>m</code> with <a>upv</a> set to the appropriate version number.</li>
+	      <li>Parse the message <code>m</code>
+		<ul>
+      		  <li>If a mandatory field in the UAF message is not present or a
+		    field doesn't correspond to its type and value then reject the
+		    operation</li>
+		</ul>
+		</li>
+	      <li>Obtain <code>FacetID</code> of the requesting Application. If the <code>AppID</code> is missing or 
+		empty, set the <code>AppID</code> to the <code>FacetID</code>.
+		<p>Verify that the <code>FacetID</code> is authorized for the <code>AppID</code> according 
+		  to the algorithms in [[FIDOAppIDAndFacets]].</p>
+  		<ul> 
+		  <li>If the <code>FacetID</code> of the requesting Application is not authorized, reject the operation</li>
+		</ul> 
+	      </li>	      
+	      <li>Filter available authenticators with the given policy and
+		present the filtered list to User.
+	      </li>
+	      <li>Let the user select the preferred Authenticator.</li>
+	      <li>Obtain TLS data if its available</li>
+	      <li>Create a FinalChallengeParams structure <code>fcp</code> and set <code>fcp.AppID</code>,
+		<code>fcp.challenge</code>, <code>fcp.facetID</code>, and <code>fcp.channelBinding</code> appropriately.
+		Serialize [[!RFC4627]] <code>fcp</code> using UTF8 encoding and base64url
+		encode it.
+		<ul> 
+		  <li><code>FinalChallenge = base64url(serialize(utf8encode(fcp)))</code></li>
+		</ul>
+	      </li>
+	      <li>For each authenticator that supports an Authenticator Interface
+		Version AIV compatible with message version
+		<code>AuthenticationRequest.header.upv</code> (see <a href='#version-negotiation'>Version Negotiation</a>) and
+		user agrees to authenticate with:
+		<ol>
+		  <li>Add <code>AppID</code>, <code>FinalChallenge</code>, <code>Transactions</code> (if present),
+		    and all other fields to the ASMRequest.</li>
+		  <li>Send the ASMRequest to the ASM. If the ASM returns an error, handle that error appropriately.
+		    The status code returned by the ASM [[!UAFASM]] must be mapped to a
+		    status code defined in [[!UAFAppAPIAndTransport]] as specified in section 
+		    <a href='#mapping-asm-status-codes-to-errorcode'></a>.</li>
+		</ol>
+	      </li>
+	    </ol> 
+	</section>
+     <section>
+      <h5>Authentication Request Processing Rules for FIDO Authenticator</h5>
+      
+      <p>See [[!UAFAuthnrCommands]], section "Sign Command".
+     
+     </section>
+     <section> 
+       <h5>Authentication Response Generation Rules for FIDO UAF Client</h5>
+       <p>The FIDO UAF Client MUST follow the steps:
+	 <ol>
+	   <li>Create an AuthenticationResponse message</li>
+	   <li>Copy <code>AuthenticationRequest.header</code> into <code>AuthenticationResponse.header</code></li>
+	   <li>Fill out <code>AuthenticationResponse.FinalChallengeParams</code> with appropriate
+	     fields and then stringify it</li>
+	   <li>Append the response from each authenticator into <code>AuthenticationResponse.assertions</code></li>
+	   <li>Send AuthenticationResponse message to the FIDO Server</li>
+	 </ol> 
+     </section>
+
+     <section>
+       <h5>Authentication Response Processing Rules for FIDO Server</h5>
+
+         <p class="note">
+             The following processing rules assume that authenticator supports "UAFV1TLV" assertion scheme.
+             Currently "UAFV1TLV" is the only defined and supported assertion scheme. When a new 
+	     assertion scheme is added to UAF protocol - this section will be extended 
+	     with corresponding processing rules.
+         </p>
+
+       <p>The FIDO Server MUST follow the steps:</p>
+	 <ol> 
+	   <li>Parse the message
+      	     <ol>
+      	       <li>If protocol version (<code>AuthenticationResponse.header.upv</code>) is not 
+		 supported – reject the operation</li>
+      	       <li>If a mandatory field in UAF message is not present or a field
+		 doesn't correspond to its type and value - reject the operation</li>
+	     </ol>
+	   </li>
+	   <li>Verify that <code>AuthenticationResponse.header.serverData</code>, if used, passes any
+	     implementation-specific checks against its validity.  See also section
+	     <a href='#serverdata-and-keyhandle'>ServerData and KeyHandle</a>.
+	   </li>
+	   <li>base64url decode <code>AuthenticationResponse.fcParams</code> and convert into an
+	     object (<code>fcp</code>)</li>
+	   <li>Verify each field in fcp and make sure it's valid:
+     	     <ol> 
+      	       <li>Make sure <code>fcp.appID</code> corresponds to the one stored by the FIDO Server
+		 <p class="note">When the <code>appID</code> provided in the request was empty, the
+		   FIDO Client must set the <code>appID</code> to the facetID (see [[FIDOAppIDAndFacets]]).
+		   In this case, the Uauth key cannot be used by other application facets.
+		 </p>
+	       </li>
+      	       <li>Make sure <code>fcp.facetID</code> is in the list of trusted FacetIDs [[FIDOAppIDAndFacets]]</li>
+      	       <li>Make sure <code>ChannelBinding</code> is as expected (see 
+		 section <a href="#channelbinding-dictionary">ChannelBinding dictionary</a>)
+		 <p class="note">
+		   There might be legitimate situations in which some methods of 
+		   channel binding fail (see section <a href='#tls-binding'></a>).
+		 </p>
+	       </li>
+      	       <li>Make sure <code>fcp.challenge</code> has really been generated by the FIDO Server
+		 for this operation and it is not expired</li>
+      	       <li>Reject the response if any of the above checks fails</li>
+             </ol> 
+	   </li>
+	   <li>For each assertion <code>a</code> in <code>AuthenticationResponse.assertions</code>
+	     <ol>
+      	      <li>Parse TLV data from <code>a.assertion</code> assuming it is encoded according to 
+		the suspected assertion scheme <code>a.assertionScheme</code> and make sure it 
+		contains all mandatory fields (indicated in authenticator Metadata) it is supposed to
+		have and has a valid syntax.
+		<ul> 
+		  <li>If it doesn't - continue with next assertion</li>
+		</ul>
+	      </li>
+	      <li>Retrieve the AAID from the assertion. 
+		<p class="note">The AAID in <code>TAG_UAFV1_SIGNED_DATA</code> is contained 
+		  in <code>a.assertion.TAG_UAFV1_AUTH_ASSERTION.TAG_UAFV1_SIGNED_DATA.TAG_AAID</code>.</p>
+	      </li>
+	      <li>Verify that <code>a.assertionScheme</code> matches <code>Metadata(AAID).assertionScheme</code>
+		<ul> 
+		  <li>If it doesn't match - continue with next assertion</li>
+		</ul>
+	      </li>
+
+      	       <li>Make sure that the AAID indeed matches the policy of the Authentication Request
+     		 <ul> 
+      		   <li> If it doesn't meet the policy – continue with next assertion</li>
+		 </ul>
+	       </li>
+	       <li>if <code>a.assertion</code> contains an object of type <code>TAG_UAFV1_AUTH_ASSERTION</code>, then 
+		 <ol>
+		   <li>if <code>a.assertion.TAG_UAFV1_AUTH_ASSERTION</code> contains <code>TAG_UAFV1_SIGNED_DATA</code> as first element: 
+		     <ol>	       
+		       <li>Obtain <code>Metadata(AAID).AuthenticatorVersion</code> for this AAID and make sure that
+			 it is lower or equal to 
+			 <code>a.assertion.TAG_UAFV1_AUTH_ASSERTION.TAG_UAFV1_SIGNED_DATA.TAG_ASSERTION_INFO.AuthenticatorVersion</code>.
+			 <ul>
+			  <li>If <code>Metadata(AAID).AuthenticatorVersion</code> is higher (i.e. the 
+			    authenticator firmware is outdated), 
+			    it is RECOMMENDED to assume increased authentication risk.
+			    See "StatusReport dictionary" and "Metadata TOC object Processing Rules" 
+			    in [[FIDOMetadataService]] for more details on this.
+			  </li>
+			 </ul>
+		       </li>
+		       <li>Retrieve 
+			 <code>a.assertion.TAG_UAFV1_AUTH_ASSERTION.TAG_UAFV1_SIGNED_DATA.TAG_KEYID</code> as KeyID
+		       </li>
+		       <li>Locate <code>UAuth.pub</code> public key associated 
+			 with (AAID, KeyID) in the user's record.
+			 <ul>
+			   <li>If such record doesn't exist - continue with next assertion</li>
+			 </ul>
+		       </li>
+      		       <li>Verify the AAID against the AAID stored
+			 in the user's record at time of Registration.
+      			 <ul>		   
+			   <li>If comparison fails – continue with next assertion</li>
+			 </ul>
+		       </li>
+		       <li>Locate authenticator specific authentication algorithms from
+			 authenticator metadata (field <code>AuthenticationAlgs</code>)</li>
+		       
+		       <li>Check the Signature Counter 
+			 <code>a.assertion.TAG_UAFV1_AUTH_ASSERTION.TAG_UAFV1_SIGNED_DATA.SignCounter</code> 
+			 and make sure it is either not supported by the authenticator 
+			 (i.e. the value provided and the value stored in the user's record are both 0) 
+			 or it has been incremented (compared to the value stored in the user's record)
+			 <ul>
+      			   <li>If it is greater than 0, but didn't increment - continue with next assertion 
+			     (as this is a cloned authenticator or a cloned authenticator 
+			     has been used previously).</li>
+     			 </ul> 
+		       </li>
+      		       <li>Hash <code>AuthenticationResponse.FinalChallengeParams</code> using the hashing
+			 algorithm suitable for this authenticator type. Look up the
+			 hash algorithm in authenticator Metadata, field
+			 <code>AuthenticationAlgs</code>. It is the hash algorithm associated with
+			 the first entry related to a constant with prefix ALG_SIGN.
+      			 <ul>
+			   <li><code>FCHash = hash(AuthenticationResponse.FinalChallengeParams)</code></li>
+			 </ul>
+		       </li>
+      		       <li>Make sure that 
+			 <code>a.assertion.TAG_UAFV1_AUTH_ASSERTION.TAG_UAFV1_SIGNED_DATA.TAG_FINAL_CHALLENGE_HASH</code>
+			 == <code>FCHash</code></li>
+      		       <ul>
+			 <li>If comparison fails – continue with next assertion</li>
+     		       </ul> 
+      		       <li>If 
+			 <code>a.assertion.TAG_UAFV1_AUTH_ASSERTION.TAG_UAFV1_SIGNED_DATA.TAG_ASSERTION_INFO.authenticationMode</code>
+			 == <code>2</code>
+			 <p class="note">The transaction hash included in this <code>AuthenticationResponse</code> 
+			   must match the transaction content specified in the related <code>AuthenticationRequest</code>.
+			   As FIDO doesn’t mandate any specific FIDO Server API, the transaction content could be cached 
+			   by any relying party software component, e.g. the FIDO Server or the relying party Web Application.</p>
+     			 <ol> 
+      			   <li>Make sure there is a transaction cached on Relying Party side.
+			     <ul>
+      			       <li>If not – continue with next assertion</li>
+			     </ul>
+			   </li>
+      			   <li>Go over all cached forms of the transaction content (potentially multiple cached PNGs for
+			     the same transaction) and calculate their hashes using hashing algorithm suitable for
+			     this authenticator (same hash algorithm as used for FinalChallenge).
+			     <ul>
+			       <li>For each <code>cachedTransaction</code> add <code>hash(cachedTransaction)</code> into
+				 <code>cachedTransactionHashList</code>
+			       </li>
+			     </ul>
+			   </li>
+      			   <li>Make sure that <code>a.TransactionHash</code> is in <code>cachedTransactionHashList</code>
+     			     <ul> 
+			       <li>If it's not in the list – continue with next assertion</li>
+			     </ul>
+			   </li>
+			 </ol>
+		       </li>
+      		       <li>Use <code>UAuth.pub</code> key and appropriate authentication algorithm to
+			 verify <code>a.assertion.TAG_UAFV1_AUTH_ASSERTION.TAG_SIGNATURE</code>
+      			 <ol>
+			   <li>If signature verification fails – continue with next assertion</li>
+			   <li>Update <code>SignCounter</code> in user's record with 
+			     <code>a.assertion.TAG_UAFV1_AUTH_ASSERTION.TAG_UAFV1_SIGNED_DATA.SignCounter</code></li>
+			 </ol>
+		       </li>
+		     </ol>
+		   </li>
+		   <li>if <code>a.assertion.TAG_UAFV1_AUTH_ASSERTION</code> contains a different object than 
+		     <code>TAG_UAFV1_SIGNED_DATA</code> as first element, 
+		     then follow the rules specific to that object.</li>
+		 </ol>
+	       </li>
+	       <li>if <code>a.assertion</code> doesn't contain an object of type <code>TAG_UAFV1_AUTH_ASSERTION</code>, 
+		 then skip this assertion (as in this UAF v1 only <code>TAG_UAFV1_AUTH_ASSERTION</code> is defined).</li>
+	       <li>Treat this assertion <code>a</code> as positively verified.</li>
+	     </ol>
+	   </li>
+	   <li>Process all positively verified authentication assertions <code>a</code>.</li>
+	 </ol>
+     </section>
+      </section>
+     </section>
+     
+     <section> 
+       <h3>Deregistration Operation</h3>
+       
+       <p>
+	 This operation allows FIDO Server to ask the FIDO Authenticator
+	 to delete keys related to the particular relying party.
+       </p>
+       <p>
+	 The FIDO Server MAY explicitly enumerate the keys to be deleted, 
+	 or the FIDO server MAY signal deregistration of all keys on all 
+	 authenticators managed by the FIDO UAF Client and relating to a given appID. 
+       </p>
+       
+       <div class="note">      
+	 There are various deregistration use cases that both FIDO Server and FIDO 
+	 Client implementations should allow for. Two in particular are:
+	 <ol>
+	   <li>FIDO Servers should trigger this operation in the event a user removes
+             their account at the relying party.</li>
+	   <li>FIDO Clients should ensure that relying party application facets 
+             -- e.g., mobile apps, web pages -- have means to initiate a deregistration
+             operation without having necessarily received a UAF protocol message
+             with an <a><code>op</code></a> value of "Dereg".  This allows the relying 
+             party app facet to remove a user's keys from authenticators during events 
+             such as relying party app removal or installation.</li>
+	   </ol>
+       </div>
+	 
+       <section>	
+	 <h4>Deregistration Request Message</h4>
+	 
+	 <p>
+           The FIDO UAF Deregistration request message is represented as an array of dictionaries. Each dictionary contains a
+           deregistration request for a specific protocol version. The array MUST NOT contain two dictionaries of the
+           same protocol version. The request is defined as
+           <a href="#idl-def-DeregistrationRequest">DeregistrationRequest</a> dictionary.
+	 </p>
+      
+      <pre class="example" title="UAF Deregistration Request">
+[{
+    "header": {
+      "op": "Dereg",
+      "upv": {
+        "major": 1,
+        "minor": 0
+      },
+  "appID": "https://uaf-test-1.noknoktest.com:8443/SampleApp/uaf/facets"
+    },
+    "authenticators": [
+      {
+        "aaid": "ABCD#ABCD",
+        "keyID": "ZMCPn92yHv1Ip-iCiBb6i4ADq6ZOv569KFQCvYSJfNg"
+      }
+    ]
+},
+{
+    "header": {
+      "op": "Dereg",
+      "upv": {
+        "major": 1,
+        "minor": 2
+      },
+  "appID": "https://uaf-test-1.noknoktest.com:8443/SampleApp/uaf/facets"
+    },
+    "authenticators": [
+      {
+        "aaid": "ABCD#ABCD",
+        "keyID": ""
+      }
+    ]
+}]
+      </pre>
+      The example above contains a version 1.0 and a version 1.2 deregistration request.  The version 1.2
+      request will deregister all keys registered in authenticator with <code>aaid</code> "ABCD#ABCD" for the given
+      <code>appID</code>.
+
+	 <p class="note">There is no deregistration response object.</p>
+       </section>
+       
+       
+       <section>
+	 <h4>DeregisterAuthenticator dictionary</h4>
+	 
+	 <dl class='idl' title='dictionary DeregisterAuthenticator'>
+	   <dt>required AAID aaid</dt>
+	   <dd>AAID of the authenticator housing the <code>UAuth.priv</code> 
+	   key to deregister, or an empty string if all keys related to the 
+	   specified <code>appID</code> are to be de-registered.  
+	   </dd>
+	   
+	   <dt>required KeyID keyID</dt>
+	   <dd>The unique KeyID related to <code>UAuth.priv</code>.
+	       KeyID is assumed to be unique within the scope of an AAID only.  
+	       
+	     
+	       If <code>aaid</code> is not an empty string,
+        then:
+        <ol>
+        <li><code>keyID</code> MAY contain a value of type 
+        KeyID, or, </li>
+        <li> <code>keyID</code> MAY be an
+        empty string. </li>
+        </ol>
+        
+        (1) signals deletion of a particular <code>UAuth.priv</code> key mapped
+        to the (<code>AAID</code>, <code>KeyID</code>) tuple. <br><br>
+        
+        (2) signals deletion of all KeyIDs associated 
+        with the specified <code>aaid</code>. <br><br>
+         
+        If <code>aaid</code> is an empty string, 
+        then <code>keyID</code> MUST also be an empty string. 
+        This signals deregistration of all keys on all 
+        authenticators that are mapped to the specified <code>appID</code>. 
+
+	     
+	   </dd>
+ 	 </dl>	
+       </section>
+       
+       <section>
+         <h4>DeregistrationRequest dictionary</h4>
+	 <dl class='idl' title='dictionary DeregistrationRequest'>
+	   <dt>required OperationHeader header </dt>
+	   <dd> <code>Header.op</code> MUST be "Dereg".
+	     
+	   </dd>
+	   <dt>required DeregisterAuthenticator[] authenticators</dt>
+	   <dd>List of authenticators to be deregistered.</dd>
+	 </dl>
+       </section>
+       <section>
+	 <h4>Deregistration Processing Rules</h4> 
+	 
+	 <section>
+	   <h5>Deregistration Request Generation Rules for FIDO Server</h5>
+	   
+	   <p>The FIDO Server MUST follow the steps:</p>
+     	   <ol> 
+      	     <li>Create a <a><code>DeregistrationRequest</code></a> message <code>m</code> 
+      	     with major version of
+	       <code>m.header.<a>upv</a></code> set to the appropriate version number.</li>
+		 <li>If the FIDO Server intends to deregister all keys on all 
+		   authenticators managed by the FIDO UAF Client for this <code>appID</code>, then: 
+		   <ol>
+		     <li>create one and only one <a><code>DeregisterAuthenticator</code></a> object <code>o</code></li>
+		     <li>Set <code>o.aaid</code> and <code>o.keyID</code> to be empty string values</li>
+		     <li>Append <code>o</code> to <code>m.authenticators</code>, and go to step 5</li>
+		   </ol>
+		 </li>
+		 <li>If the FIDO Server intends to deregister all keys on all 
+		   authenticators with a given AAID managed by the FIDO UAF Client for 
+		   this <code>appID</code>, then: 
+		   <ol>
+		     <li>create one and only one <a><code>DeregisterAuthenticator</code></a> object <code>o</code></li>
+		     <li>Set <code>o.aaid</code> to the intended AAID and set 
+		         <code>o.keyID</code> to be an empty string.</li>
+		     <li>Append <code>o</code> to <code>m.authenticators</code>, and go to step 5</li>
+		     
+		   </ol>
+		 </li>
+		 <li>Otherwise, if the FIDO Server intends to deregister specific 
+		     (<code>AAID</code>, <code>KeyID</code>) tuples, then 
+		     for each tuple to be deregistered:
+		   <ol>
+		       <li>create a <a><code>DeregisterAuthenticator</code></a> object <code>o</code></li>
+      		 <li>Set <code>o.aaid</code> and <code>o.keyID</code> appropriately</li>
+      		 <li>Append <code>o</code> to <code>m.authenticators</code></li>
+     		  <!-- </ol> 
+		 </li> -->
+	       </ol>
+	     </li>
+      	<li id="dereg.rules.finish">delete related entry (or entries) in FIDO Server's account database</li>
+      	<li>Send message to FIDO UAF Client</li>
+	   </ol>
+	 </section>
+	 
+	 <section> 
+	   <h5>Deregistration Request Processing Rules for FIDO UAF Client</h5>
+
+	   <p>The FIDO UAF Client MUST follow the steps:</p>
+     	   <ol> 
+	     <li>Choose the message <code>m</code> with <a>upv</a> set to the appropriate version number.</li>
+      	     <li>Parse the message
+      	       <ul>
+      		 <li>If a mandatory field in <a><code>DeregistrationRequest</code></a> message is not present
+		   or a field doesn't correspond to its type and value – reject
+		   the operation</li>
+		 <li>Empty string values for <code>o.aaid</code> and <code>o.keyID</code> MUST occur 
+		   in the first and only DeregisterAuthenticator object  o, otherwise reject the operation</li>
+     	       </ul> 
+	     </li>
+      	     <li>For each authenticator compatible with the message version
+	       <code>DeregistrationRequest.header.upv</code> and having an AAID matching one of the provided <code>AAID</code>s
+	       (an AAID of an authenticator matches if it is either (a) equal 
+	       to one of the <code>AAID</code>s in the <code>DeregistrationRequest</code> or 
+	       if (b) the  <code>AAID</code> in the <code>DeregistrationRequest</code> is an empty string):
+      	       <ol>
+      		 <li>Create appropriate <code>ASMRequest</code> for Deregister function and send it to the ASM.  
+		   If the ASM returns an error, handle that error appropriately.
+		   The status code returned by the ASM [[!UAFASM]] must be mapped to a
+		   status code defined in [[!UAFAppAPIAndTransport]] as specified in section 
+		   <a href='#mapping-asm-status-codes-to-errorcode'></a>.
+		 </li>
+	       </ol>
+	     </li>
+	   </ol>
+	 </section>
+	 <section>
+      	   <h5>Deregistration Request Processing Rules for FIDO Authenticator</h5>
+	   
+      	   <p>See [[!UAFASM]] section "Deregister request".</p>
+	 </section>
+       </section>
+     </section>
+    </section>
+    <section class='informative'>
+      <h2>Considerations</h2>
+      
+      <section>
+	<h3>Protocol Core Design Considerations</h3>
+	
+	<p>
+	  This section describes the important design elements used in the
+	  protocol.</p>
+	
+	<section> 
+	  <h4>Authenticator Metadata</h4>
+	  
+	  <p>
+	    It is assumed that FIDO Server has access to a list of all
+	    supported authenticators and their corresponding Metadata.
+	    Authenticator metadata [[FIDOMetadataStatement]] contains
+	    information such as:</p>
+	  <ul> 
+	    <li>Supported Registration and Authentication Schemes</li>
+	    <li>Authentication Factor, Installation type, supported
+	      content-types and other supplementary information, etc.</li>
+	  </ul>
+	  
+	  <p>
+	    In order to make a decision about which authenticators are
+	    appropriate for a specific transaction, FIDO Server looks up
+	    the list of authenticator metadata by AAID and retrieves the
+	    required information from it.</p>
+	  
+	  <p class='normative'>
+	    Each entry in the authenticator metadata repository MUST be
+	    identified with a unique authenticator Attestation ID (AAID).</p>
+	</section>
+	
+	<section> 
+	  <h4>Authenticator Attestation</h4>
+	  
+	  <p>
+	    Authenticator Attestation is the process of validating
+	    authenticator model identity during registration. It allows
+	    Relying Parties to cryptographically verify that the
+	    authenticator reported by FIDO UAF Client is really what it claims
+	    to be.</p>
+	    
+	  <p>
+	    Using authenticator Attestation, a relying party
+	    "example-rp.com" will be able to verify that the
+	    authenticator model of the "example-Authenticator", reported
+	    with AAID "1234#5678", is not malware running on the FIDO User
+	    Device but is really a authenticator of model "1234#5678".</p>
+      
+	  <p class='normative'>
+	    FIDO Authenticators SHOULD support "Basic Attestation" or "ECDAA" described
+	    below. New Attestation mechanisms may be added to the protocol
+	    over time.</p>
+      
+	  <p class='normative'>
+	    FIDO Authenticators not providing sufficient protection for
+	    Attestation keys (non-attested authenticators) MUST use the
+	    UAuth.priv key in order to formally generate the same KeyRegistrationData object 
+	    as attested authenticators. This behavior MUST be properly declared in the Authenticator
+	    Metadata.</p>
+
+	  <section>      
+	    <h5>Basic Attestation</h5>
+	    
+	    <div class='normative'>
+	      There are two different flavors of Basic Attestation:
+	      <dl>
+		<dt>Full Basic Attestation</dt>
+		<dd>Based on an attestation private key shared among a class of authenticators (e.g. same model).</dd>
+		<dt>Surrogate Basic Attestation</dt>
+		<dd>Just syntactically a Basic Attestation.  The attestation object self-signed, i.e. it 
+		  is signed using the UAuth.priv key, i.e. the key corresponding to 
+		  the UAuth.pub key included in the attestation object.
+		  As a consequence it <strong>does not</strong> provide a cryptographic 
+		  proof of the security characteristics. But it is the best thing 
+		  we can do if the authenticator is not able to have an attestation private key.
+		</dd>
+	      </dl>
+	    </div>
+
+	    <section> 
+	      <h6>Full Basic Attestation</h6>
+	      
+	      <p class='note certification'>
+		FIDO Servers must have access to a trust anchor for verifying
+		attestation public keys (i.e. Attestation Certificate trust
+		store) in order to follow the assumptions made in [[FIDOSecRef]]. 
+		Authenticators must provide its attestation
+		signature during the registration process for the same reason. 
+		The attestation trust anchor is shared with FIDO Servers out of band (as part
+		of the Metadata). This sharing process shouldt be done according 
+		to [[FIDOMetadataService]].</p>
+	      
+	      <p class="note">
+		The protection measures of the Authenticator's attestation
+		private key depend on the specific authenticator model's
+		implementation.</p>
+	      
+	      <p class='note certification specific'>
+		The FIDO Server must load the appropriate Authenticator
+		Attestation Root Certificate from its trust store based on the
+		AAID provided in KeyRegistrationData object.</p>
+
+	      <p>
+		In this Full Basic Attestation model, a large number of
+		authenticators must share the same Attestation certificate and
+		Attestation Private Key in order to provide non-linkability
+		(see <a href='#protocol-core-design-considerations'>Protocol Core Design Considerations</a>).
+		Authenticators can only be identified on a production batch
+		level or an AAID level by their Attestation Certificate, and
+		not individually. A large number of authenticators sharing the
+		same Attestation Certificate provides better privacy, but also
+		makes the related private key a more attractive attack target.</p>
+	 
+	      <p class='note certification specific'>
+		When using Full Basic Attestation: A given set of authenticators sharing the same manufacturer and
+		essential characteristics must not be issued a new Attestation
+		Key before at least 100,000 devices are issued the previous
+		shared key.</p>      
+	 
+	      <figure>	  
+		<img src="./img/fido-uaf-protocol-attestation-cert-chain.png" 
+		     onerror="./img/fido-uaf-protocol-attestation-cert-chain.png" 
+		     alt="Attestation Certificate Chain"/>
+		<figcaption>Attestation Certificate Chain</figcaption>
+              </figure>
+	    </section>
+	    <section>
+	      <h6>Surrogate Basic Attestation</h6>
+	      
+              <p class='normative'>
+		In this attestation method, the UAuth.priv key MUST be used to sign the
+  		Registration Data object. This behavior MUST be properly declared in the Authenticator
+		Metadata.</p>
+		
+              <p class='note certification'>
+		FIDO Authenticators not providing sufficient protection for
+		Attestation keys (non-attested authenticators) must use this attestation method.</p>		
+	    </section>
+	  </section>
+
+	  <section>      
+	    <h5>Direct Anonymous Attestation (ECDAA)</h5>
+
+	    <p>The FIDO Basic Attestation scheme uses attestation "group" keys shared across a 
+	      set of authenticators with identical characteristics in
+	      order to preserve privacy by avoiding the introduction of global correlation handles. 
+	      If such an attestation key is extracted from one single authenticator, it is possible 
+	      to create a "fake" authenticator using the 
+	      same key and hence indistinguishable from the original authenticators by the relying party.  
+	      Removing trust for registering new authenticators
+	      with the related key would affect the entire set of authenticators sharing the same "group" key.  
+	      Depending on the number of authenticators,
+	      this risk might be unacceptable high.
+	    </p>
+	    <p>This is especially relevant when the attestation key is primarily protected against 
+	      malware attacks as opposed to targeted physical attacks.
+	    </p>
+	    <p>An alternative approach to "group" keys is the use of individual 
+	      keys combined with a Privacy-CA [[TPMv1-2-Part1]].  Translated to FIDO, 
+	      this approach would require one Privacy-CA interaction for each Uauth key.  
+	      This means relatively high load and high 
+	      availability requirements for the Privacy-CA.  Additionally the Privacy-CA aggregates sensitive 
+	      information (i.e. knowing the  
+	      relying parties the user interacts with).  This might make the Privacy-CA an interesting attack target.  
+	    </p>
+	    <p>Another alternative is the Direct Anonymous Attestation [[BriCamChe2004-DAA]]. 
+	      Direct Anonymous Attestation is a cryptographic 
+	      scheme combining privacy with security. It uses the Authenticator specific secret 
+	      once to communicate with a single DAA Issuer (either at manufacturing time or after being sold before first use)
+	      and uses the resulting DAA credential in the DAA-Sign protocol with each relying party.
+	      The (original) DAA scheme has been adopted by the Trusted Computing Group for TPM v1.2 [[TPMv1-2-Part1]].  
+	    </p>
+	    <p>ECDAA (see [[!FIDOEcdaaAlgorithm]] for details) is an improved DAA scheme based on elliptic curves 
+	      and bilinear pairings [[CheLi2013-ECDAA]].  
+	      This scheme provides significantly improved performance compared with the 
+	      original DAA and it is part of the TPMv2 specification [[TPMv2-Part1]].
+	    </p>	    
+
+            <p class='normative'>
+	      The ECDAA attestation algorithm is used as specified in [[!FIDOEcdaaAlgorithm]].
+	    </p>
+	    
+	  </section>
+
+	</section>
+	<section> 
+	  <h4>Error Handling</h4>
+	  
+	  <p class='note certificaion specific'>
+	    FIDO Servers must inform the calling Relying Party Web
+	    Application Server (see <a href='#FIDOInteroperabilityOverview'>FIDO Interoperability
+	      Overview</a>) about any error conditions encountered when
+	    generating or processing UAF messages through their proprietary
+	    API.</p>
+      
+	  <p class='normative'>
+	    FIDO Authenticators MUST inform the FIDO UAF Client (see <a href='#FIDOInteroperabilityOverview'>FIDO Interoperability
+	      Overview</a>) about any error conditions
+	    encountered when processing commands through the Authenticator
+	    Specific Module (ASM). See [[UAFASM]] and [[UAFAuthnrCommands]] for
+	    details.</p>
+	</section>
+	<section> 
+	  <h4>Assertion Schemes</h4>
+	  
+	  <p>
+	    UAF Protocol is designed to be compatible with a variety of
+	    existing authenticators (TPMs, Fingerprint Sensors, Secure
+	    Elements, etc.) and also future authenticators designed for
+	    FIDO. Therefore extensibility is a core capability designed
+	    into the protocol.</p>
+	  
+	  <p>
+	    It is considered that there are two particular aspects that need
+	    careful extensibility. These are:</p>
+	  <ul> 
+      	    <li>Cryptographic key provisioning (KeyRegistrationData)</li>
+            <li>Cryptographic authentication and signature (SignedData)</li>
+	  </ul>
+	  
+	  <p>
+	    The combination of KeyRegistrationData and SignedData schemes is
+	    called an Assertion Scheme.</p>
+      
+	  <p>
+	    The UAF protocol allows plugging in new Assertion Schemes. See
+	    also <a href='#uaf-supported-assertion-schemes'>UAF Supported Assertion Schemes</a>.</p>
+	  
+	  <p>
+	    The Registration Assertion defines how and in which format a
+	    cryptographic key is exchanged between the authenticator and
+	    the FIDO Server.</p>
+      
+	  <p>
+	    The Authentication Assertion defines how and in which format the
+	    authenticator generates a cryptographic signature.</p>
+      
+	  <p>
+	    The generally-supported Assertion Schemes are defined in
+	    [[UAFRegistry]].</p>
+	</section>
+	<section> 
+	  <h4>Username in Authenticator</h4>
+	  
+	  <p>
+	    FIDO UAF supports authenticators acting as first authentication 
+	    factor (i.e. replacing username and password).  As part of the 
+	    FIDO UAF Registration, the Uauth key is registered (linked) 
+	    to the related user account at the RP.  The authenticator 
+	    stores the username (allowing the user to select a 
+	    specific account at the RP in the case he has multiple ones). 
+	    See [[UAFAuthnrCommands]], section "Sign Command" for details.
+	  </p>
+	</section>
+	<section> 
+	  <h4>Silent Authenticators</h4>
+	  
+	  <p>
+	    FIDO UAF supports authenticators not requiring any types of user verification or
+	    user presence check.  Such authenticators are called <dfn>Silent Authenticators</dfn>.
+	  </p>
+	  <p>
+	    In order to meet user's expectations, such Silent Authenticators need specific properties:
+	    <ul>
+	      <li>It must be possible for a user to effectively remove a Uauth 
+		key maintained by a Silent Authenticator (in order to avoid being tracked) 
+		at the user's discretion (see [[UAFAuthnrCommands]]).  This is not compatible 
+		with statelesss implementations storing the Uauth private key wrapped inside a 
+		KeyHandle on the FIDO Server.
+	      </li>
+	      <li>TransactionConfirmation is not supported (as it would require user input which is not intended),
+		see [[UAFAuthnrCommands]].
+	      </li>
+	      <li>They might not operate in first factor mode (see [[UAFAuthnrCommands]]) as 
+		this might violate the privacy principles.
+	      </li>
+	    </ul>
+	  </p>
+	  <p>The MetadataStatement has to truthfully reflect the Silent Authenticator, 
+	    i.e. field userVerification needs to be set to USER_VERIFY_NONE.</p>
+	</section>
+	<section> 
+	  
+	  <h4>TLS Protected Communication</h4>
+	  
+	  <div class='note certification specific'>
+	    <p>
+	      In order to protect the data communication
+	      between FIDO UAF Client and FIDO Server a protected TLS channel
+	      must be used by FIDO UAF Client (or User Agent) and the
+	      Relying Party for all protocol elements.</p>
+	    <ol>  
+	      <li>The server endpoint of the TLS connection must be at the Relying
+		Party</li>
+	      <li>The client endpoint of the TLS connection must be either the FIDO UAF Client
+		or the User Agent / App</li>
+	      <li>TLS Client and Server should
+		use TLS v1.2 or newer and should only use TLS v1.1 if TLS
+		v1.2 or higher are not available. The "anon" and "null" TLS
+		crypto suites are not allowed and must be rejected; insecure
+		crypto-algorithms in TLS (e.g. MD5, RC4, SHA1) should be
+		avoided [[SP 800-131A]] [[RFC7525]].</li>
+	      <li>TLS Extended Master Secret Extension [[RFC7627]] should be used to protect against MITM attacks.
+		This is relevant when only <code>serverEndPoint</code> or <code>tlsServerCertificate</code> are 
+		used as TLS binding method.
+	      </li>
+	      <li>The use of tlsUnique is deprecated as its security is broken, see [[TLSAUTH]].</li>
+	    </ol>
+	  </div>
+      
+	  We recommend, that the
+	  <ol>
+	    <li>
+	      TLS Client verifies and validates the server
+	      certificate chain according to [[RFC5280]], section 6
+	      "Certificate Path Validation". The certificate revocation status
+	      should be checked (e.g. using OCSP [[RFC2560]] or CRL based
+	      validation [[RFC5280]]) and the TLS server identity should be checked as well
+	      [[RFC6125]].</li>
+	    <li>
+	      TLS Client's trusted certificate root store
+	      is properly maintained and at least requires the CAs
+	      included in the root store to annually pass Web Trust or ETSI
+	      (ETSI TS 101 456, or ETSI TS 102 042) audits for SSL CAs.</li>
+	  </ol>
+	  <p>
+	    See [[TR-03116-4]] and [[SHEFFER-TLS]] for more recommendations on
+	    how to use TLS.</p>
+	</section>
+      </section>
+      <section> 
+	<h3>Implementation Considerations</h3>
+	
+	<section>
+	  <h4>Server Challenge and Random Numbers</h4>
+	  
+	  <p class='note certification'>
+	    A <a title='ServerChallenge'>ServerChallenge</a> needs 
+	    appropriate random sources in order to be effective (see
+	    [[!RFC4086]] for more details). The (pseudo-)random numbers used
+	    for generating the Server Challenge should successfully pass
+	    the randomness test specified in [[!Coron99]] and they should follow 
+	    the guideline given in [[!SP800-90b]].</p>
+	</section>
+	
+      </section> 
+      <section>
+	<h3>Security Considerations</h3>
+	
+	<p>
+	  There is no "one size fits all" authentication method. The FIDO
+	  goal is to decouple the user verification method from the
+	  authentication protocol and the authentication server, and to
+	  support a broad range of user verification methods and a broad
+	  range of assurance levels. FIDO authenticators should be able
+	  to leverage capabilities of existing computing hardware, e.g.
+	  mobile devices or smart cards.</p>
+	
+	<p>
+	  The overall assurance level of electronic user authentications
+	  highly depends (a) on the security and integrity of the user's
+	  equipment involved and (b) on the authentication method being
+	  used to authenticate the user.</p>
+	  
+	<p>
+	  When using FIDO, users should have the freedom to use any
+	  available equipment and a variety of authentication methods.
+	  The relying party needs reliable information about the security
+	  relevant parts of the equipment and the authentication method
+	  itself in order to determine whether the overall risk of an
+	  electronic authentication is acceptable in a particular
+	  business context.  The FIDO Metadata[[FIDOMetadataService]] is intended to provide 
+	  such information.</p>
+      
+	<p>
+	  It is important for the UAF protocol to provide this kind of
+	  reliable information about the security relevant parts of the
+	  equipment and the authentication method itself to the FIDO
+	  server.</p>
+      
+	<p>
+	  The overall security is determined by the weakest link. In order
+	  to support scalable security in FIDO, the underlying UAF
+	  protocol needs to provide a very high conceptual security
+	  level, so that the protocol isn't the weakest link.</p>
+      
+	<p>
+	  <strong>Relying Parties define Acceptable Assurance Levels.</strong> The FIDO Alliance
+	  envisions a broad range of FIDO UAF Clients, FIDO Authenticators and
+	  FIDO Servers to be offered by various vendors. Relying parties
+	  should be able to select a FIDO Server providing the
+	  appropriate level of security. They should also be in a
+	  position to accept FIDO Authenticators meeting the security
+	  needs of the given business context, to compensate assurance
+	  level deficits by adding appropriate implicit authentication
+	  measures, and to reject authenticators not meeting their
+	  requirements. FIDO does not mandate a very high assurance level
+	  for FIDO Authenticators, instead it provides the basis for
+	  authenticator and user verification method competition.</p>
+      
+	<p>
+	  <strong>Authentication vs. Transaction Confirmation.</strong> Existing Cloud
+	  services are typically based on authentication. The user launches
+	  an application (i.e. User Agent) assumed to be trusted and
+	  authenticates to the Cloud service in order to establish an
+	  authenticated communication channel between the application and
+	  the Cloud service. After this authentication, the application
+	  can perform any actions to the Cloud service using the authenticated channel. 
+	  The service provider will attribute all those actions to the user.
+	  Essentially the user authenticates all actions performed by the
+	  application in advance until the service connection or
+	  authentication times out. This is a very convenient way as the
+	  user doesn't get distracted by manual actions required for the
+	  authentication. It is suitable for actions with low risk
+	  consequences.</p>
+      
+	<p>
+	  However, in some situations it is important for the relying
+	  party to know that a user really has seen and accepted a
+	  particular content before he authenticates it. This method is
+	  typically being used when non-repudiation is required. The
+	  resulting requirement for this scenario is called What You See
+	  Is What You Sign (WYSIWYS).</p>
+	  
+	<p>
+	  UAF supports both methods; they are called "Authentication" and
+	  "Transaction Confirmation". The technical difference is, that
+	  with Authentication the user confirms a random challenge, where
+	  in the case of Transaction Confirmation the user also confirms
+	  a human readable content, i.e. the contract. From a security
+	  point, in the case of authentication the application needs to
+	  be trusted as it performs any action once the authenticated
+	  communication channel has been established. In the case of
+	  Transaction Confirmation only the transaction confirmation 
+	  display component implementing WYSIWYS needs to be trusted, 
+	  not the entire application.</p>
+      
+	<p>
+	  <strong>Distinct Attestable Security Components.</strong> For the relying party in
+	  order to determine the risk associated with an authentication,
+	  it is important to know details about some components of the
+	  user's environment. Web Browsers typically send a "User Agent"
+	  string to the web server. Unfortunately any application could
+	  send any string as "User Agent" to the relying party. So this
+	  method doesn't provide strong security. FIDO UAF is based on a
+	  concept of cryptographic attestation. With this concept, the
+	  component to be attested owns a cryptographic secret and
+	  authenticates its identity with this cryptographic secret. In
+	  FIDO UAF the cryptographic secret is called "Authenticator
+	  Attestation Key". The relying party gets access to reference
+	  data required for verifying the attestation.</p>
+      
+	<p>
+	  In order to enable the relying party to appropriately determine
+	  the risk associated with an authentication, all components
+	  performing significant security functions need to be
+	  attestable.</p>
+      
+	<p>
+	  In FIDO UAF significant security functions are implemented in the
+	  "FIDO Authenticators". Security functions are:</p>
+	  <ol> 
+	    <li>Protecting the attestation key.</li>
+	    <li>Generating and protecting the Authentication key(s), typically
+	      one per relying party and user account on relying party.</li>
+	    <li>Verifying the user.</li>
+	    <li>Providing the WYSIWYS capability ("Transaction Confirmation Display" component).</li>
+	  </ol>
+ 
+	<p>
+	  Some FIDO Authenticators might implement these functions in
+	  software running on the FIDO User Device, others might
+	  implement these functions in "hardware", i.e. software running on a hardware 
+	  segregated from the FIDO User Device. Some FIDO Authenticators
+	  might even be formally evaluated and accredited to some national
+	  or international scheme. Each FIDO Authenticator model has an attestation ID
+	  (AAID), uniquely identifying the related security characteristics.
+	  Relying parties get access to these security properties of the
+	  FIDO Authenticators and the reference data required for
+	  verifying the attestation.</p>
+      
+	<p>
+	  <strong>Resilience to leaks from other verifiers.</strong> One of the important
+	  issues with existing authentication solutions is a weak server
+	  side implementation, affecting the security of authentication
+	  of typical users to other relying parties. It is the goal of
+	  the FIDO UAF protocol to decouple the security of different relying
+	  parties.</p>
+      
+	<p>
+	  <strong>Decoupling User Verification Method from Authentication Protocol.</strong>
+	  In order to decouple the user verification method from the
+	  authentication protocol, FIDO UAF is based on an extensible set of
+	  cryptographic authentication algorithms. The cryptographic
+	  secret will be unlocked after user verification by the
+	  Authenticator. This secret is then used for the
+	  authenticator-to-relying party authentication. The set of
+	  cryptographic algorithms is chosen according to the
+	  capabilities of existing cryptographic hardware and computing
+	  devices. It can be extended in order to support new
+	  cryptographic hardware.</p>
+      
+	<p>
+	  <strong>Privacy Protection.</strong> Different regions in the world have different
+	  privacy regulations. The FIDO UAF protocol should be acceptable in
+	  all regions and hence must support the highest level of data
+	  protection. As a consequence, FIDO UAF doesn't require transmission
+	  of biometric data to the relying party nor does it require the
+	  storage of biometric reference data [[ISOBiometrics]] at the relying
+	  party. Additionally, cryptographic secrets used for different
+	  relying parties shall not allow the parties to link actions to
+	  the same user entity. UAF supports this concept, known as
+	  non-linkability. Consequently, the UAF protocol doesn't require
+	  a trusted third party to be involved in every transaction.</p>
+	  
+	<p>
+	  Relying parties can interactively discover the AAIDs of all
+	  enabled FIDO Authenticators on the FIDO User Device using the
+	  Discovery interface [[UAFAppAPIAndTransport]]. The combination of
+	  AAIDs adds to the entropy provided by the client to relying
+	  parties. Based on such information, relying parties can
+	  fingerprint clients on the internet (see Browser Uniqueness at
+	  eff.org and https://wiki.mozilla.org/Fingerprinting). In order
+	  to minimize the entropy added by FIDO, the user can
+	  enable/disable individual authenticators – even when they are
+	  embedded in the device (see [[UAFAppAPIAndTransport]], section
+	  "privacy considerations").</p>
+	<section>
+	  <h4>FIDO Authenticator Security</h4>
+	  
+	  <p>
+	    See [[UAFAuthnrCommands]].</p>
+	</section>
+	<section> 
+	  <h4>Cryptographic Algorithms</h4>
+	  
+	  <p>
+	    In order to keep key sizes small and to make private key
+	    operations fast enough for small devices, it is suggested that
+	    implementers prefer ECDSA [[ECDSA-ANSI]] in combination with SHA-256 / SHA-512
+	    hash algorithms. However, the RSA algorithm is also supported.
+	    See [[FIDORegistry]] "Authentication Algorithms" and "Public Key Representation Formats"
+	    for a list of generally supported cryptographic algorithms.</p>
+	  
+	  <p>
+	    One characteristic of ECDSA is that it needs to produce, for
+	    each signature generation, a fresh random value. For effective
+	    security, this value must be chosen randomly and uniformly from
+	    a set of modular integers, using a cryptographically secure
+	    process. Even slight biases in that process may be turned into
+	    attacks on the signature schemes. </p>
+	  <p class="note certification">
+            If such random values cannot be provided under all possible environmental conditions, then a
+	    deterministic version of ECDSA should be used (see [[!RFC6979]]).</p>
+	</section>
+	<section>
+	  <h4>FIDO Client Trust Model</h4>
+	  
+	  The FIDO environment on a FIDO User Device comprises 4 entities:
+	  <ul>
+	    <li>User Agents (a native app or a browser)</li>
+	    <li>FIDO UAF Clients (a shared service potentially used by multiple User Agents)</li>
+	    <li>Authenticator Specific Modules (ASMs)</li>
+	    <li>Authenticators</li>
+	  </ul>
+	  
+	  <figure>	  
+            <img src="./img/fido-uaf-protocol-entity-verification-overview.png" 
+		 onerror="./img/fido-uaf-protocol-entity-verification-overview.png" 
+		 alt="UAF Client Trust Model"/>
+	    <figcaption>UAF Client Trust Model</figcaption>
+	  </figure>
+	  
+	  <p>The security and privacy principles that underpin mobile operating systems 
+	    require certain behaviours from apps. FIDO must uphold those principles 
+	    wherever possible. This means that each of these components has to enforce 
+	    specific trust relationships with the others to avoid the risk of rogue components 
+	    subverting the integrity of the solution. 
+	  </p>
+	  <p>One specific requirement on handsets is that apps originating from different 
+	    vendors must not be allowed directly to view or edit each other’s data (e.g. FIDO UAF credentials).
+	  </p>
+	  
+	  <p>Given that FIDO UAF Clients are intended to provide a shared service, the principle 
+	    of siloed app data has been applied to the FIDO UAF Client, rather than individual apps.  
+	    This means that if two or more FIDO UAF Clients are present on a device, 
+	    then each FIDO UAF Client is unable to access authentication keys created by another FIDO UAF Client.  
+	    A given FIDO UAF Client may however provide services to multiple User Agents, so that the same 
+	    authentication key can authenticate to different facets of the same Relying Party, 
+	    even if one facet is a 3rd party browser.
+	  </p>
+	  <p>This exclusive access restriction is enforced through the KHAccessToken.  
+	    When a FIDO UAF Client communicates with an ASM, the ASM reads the identity of the 
+	    FIDO UAF Client caller1 and includes that Client ID in the KHAccessToken that it sends 
+	    to the authenticator.  Subsequent calls to the authenticator must include the 
+	    same Client ID in the KHAccessToken.  Each authentication key is also bound to the 
+	    ASM that created it, by means of an ASMToken (a random unique ID for the ASM) 
+	    that is also included in the KHAccessToken.
+	  </p>
+	  <p>Finally, the User Agents that a FIDO UAF Client will recognise are determined by the 
+	    Relying Party itself.  The FIDO UAF Client requests a list of Trusted Apps from the 
+	    RP as part of the Registration and Authentication protocols.  This prevents 
+	    User Agents that have not been explicitly authorized by the Relying Party 
+	    from using the FIDO credentials.
+	  </p>
+	  <p>In this manner, in a compliant FIDO installation, UAF credentials can only be 
+	    accessed via apps that the relying party explicitly trusts and through the 
+	    same client and ASM that performed the original registration.
+	  </p>
+	  <p>It should be noted that the specification allows for FIDO UAF Clients to 
+	    be built directly into User Agents.  However, such implementations 
+	    will restrict the ability to support multiple facets for relying party 
+	    applications unless they also expose the UAF Client API for other User Agents to consume.
+	  </p>	  
+	  
+	  <section class="certification"> 
+	    <h5>Isolation using KHAccessToken</h5>
+	    
+	    <p>
+	      Authenticators might be implemented in dedicated hardware and
+	      hence might not be able to verify the calling software entity
+	      (i.e. the ASM).</p>
+	    
+	    <p>
+	      The KHAccessToken allows restricting access to the keys
+	      generated by the FIDO Authenticator to the intended ASM. It is
+	      based on a Trust On First Use (TOFU) concept.</p>
+	    
+	    <p>
+	      FIDO Authenticators are capable of binding UAuth.Key with a key
+	      provided by the caller (i.e. the ASM). This key is called
+	      KHAccessToken.</p>
+	    
+	    <p>
+	      This technique allows making sure that registered keys are only
+	      accessible by the caller that originally registered them. A
+	      malicious App on a mobile platform won't be able to access keys
+	      by bypassing the related ASM (assuming that this ASM originally
+	      registered these keys).</p>
+	    
+	    <p>
+	      The KHAccessToken is typically specific to the AppID, PersonaID,
+	      ASMToken and the CallerID. See [[UAFASM]] for more details.</p>
+	    
+	    <p class="note">
+	      On some platforms, the ASM additionally might need special
+	      permissions in order to communicate with the FIDO Authenticator. 
+	      Some platforms do not provide means to reliably enforce access control among
+	      applications.</p>
+	  </section>
+	</section>
+	
+	<section class="certification"> 
+	  <h4>TLS Binding</h4>
+	  
+	  <p>
+	    Various channel binding methods have been proposed (e.g.
+	    [[RFC5929]] and [[ChannelID]]).</p>
+	  
+	  <p>
+	    UAF relies on TLS server authentication for binding
+	    authentication keys to AppIDs. There are threats:</p>
+	  <ol> 
+	    <li>
+	      Attackers might fraudulently get a TLS server certificate for
+	      the same AppID as the relying party and they might be able to
+	      manipulate the DNS system.</li>	  
+	    <li>
+	      Attackers might be able to steal the relying party's TLS server
+	      private key and certificate and they might be able to
+	      manipulate the DNS system.</li>
+	  </ol> 
+	  <p>
+	    And there are functionality requirements:</p>
+	  <ol> 
+	    <li>
+	      UAF transactions might span across multiple TLS sessions. As a
+	      consequence, "tls-unique" defined in [RFC5929] might be
+	      difficult to implement.</li>
+	    <li>
+	      Data centers might use SSL concentrators.</li>	  
+	    <li>
+	      Data centers might implement load-balancing for TLS endpoints
+	      using different TLS certificates. As a consequence,
+	      "tls-server-end-point" defined in [RFC5929], i.e. the hash of
+	      the TLS server certificate might be inappropriate.</li>
+	    <li>
+	      Unfortunately, hashing of the TLS server certificate (as in
+	      "tls-server-end-point") also limits the usefulness of the
+	      channel binding in a particular, but quite common circumstance.
+	      If the client is operated behind a trusted (to that client)
+	      proxy that acts as a TLS man-in-the-middle, your client will
+	      see a different certificate than the one the server is using.
+	      This is actually quite common on corporate or military networks
+	      with a high security posture that want to inspect all incoming
+	      and outgoing traffic. If the FIDO Server just gets a hash
+	      value, there's no way to distinguish this from an attack. If
+	      sending the entire certificate is acceptable from a performance
+	      perspective, the server can examine it and determine if it is a
+	      certificate for a valid name from a non-standard issuer (likely
+	      administratively trusted) or a certificate for a different name
+	      (which almost certainly indicates a forwarding attack).</li>
+	  </ol>
+	  <p>
+	    See <a href='#tls-channelbinding-dictionary'>ChannelBinding dictionary</a> for more details.</p>
+	</section>
+	<section class="certification"> 
+	  <h4>Session Management</h4>
+	  <p>
+	    FIDO does not define any specific session management methods.  However, several FIDO functions
+	    rely on a robust session management being implemented by the relying party's web application:</p>
+	  <dl> 
+	    <dt><a href='#registration'>FIDO Registration</a></dt>
+	    <dd>A web application might trigger FIDO Registration after authenticating 
+	      an existing user via legacy credentials.  
+	      So the session is used to maintain the authentication state until the FIDO Registration is completed.</dd>
+	    <dt><a href='#authentication'>FIDO Authentication</a></dt>
+	    <dd>After success FIDO Authentication, the session is used to maintain the authentication state during the 
+	      operations performed by the user agent or mobile app.</dd>
+	  </dl> 
+	  
+	  <p>
+	    Best practices should be followed to implement robust session management (e.g. [[OWASP2013]]).</p>
+	  
+	</section>
+	<section> 
+	  <h4>Personas</h4>
+	  
+	  <p>
+	    FIDO supports unlinkability [[AnonTerminology]] of accounts at
+	    different relying parties by using relying party specific keys.</p>
+	  
+	  <p>
+	    Sometimes users have multiple accounts at a particular relying
+	    party and even want to maintain unlinkability between these
+	    accounts.</p>
+	  
+	  <p>
+	    Today, this is difficult and requires certain measures to be
+	    strictly applied.</p>
+	  
+	  <p>
+	    FIDO does not want to add more complexity to maintaining
+	    unlinkability between accounts at a relying party.</p>
+	  
+	  <p>
+	    In the case of roaming authenticators, it is recommended to use
+	    different authenticators for the various personas (e.g.
+	    "business", "personal"). This is possible as roaming
+	    authenticators typically are small and not excessively
+	    expensive.</p>
+	  
+	  <p>
+	    In the case of bound authenticators, this is different. FIDO
+	    recommends the "Persona" concept for this situation.</p>
+	  
+	  <p>
+	    All relevant data in an authenticator are related to one Persona
+	    (e.g. "business" or "personal"). Some administrative interface
+	    (not standardized by FIDO) of the authenticator may allow
+	    maintaining and switching Personas.</p>
+	  
+	  <p class="normative">
+	    The authenticator MUST only "know" / "recognize" data (e.g.
+	    authentication keys, usernames, KeyIDs, …) related to the
+	    Persona being active at that time.</p>
+	  
+	  <p>
+	    With this concept, the User can switch to the "Personal" Persona
+	    and register new accounts. After switching back to "Business"
+	    Persona, these accounts will not be recognized by the
+	    authenticator (until the User switches back to "Personal"
+	    Persona again).</p>
+	  
+	  <p>
+	    In order to support the persona feature, the FIDO Authenticator-specific 
+	    Module API [[UAFASM]] supports the use of
+	    a 'PersonaID' to identify the persona in use by the
+	    authenticator. How Personas are managed or communicated with
+	    the user is out of scope for FIDO.</p>
+	</section>
+	<section> 
+	  <h4>ServerData and KeyHandle</h4>
+	  
+	  <p>
+	    Data contained in the field serverData (see <a href='#operation-header-dictionary'>Operation
+	      Header dictionary</a>) of UAF requests is sent to the FIDO UAF Client and will be
+	    echoed back to the FIDO Server as part of the related UAF
+	    response message.</p>
+	  
+	  <p class="note certification specific">
+	    The FIDO Server should not assume any kind of implicit integrity
+	    protection of such data nor any implicit session binding. The FIDO
+	    Server must explicitly bind the serverData to an active
+	    session.</p>
+	  
+	  <p class="note certification specific">
+	    In some situations, it is desirable to protect sensitive data
+	    such that it can be stored in arbitrary places (e.g. in
+	    serverData or in the KeyHandle). In such situations, the
+	    confidentiality and integrity of such sensitive data must be
+	    protected. This can be achieved by using a suitable encryption
+	    algorithm, e.g. AES with a suitable cipher mode, e.g. CBC or
+	    CTR [[CTRMode]]. This cipher mode needs to be used correctly. For
+	    CBC, for example, a fresh random IV for each encryption is
+	    required. The data might have to be padded first in order to
+	    obtain an integral number of blocks in length. The integrity
+	    protection can be achieved by adding a MAC or a digital signature 
+	    on the ciphertext, using a different key than for the encryption, e.g. using HMAC [[FIPS198-1]].
+	    Alternatively, an authenticated encryption scheme such as
+	    AES-GCM [[SP800-38D]] or AES-CCM [[SP800-38C]] could be used.
+	    Such a scheme provides both integrity and confidentiality in a
+	    single algorithm and using a single key.</p>
+	  
+	  <p class="note certification specific">
+	    When protecting serverData, the MAC or digital signature computation 
+	    should include some data that binds the data to its associated message, for example by
+	    re-including the challenge value in the authenticated
+	    serverData.</p>
+	</section>
+	<section> 
+	  <h4>Authenticator Information retrieved through UAF Application API vs.
+	    Metadata</h4>
+	  
+	  <p>
+	    Several authenticator properties (e.g. UserVerificationMethods,
+	    KeyProtection, TransactionConfirmationDisplay, ...) are available in the
+	    metadata [[FIDOMetadataStatement]] and through the FIDO UAF Application API.
+	    The properties included in the metadata are authoritative and
+	    are provided by a trusted source. When in doubt, decisions
+	    should be based on the properties retrieved from the Metadata
+	    as opposed to the data retrieved through the FIDO UAF Application API.</p>
+	  
+	  <p>
+	    However, the properties retrieved through the FIDO UAF Application API provide
+	    a good "hint" what to expect from the Authenticator. Such
+	    "hints" are well suited to drive and optimize the user
+	    experience.</p>
+	</section>
+	<section class="certification"> 
+	  <h4>Policy Verification</h4>
+	  
+	  <p>
+	  FIDO UAF Response messages do not include all parameters
+	  received in the related FIDO UAF request message into the
+	  to-be-signed object. As a consequence, any MITM could modify
+	  such entries.</p>
+	
+	<p>
+	  FIDO Server will detect such changes if the modified value is
+	  unacceptable.</p>
+      
+	<p>
+	  For example, a MITM could replace a generic policy by a policy
+	  specifying only the weakest possible FIDO Authenticator. Such a
+	  change will be detected by FIDO Server if the weakest possible
+	  FIDO Authenticator does not match the initial policy (see
+	  <a href='#registration-response-processing-rules-for-fido-server'>Registration Response Processing Rules</a> and 
+	  <a href='#authentication-response-processing-rules-for-fido-server'>Authentication Response Processing Rules</a>).</p>
+      </section>
+      <section class="certification"> 
+	<h4>Replay Attack Protection</h4>
+	
+	<p>
+	  The FIDO UAF protocol specifies two different methods for
+	  replay-attack protection:</p>
+	<ol> 
+	  <li>Secure transport protocol (TLS)</li>
+	  <li>Server Challenge.</li>
+	</ol>
+	
+	<p>
+	  The TLS protocol by itself protects against replay-attacks when
+	  implemented correctly [[TLS]].</p>
+      
+	<p>
+	  Additionally, each protocol message contains some random
+	  bytes in the <code>ServerChallenge</code> field. The FIDO server should only
+	  accept incoming FIDO UAF messages which contain a valid
+	  <code>ServerChallenge</code> value. This is done by
+	  verifying that the <code>ServerChallenge</code> value, sent
+	  by the client, was previously generated by the FIDO server.
+	  See <a title='FinalChallengeParams'>FinalChallengeParams</a>.
+	</p>
+
+	<p>
+	  It should also be noted that under some (albeit unlikely)
+	  circumstances, random numbers generated by the FIDO server
+	  may not be unique, and in such cases, the same <code>ServerChallenge</code> 
+	  may be presented more than once, making a replay attack harder to detect.
+	</p>
+
+      </section>
+      <section class="certification"> 
+	<h4>Protection against Cloned Authenticators</h4>
+	
+	<p>
+	  FIDO UAF relies on the UAuth.Key to be protected and managed by
+	  an authenticator with the security characteristics specified
+	  for the model (identified by the AAID). The security is better
+	  when only a single authenticator with that specific UAuth.Key
+	  instance exists. Consequently FIDO UAF specifies some
+	  protection measures against cloning of authenticators.</p>
+      
+	<p>
+	  Firstly, if the UAuth private keys are protected by appropriate
+	  measures then cloning should be hard as such keys cannot be
+	  extracted easily.</p>
+      
+	<p>
+	  Secondly, UAF specifies a Signature Counter (see 
+	  <a href='#authentication-response-processing-rules-for-fido-server'>Authentication Response Processing Rules</a> 
+	  and [[!UAFAuthnrCommands]]). 
+	  This counter is increased by every signature operation. If a cloned
+	  authenticator is used, then the subsequent use of the original
+	  authenticator would include a signature counter lower to or
+	  equal to the previous (malicious) operation. Such an incident
+	  can be detected by the FIDO Server.</p>
+      </section> 
+      
+      <section> 
+	<h4>Anti-Fraud Signals</h4>
+      
+	<p>
+	  There is the potential that some attacker misuses a FIDO Authenticator for committing fraud, more specifically they would:</p>
+	<ol>
+	  <li>Register the authenticator to some relying party for one account</li>
+	  <li>Commit fraud</li>
+	  <li>Deregister the Authenticator</li>
+	  <li>Register the authenticator to some relying party for another account</li>
+	  <li>Commit fraud</li>
+	  <li>Deregister the Authenticator</li>
+	  <li>and so on...</li>
+	</ol>
+	<p class="note certification">
+	  Authenticators might support a Registration Counter (<code>RegCounter</code>).  The <code>RegCounter</code> will 
+	  be incremented on each registration and hence might become exceedingly high in such fraud scenarios.
+	  See [[!UAFAuthnrCommands]] for more details.</p>
+      </section> 
+      
+      </section>
+      <section>
+	<h3>Interoperability Considerations</h3>
+	
+	<p>
+	  FIDO supports Web Applications, Mobile Applications and Native
+	  PC Applications. Such applications are referred to as FIDO enabled applications.</p>
+      
+	<figure id='FIDOInteroperabilityOverview'>	  
+          <img src="./img/fido-uaf-protocol-interoperability.png" 
+	       onerror="./img/fido-uaf-protocol-interoperability.png" 
+	       alt="FIDO Interoperability Overview"/>
+	  <figcaption>FIDO Interoperability Overview</figcaption>
+	</figure>
+	
+	<p>
+	  <strong>Web applications</strong> typically consist of the web application server
+	  and the related Web App. The Web App code (e.g. HTML and
+	  JavaScript) is rendered and executed on the client side by the
+	  User Agent. The Web App code talks to the User Agent via a set
+	  of JavaScript APIs, e.g. HTML DOM. The FIDO DOM API
+	  is defined in [[UAFAppAPIAndTransport]]. The protocol between the Web App and the
+	  Relying Party Web Application Server is typically proprietary.</p>
+	
+	<p>
+	  <strong>Mobile Apps</strong> play the role of the User Agent and the Web App
+	  (Client). The protocol between the Mobile App and the Relying
+	  Party Web Application Server is typically proprietary. </p>
+	
+	<p>
+	  <strong>Native PC Applications</strong> play the role of the User Agent, the Web
+	  App (Client). Those applications are typically expected to be independent from any
+	  particular Relying Party Web Application Server. </p>
+	
+	<p>
+	  It is recommended for FIDO enabled applications to use the FIDO messages according to the format specified in this document.
+	</p>
+	
+	<p>
+          It is recommended for FIDO enabled application to use the UAF HTTP Binding defined in [[!UAFAppAPIAndTransport]].
+	</p>
+      
+      
+	<div class='note'>
+	  <p>
+	    The KeyRegistrationData and SignedData objects 
+	    [[UAFAuthnrCommands]] are generated and signed by the FIDO
+	    Authenticators and have to be verified by the FIDO Server.
+	    Verification will fail if the values are modified during
+	    transport.</p>
+	  
+	  <p>
+	    The ASM API [UAFASM] specifies the standardized API to access
+	    authenticator Specific Modules (ASMs) on Desktop PCs and Mobile
+	    Devices.</p>
+	  
+	  <p>
+	    The document [[UAFAuthnrCommands]] does not specify a particular protocol or API.
+	    Instead it lists the minimum data set and a specific message
+	    format which needs to be transferred to and from the FIDO
+	    Authenticator.</p>
+	</div>
+      </section>
+    </section>
+    <section class="normativeDisclaimer"> 
+      <h2>UAF Supported Assertion Schemes</h2>
+  
+      <section>
+	<h3>Assertion Scheme "UAFV1TLV"</h3>
+
+	<p class="certification">
+	  This scheme is mandatory to implement for FIDO Servers.
+	  This scheme is mandatory to implement for FIDO Authenticators.
+	</p>
+	
+	<p>
+	  This Assertion Scheme allows the authenticator and the FIDO
+	  Server to exchange an asymmetric authentication key generated
+	  by the Authenticator.
+	</p>
+      
+	<p>
+	  This assertion scheme is using Tag Length Value (TLV) compact encoding to
+	  encode registration and authentication assertions generated by authenticators.
+	  This is the default assertion scheme for UAF protocol.</p>
+	
+	<p>
+	  TAGs and Algorithms are defined in [[UAFRegistry]].
+	</p>
+	
+	<p>
+	  The authenticator MUST use a dedicated key pair (UAuth.pub/UAuth.priv) 
+	  suitable for the authentication algorithm specified in the 
+	  metadata statement [[!FIDOMetadataStatement]] for each relying party.  
+	  This key pair SHOULD be generated as part of the registration operation.
+	</p>
+    
+	<p class="certification">
+	  Conforming FIDO Servers MUST implement all
+	  authentication algorithms and key formats listed in document
+	  [[!FIDORegistry]] unless they are explicitly marked as optional in [[!FIDORegistry]].
+	</p>
+	
+	<p class="certification">
+	  Conforming FIDO Servers MUST implement all
+	  attestation types (<code>TAG_ATTESTATION_*</code>) listed in document
+	  [[!UAFRegistry]] unless they are explicitly marked as optional in [[!UAFRegistry]].
+	</p>
+	
+	<p class="certification">
+	  Conforming authenticators MUST implement (at least) one
+	  attestation type defined in [[!UAFRegistry]], as well as one authentication 
+	  algorithm and one key format listed in [[!FIDORegistry]].
+	</p>
+ 
+	<section>
+	  <h4>KeyRegistrationData</h4>
+	  
+	  <p>
+	    See [[UAFAuthnrCommands]], section "TAG_UAFV1_KRD".
+	  </p>
+	</section>
+	<section> 
+	  <h4>SignedData</h4>
+	  
+	  <p>
+	    See [[UAFAuthnrCommands]], section "TAG_UAFV1_SIGNED_DATA".
+	  </p>
+	</section>
+      </section>
+    </section>
+
+    <section> 
+  <h2>Definitions</h2>
+  
+  <p>
+    See [[FIDOGlossary]].
+  </p>
+    
+    </section>
+
+    <section id=tof>
+    </section>
+ </body>
+</html>

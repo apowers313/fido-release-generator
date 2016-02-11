@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>FIDO ECDAA Algorithm</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <!--
+  === NOTA BENE ===
+  For the three scripts below, if your spec resides on dev.w3 you can check them
+  out in the same tree and use relative links so that they'll work offline,
+  -->
+  <script src='resources/respec-fido-common.js' class='remove' async></script>
+  <script type="text/javascript" class="remove">
+      var respecConfig = {
+        // specification status (e.g. WD, LCWD, NOTE, etc.). If in doubt use ED.
+        // Member-SUBM
+       specStatus: "WD",
+       specVersion: "v1.3",
+       specFamily: "uaf",             // specFamily is here for common-specs due to release-tool publishing
+                                      // and their being placed in to a release dir with whichever specFamily
+                                      // at release build time -- so the value of this var in the .html files in 
+                                      // common-specs repo will depend upon whichever spec family last 
+                                      // built a release snapshot
+
+      // shortName is what is termed specInRepoStemFN in..
+      // https://confluence.fidoalliance.org/display/ALL/FIDO+Alliance+filenaming+and+version+labeling+conventions
+        shortName:  "fido-ecdaa-algorithm",
+
+      // if your specification has a subtitle that goes below the main
+      // formal title, define it here
+      // subtitle   :  "an excellent document",
+
+      // if you wish the publication date to be other than today, set this
+      // NOTE: UNCOMMENT THIS PRIOR TO RUNNING release-tool/release.pl for a release, 
+      //       whether internal or external (TODO: release-tool should take care of this)...
+      //publishDate: "2015-05-22",
+      
+      // if the specification's copyright date is a range of years, specify
+      // the start date here:
+      copyrightStart: "2013",
+      
+      // if there is a previously published draft, uncomment this and set its YYYY-MM-DD date
+      // and its maturity status, OR, comment the latter two items out, and add an 
+      // explicit prevVersion URI pointing to the previously publicly published version...
+      //previousPublishDate: "",
+      //previousMaturity: "",
+      //  prevVersion: "https://fidoalliance.org/specs/fido-uaf-v1.0-ps-20141208/fido-uaf-metadata-service-v1.0-ps-20141208.html",
+
+        // if there a publicly available Editor's Draft, this is the link
+        edDraftURI: "",
+
+        // if this is a LCWD, uncomment and set the end of its review period
+        // lcEnd: "2009-08-05",
+
+        // editors, add as many as you like
+        // only "name" is required
+        editors:  [
+          { name: "Rolf Lindemann", url: "mailto:rolf@noknok.com",
+            company: "Nok Nok Labs, Inc.", companyURL: "https://www.noknok.com/" }
+        ],
+
+        // authors, add as many as you like. 
+        // This is optional, uncomment if you have authors as well as editors.
+        // only "name" is required. Same format as editors.
+
+        authors:  [
+          { name: "Alec Edgington", url: "mailto:alec.edgington@trustonic.com",
+            company: "Trustonic", companyURL: "https://www.trustonic.com/" },
+          { name: "Rainer Urian", url: "mailto:rainer.urian@infineon.com",
+            company: "Infineon", companyURL: "https://www.infineon.com/" }
+        ],
+
+        // name of the WG
+        wg:           "FIDO Alliance",
+
+        // URI of the public WG page
+        wgURI:        "https://fidoalliance.org/",
+
+        // name (with the @w3c.org) of the public mailing to which comments are due
+        //wgPublicList: "public-webappsec",
+
+      };
+  </script>
+  <script src='resources/fido-refs.js' class='remove'></script>
+  <script type="text/javascript"
+	  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+  </script>
+</head>
+<body>
+
+<!-- only put content here if you want a custom status of document not
+  the specification-maturity-appropriate boilerplate -->
+<section id='sotd'></section>
+
+<section id='abstract'>
+  <p>The FIDO Basic Attestation scheme uses attestation "group" keys shared across a 
+    set of authenticators with identical characteristics in
+    order to preserve privacy by avoiding the introduction of global correlation handles. 
+    If such an attestation key is extracted from one single authenticator, it is possible 
+    to create a "fake" authenticator using the 
+    same key and hence indistinguishable from the original authenticators by the relying party.  
+    Removing trust for registering new authenticators
+    with the related key would affect the entire set of authenticators sharing the same "group" key.  
+    Depending on the number of authenticators,
+    this risk might be unacceptable high.
+  </p>
+  <p>This is especially relevant when the attestation key is primarily protected against 
+    malware attacks as opposed to targeted physical attacks.
+  </p>
+  <p>An alternative approach to "group" keys is the use of individual 
+    keys combined with a Privacy-CA [[TPMv1-2-Part1]].  Translated to FIDO, 
+    this approach would require one Privacy-CA interaction for each Uauth key.  
+    This means relatively high load and high 
+    availability requirements for the Privacy-CA.  Additionally the Privacy-CA aggregates sensitive 
+    information (i.e. knowing the  
+    relying parties the user interacts with).  This might make the Privacy-CA an interesting attack target.  
+  </p>
+  <p>Another alternative is the Direct Anonymous Attestation [[BriCamChe2004-DAA]]. 
+    Direct Anonymous Attestation is a cryptographic 
+    scheme combining privacy with security. It uses the authenticator specific secret 
+    once to communicate with a single DAA Issuer 
+    and uses the resulting DAA credential in the DAA-Sign protocol with each relying party.
+    The DAA scheme has been adopted by the Trusted Computing Group for TPM v1.2 [[TPMv1-2-Part1]].  
+  </p>
+  <p>In this document, we specify the use of an improved DAA scheme based on elliptic curves 
+    and bilinear pairings largely compatible with [[CheLi2013-ECDAA]] called ECDAA.  
+    This scheme provides significantly improved performance compared with the 
+    original DAA and basic building blocks for its implementation are part of the TPMv2 specification [[TPMv2-Part1]].
+  </p>
+  <p>Our improvements over [[CheLi2013-ECDAA]] mainly consist of security fixes 
+    (see [[ANZ-2013]] and [[XYZF-2014]]) when splitting the sign operation into two parts.
+  </p>
+</section>
+
+<section>
+  <h2>Notation</h2>
+  
+  <p>Type names, attribute names and element names are written as <code>code</code>.
+    
+  <p>String literals are enclosed in “”, e.g. “ED256”.
+    
+  <p>In formulas we use “|” to denote byte wise concatenation
+    operations.
+
+  <p>\(X = P^x\) denotes scalar multiplication (with scalar x) of a (elliptic) curve point P.</p>
+  <p>RAND(x) denotes generation of a random number between 0 and x-1.</p>
+  <p>RAND(G) denotes generation of a random number belonging to Group G.</p>
+
+  <p>Specific terminology used in this document is defined in
+    [[FIDOGlossary]].</p>
+
+  <p>The type <code>BigNumber</code> denotes an arbitrary length integer value.</p>
+
+  <p>The type <code>ECPoint</code> denotes an elliptic curve point with its affine coordinates x and y.</p>
+
+  <p>The type <code>ECPoint2</code> denotes a point on the sextic twist of a BN elliptic curve over \(F(q^2)\).
+    The ECPoint2 has two affine coordinates each having two components of type BigNumber</p>
+
+  <section id="conformance">  <!-- inserts normative/non-normative & RFC2119 boilerplate -->
+    <!-- add any extra language your spec requires here -->
+  </section>
+</section>
+
+<section class="informative">
+  <h2>Overview</h2>
+  <p>
+    FIDO uses the concept of attestation to provide a cryptographic proof of the 
+    <dfn>authenticator</dfn> [[FIDOGlossary]] model to the relying party.  When the authenticator is registered 
+    to the relying party (RP), it generates a new authentication key pair 
+    and includes the public key in the attestation message 
+    (also known as key registration data object,  <dfn>KRD</dfn>).
+    When using the ECDAA algorithm, the <a>KRD</a> object is signed using <a href='#ecdaa-sign'></a>.
+  </p>
+  <p>
+    For privacy reasons, the authentication key pair is dedicated to one RP (to 
+    an application identifier <dfn>AppID</dfn> [[FIDOGlossary]] to be more specific).  Consequently 
+    the attestation method needs to provide the same level of unlinkability.  This is the reason
+    why the FIDO ECDAA Algorithm doesn't use a basename (bsn) often found in other direct 
+    anonymous attestation algorithms, e.g. [[BriCamChe2004-DAA]] or [[BFGSW-2011]].
+  </p>
+  <p>The authenticator encapsulates all user verification operations and cryptographic functions.
+    An authenticator specific module (<dfn>ASM</dfn>) [[FIDOGlossary]] is used to provide a standardized 
+    communication interface for authenticators.  The authenticator might be implemented in separate
+    hardware or trusted execution environments.  The ASM is assumed to run in the normal operating 
+    system (e.g. Android, Windows, ...).
+  </p>
+
+  <section>
+    <h3>Scope</h3>
+    <p>
+      This document describes the FIDO ECDAA attestation algorithm in
+      detail. 
+    </p>
+  </section>
+
+  <section>
+    <h3>Architecture Overview</h3>
+    ECDAA attestation defines <a href='#global-ecdaa-system-parameters'>global system parameters</a> 
+    and <a href='#issuer-specific-ecdaa-parameters'>issuer specific parameters</a>. 
+    Both parameter sets need to be installed on the host, in the <a>authenticator</a> and in the FIDO Server.
+
+    The ECDAA method consists of two steps:
+    <ul>
+      <li><a href='#outline-of-the-ecdaa-join-operation'>ECDAA-Join</a> to be performed <em>before</em>
+	the first FIDO Registration
+	<ul>
+	  <li>n = GetNonceFromECDAAIssuer()</li>
+	  <li>(Q, c1, s1) = EcdaaJoin1(X, Y, n)</li>
+	  <li>(A, B, C, D, s2, c2) = EcdaaIssuerJoin(Q, c1, s1)</li>
+	  <li>EcdaaJoin2(A, B, C, D, c2, s2) // store cre=(A, B, C, D)</li>
+	</ul>
+      </li>
+      <li>and the pair of <a href='#ecdaa-sign-operation'>ECDAA-Sign</a> performed by the <a>authenticator</a> 
+	and <a href='#ecdaa-verify-operation'>ECDAA-Verify</a> performed by the FIDO Server 
+	as part of the FIDO Registration.
+	<ul>
+	  <li>Client: Attestation = (signature, <a>KRD</a>) = EcdaaSign(<a>AppID</a>)</li>
+	  <li>Server: success=EcdaaVerify(signature, <a>KRD</a>, <a>AppID</a>)</li>
+	</ul>
+      </li>
+    </ul>
+    <p>
+      The technical implementation details of the ECDAA-Join step are out-of-scope for FIDO. 
+      In this document we normatively specify the general algorithm to the extent required 
+      for interoperability and we outline examples of some possible implementations for this step.
+    </p>
+    <p>
+      The ECDAA-Sign and ECDAA-Verify steps and the encoding of the related ECDAA Signature
+      are normatively specified in this document.  The generation and encoding of the <a>KRD</a> object is defined 
+      in other FIDO specifications.
+    </p>
+    
+    <p>The algorithm and terminology are inspired by [[BFGSW-2011]].  The algorithm was modified in order to
+      fix security weaknesses (e.g. as mentioned by [[ANZ-2013]] and [[XYZF-2014]]).
+      Our algorithm proposes an improved task split for the sign operation while still being compatible
+      to TPMv2 (without fixing the TPMv2 weaknesses in such case).
+    </p>
+  </section>
+</section>
+
+
+<section class="normativeDisclaimer">
+  <h2>FIDO ECDAA Attestation</h2>
+
+  <section>
+    <h3>Object Encodings</h3>
+    <p>We need to convert <code>BigNumber</code> and <code>ECPoint</code> objects to 
+      byte strings using the following encoding functions:</p>
+
+
+    <section>
+      <h4>Encoding <code>BigNumber</code> values as byte strings (BigNumberToB)</h4>
+      We use the I2OSP algorithm as defined in [[!RFC3447]] for converting big numbers to byte arrays.
+      The bytes from the big endian encoded (non-negative) number <code>n</code> 
+      will be copied right-aligned into the buffer area <code>b</code>.  
+      The unused bytes will be set to 0.  Negative values will not occur due to the construction of the algorithms.
+
+      <pre class="example" title="Converting BigNumber n to byte string b">
+b0 b1 b2 b3 b4 b5 b6 b7
+ 0  0 n0 n1 n2 n3 n4 n5
+      </pre>
+
+      The algorithm implemented in Java looks like this:
+      <pre class="example" title="Algorithm for converting BigNumber to byte strings">
+ByteArray BigNumberToB(
+      BigNumber inVal, // IN: number to convert
+      int size         // IN: size of the output.
+     )
+{
+  ByteArray buffer = new ByteArray(size);
+  int oversize = size - inVal.length;
+  if (oversize < 0)
+    return null;
+  for (int i=overvize; i > 0; i--)
+     buffer[i] = 0;
+  ByteCopy( inVal.bytes, &buffer[oversize], inVal.length);
+ return buffer;
+}
+      </pre>
+
+    </section>
+    
+    <section>
+      <h4>Encoding <code>ECPoint</code> values as byte strings (ECPointToB)</h4>
+      We use the ANSI X9.62 Point-to-Octet-String [[!ECDSA-ANSI]] conversion using the expanded format, i.e. 
+      the format where the compression byte (i.e. 0x04 for expanded) is followed 
+      by the encoding of the affine x coordinate,
+      followed by the encoding of the affine y coordinate.
+
+      <pre class="example" title="Converting ECPoint P to byte string">
+(x, y) = ECPointGetAffineCoordinates(P)
+len = G1.byteLength
+byte string = 0x04 | BigIntegerToB(x,len) | BigIntegerToB(y,len)
+      </pre>
+
+    </section>
+    
+    <section>
+      <h4>Encoding <code>ECPoint2</code> values as byte strings (ECPoint2ToB)</h4>
+      <p>
+	The type <code>ECPoint2</code> denotes a point on the sextic twist of a BN elliptic curve over \(F(q^2)\), 
+	see section <a href='#supported-curves-for-ecdaa'></a>.
+	Each <code>ECPoint2</code> is represented by a pair <code>(a, b)</code> of elements of \(F(q)\).
+      </p>
+      The group zero element is always encoded as a single null byte (i.e. 0x0).
+
+      <p>
+	We always assume normalized (non-zero) ECPoint2 values (i.e. cz = 1) before encoding them.  
+	Non-zero values are encoded using the expanded format (i.e. 0x04 for expanded) 
+	followed by the cx followed by the cy value.
+	This leads to the concatenation of 0x04 followed by the first element (<code>cx.a</code>) and 
+	second element (<code>cx.b</code>) of the pair of cx followed by the
+	first element (<code>cy.a</code>) and second element (<code>cy.b</code>) of the pair of cy.  
+	All individual numbers are padded to the same length 
+	(i.e. the maximum byte length of all relevant 4 numbers).
+      </p>
+      <pre class="example" title="Converting ECPoint2 P2 to byte string">
+(cx, cy) = ECPointGetAffineCoordinates(P2)
+len = G2.byteLength
+byte string = 0x04 | BigIntegerToB(cx.a,len) | BigIntegerToB(cx.b,len) 
+              | BigIntegerToB(cy.a,len) | BigIntegerToB(cy.b,len)
+      </pre>
+      
+
+    </section>
+
+  </section>
+
+  <section>
+    <h3>Global ECDAA System Parameters</h3>
+    <ol>
+	  <li>Groups \(G_1\), \(G_2\) and \(G_T\), of sufficiently large prime order \(p\)</li>
+	  <li>Two generators \(P_1\) and \(P_2\), such that \(G_1 = \langle P_1\rangle \) 
+	    and \(G_2 = \langle P_2 \rangle\)</li>
+	  <li> A bilinear pairing \(e: G_1 \times G_2 \rightarrow G_T\).  
+	    We propose the use of "ate" pairing (see [[BarNae-2006]]).
+	    For example source code on this topic, see <a href='https://code.google.com/p/bnpairings/'>BNPairings</a>.
+	  </li>
+	  <li>Hash function \(H\) with \(H: \{0, 1\}^* \rightarrow Z_p\). </li>
+	  <li> \((G_1, P_1, p, H)\) are installed in all authenticators implementing FIDO ECDAA attestation.</li>
+	</ol>
+
+    <p><b>Definition of \(G_1, G_2, G_T\), Pairings and hash function \(H\)</b></p>  
+    See section <a href='#supported-curves-for-ecdaa'></a>.
+
+  </section>
+
+  <section>
+    <h3>Issuer Specific ECDAA Parameters</h3>
+    Issuer Parameters parI
+    <ol>
+      <li>Randomly generated issuer private key \(isk=(x,y)\) with \([x,y = RAND(p)]\).</li>
+      <li>Issuer public key \((X,Y)\), with \(X = P_2^x\) and \(Y = P_2^y\).</li>
+      <li>A proof that the issuer key was correctly computed
+      <ol>
+      	<li>BigInteger \(r_x = RAND(p)\)</li>
+	<li>BigInteger \(r_y = RAND(p)\)</li>
+      	<li>ECPoint2 \(U_x = P_2^{r_x}\)
+	</li>
+	<li>ECPoint2 \(U_y = P_2^{r_y}\)</li>
+      	<li>BigInteger \(c = H(U_x | U_y | P_2 | X | Y)\)</li>
+      	<li>BigInteger \(s_x = r_x + c \cdot x \pmod{p}\)</li>
+	<li>BigInteger \(s_y = r_y + c \cdot y \pmod{p}\)</li>
+      </ol>
+      </li>
+      <li>\(ipk = X, Y, c, s_x, s_y\)</li>
+    </ol>
+    
+    Whenever a party uses ipk for the first time, it must first verify that it was correctly generated:
+    <p>
+      \(H(P_2^{s_x} \cdot X^{-c} | P_2^{s_y} \cdot Y^{-c} | P_2 | X | Y) \stackrel{?}{=} c\)
+    </p>
+    <div class="note review">
+      <p>\( P_2^{s_x} \cdot X^{-c} = P_2^{r_x + c x} \cdot P_2^{-c x} = P_2^{r_x} = U_x \)</p>
+      <p>\( P_2^{s_y} \cdot Y^{-c} = P_2^{r_y + c y} \cdot P_2^{-c y} = P_2^{r_y} = U_y \)</p>
+    </div>
+	
+    <p>The ECDAA-Issuer public key ipk MUST be dedicated to a single <a>authenticator</a> model.</p>
+
+  </section>
+
+  <section>
+    <h3>ECDAA-Join</h3>
+    
+    <div class="note">
+      <p>One ECDAA-Join operation is required once in the lifetime of an <a>authenticator</a> prior to the first
+	registration of a credential.</p>
+    </div>
+    
+    <p>
+      In order to use ECDAA, the <a>authenticator</a> must first receive ECDAA credentials from an ECDAA-Issuer.  
+      This is done by the ECDAA-Join operation.  
+      This operation needs to be performed a single time (before the first credential registration can take place).
+      
+      After the ECDAA-Join, the <a>authenticator</a> will use the ECDAA-Sign operation as part of each FIDO Registration. 
+      The ECDAA-Issuer is not involved in this step.  ECDAA plays no role in 
+      FIDO Authentication / Transaction Confirmation operations.
+    </p>
+    
+    <p>
+      In order to use ECDAA, (at least) one ECDAA-Issuer is needed.  The approach specified in this document
+      easily scales to multiple ECDAA-Issuers, e.g. one per <a>authenticator</a> vendor.  
+      FIDO lets the <a>authenticator</a> vendor choose any ECDAA-Issuer (similar to his current freedom for selecting any 
+      PKI infrastructure/service provider to issuing attestation certificates required for FIDO Basic Attestation).
+      <ul>
+	<li>All ECDAA-Join operations (of the related authenticators) are 
+	  performed with one of the ECDAA-Issuer entities.
+	</li>
+	<li>Each ECDAA-Issuer has a set of public parameters, i.e. ECDAA public key material. 
+	  The related Attestation Trust Anchor is contained in the metadata of 
+	  each <a>authenticator</a> model identified by its AAGUID.
+	</li>
+      </ul>
+    </p>
+    <p>
+      There are two different implementation options relevant for the <a>authenticator</a> Vendors 
+      (the <a>authenticator</a> vendor can freely choose them):
+      <ol>
+	<li>In-Factory ECDAA-Join</li>
+	<li>Remote ECDAA-Join and</li>
+      </ol>
+    </p>
+    
+    <p>
+      In the first case, physical proximity is used to locally establish 
+      the trust between the ECDAA-Issuer and the <a>authenticator</a> 
+      (e.g. using a key provisioning station in a production line).  
+      There is no requirement for the ECDAA-Issuer to operate an online web service.
+    </p>
+    <p>
+      In the second case, some credential is required to remotely establish the 
+      trust between the ECDAA-Issuer and the <a>authenticator</a>.  
+      As this operation is performed once and only with a single ECDAA-Issuer, 
+      privacy is preserved and an <a>authenticator</a> specific credential can and should be used. 
+    </p>
+    
+    <p>Not all ECDAA authenticators might be able to add their <a>authenticator</a> 
+      model IDs (e.g. AAGUID) to the registration assertion (e.g. TPMs). 
+      In all cases, the ECDAA-Issuer will be able to derive the exact the 
+      <a>authenticator</a> model from either the credential or the physically 
+      proximiate <a>authenticator</a>.  So the ECDAA-Issuer root key MUST  
+      be dedicated to a single <a>authenticator</a> model.
+    </p>
+    
+    <section class="normativeDisclaimer">
+      <h4>ECDAA-Join Algorithm</h4>
+      <div class="note">
+	<p>If this join is not in-factory, the value Q must be authenticated by the <a>authenticator</a>. 
+	  Upon receiving this value, the issuer must verify that this <a>authenticator</a> did not join before.</p>
+      </div>
+      <ol>
+	<li>The <a>authenticator</a> asks the issuer for a nonce.</li>
+	<li>The issuer chooses a nonce BigInteger \(n = RAND(p)\) and sends \(n\) via the <a>ASM</a> to the <a>authenticator</a>.</li>
+	<li>The <a>authenticator</a> chooses and stores the ECDAA private key BigInteger \(sk = RAND(p)\) </li>
+	<li>The <a>authenticator</a> computes its ECDAA public key ECPoint \(Q = P_1^{sk}\)</li>
+	<li>The <a>authenticator</a> proves knowledge of \(sk\) as follows
+	  <ol>
+	    <li>BigInteger \(r_1 = RAND(p)\)</li>
+	    <li>ECPoint \(U_1 = P_1^{r_1}\)</li>
+	    <li>BigInteger \(c_1 = H(U_1 | P_1 | Q | n)\)</li>
+	    <li>BigInteger \(s_1 = r_1 + c_1 \cdot sk\)</li>
+	  </ol>
+	</li>
+	<li>The <a>authenticator</a> sends \(Q, c_1, s_1\) via the <a>ASM</a> to the issuer</li>
+	<li>The issuer verifies that the <a>authenticator</a> is "authentic" and that \(Q\) 
+	  was indeed generated by the <a>authenticator</a>.
+	  In the case of an in-factory Join, this might be trivial; in the case of a remote 
+	  Join this typically requires the use of other cryptographic methods.  
+	  Since ECDAA-Join is a one-time operation, unlinkability is not a concern for that.
+	</li>
+	<li>The issuer verifies that \(Q \in G_1\) and 
+	  verifies \(H(P_1^{s_1} \cdot Q^{-c_1} | P_1 | Q | n) \stackrel{?}{=} c_1\) 
+	  (check proof-of-possession of private key).
+	  <div class="note review">
+	    <p>\( P_1^{s_1} \cdot Q^{-c_1} = P_1^{r_1 + c_1 sk} \cdot Q^{-c_1} 
+	      = P_1^{r_1 + c_1 sk} \cdot P_1^{-c_1 sk}
+	      = P_1^{r_1} = U_1 \)
+	    </p>
+	  </div>
+	</li>
+	<li>The issuer creates credential \((A, B, C, D)\) as follows
+	  <ol>
+    	    <li>BigInteger \(l_J = RAND(p)\)</li>
+    	    <li>ECPoint \(A = P_1^{l_J}\)</li>
+    	    <li>ECPoint \(B = A^y\)</li>
+    	    <li>ECPoint \(C = A^x \cdot Q^{x y l_J}\)</li>
+    	    <li>ECPoint \(D = Q^{l_J y}\)</li>
+	</ol></li>
+	<li> The issuer proves that it computed this credential correctly:
+	  <ol>
+	    <li>BigInteger \(r_2 = RAND(p)\)</li>
+	    <li>ECPoint \(U_2 = P_1^{r_2}\)</li>
+	    <li>ECPoint \(V_2 = Q^{r_2}\)</li>
+	    <li>BigInteger \(c_2 = H(U_2 | V_2 | P_1 | B | Q | D)\)</li>
+	    <li>BigInteger \(s_2 = r_2 + c_2 \cdot l_J \cdot y\)</li>
+	  </ol>
+	</li>
+	<li>The issuer sends \(A, B, C, D, c_2, s_2\) to the <a>authenticator</a>.	</li>
+	<li>The <a>authenticator</a> checks that \(A, B, C, D \in G_1\) and \(A \neq 1_{G_1}\)</li>
+	<li>The <a>authenticator</a> checks \(H(P_1^{s_2} \cdot B^{-c_2} | Q^{s_2} \cdot D^{-c_2} |
+	  P_1 | B | Q | D) \stackrel{?}{=} c_2\) </li>
+	<div class="note review">
+	  <p>
+	    \(P_1^{s_2} \cdot B^{-c_2} = P_1^{r_2} \cdot P_1^{c_2 \cdot l_J \cdot y} \cdot B^{-c_2} 
+	    = U_2 \cdot B^{c_2} \cdot B^{-c_2} = U_2\)
+	  </p>
+	  <p>	
+	    \(Q^{s_2} \cdot D^{-c_2} = Q^{r_2} \cdot Q^{c_2 \cdot l_J \cdot y} \cdot D^{-c_2} 
+	    = V_2 \cdot D^{c_2} \cdot D^{-c_2} = V_2\)
+	</p>
+	</div>
+	<li>The <a>authenticator</a> checks \(e(A, Y) \stackrel{?}{=} e(B, P_2)\) 
+	  <p class="note review">\(e(A, Y) = e(P_1^{l_J}, P_2^y)\); 
+	    \(e(B, P_2) = e(A^y, P_2) = e(P_1^{y l_J}, P_2)\)
+	  </p>
+	</li>
+	<li>and the <a>authenticator</a> checks \(e(C, P_2) \stackrel{?}{=} e(A \cdot D, X)\)
+	  <p class="note review">\(e(C, P_2) = e(A^x \cdot Q^{x y l_J}, P_2)\);
+	    \(e(A \cdot D, X) = e(A \cdot Q^{y l_J}, P_2^x) \)
+	  </p>
+	</li>
+	<li>The <a>authenticator</a> stores credential \(A, B, C, D\)</li>
+      </ol>
+    </section>
+    
+    <section class="informative">
+      <h4>ECDAA-Join Split between Authenticator and ASM</h4>
+      <div class="note">
+	<p>If this join is not in-factory, the value Q must be authenticated by the <a>authenticator</a>. 
+	  Upon receiving this value, the issuer must verify that this <a>authenticator</a> did not join before.</p>
+      </div>
+      <ol>
+	<li>The <a>ASM</a> asks the issuer for a nonce.</li>
+	<li>The issuer chooses a nonce BigInteger \(n = RAND(p)\) and sends \(n\) to the <a>ASM</a>.</li>
+	<li>The <a>ASM</a> forwards \(n\) to the <a>authenticator</a></li>
+	<li>The <a>authenticator</a> chooses and stores the private key BigInteger \(sk = RAND(p)\)</li>
+	<li>The <a>authenticator</a> computes its ECDAA public key ECPoint \(Q = P_1^{sk}\)</li>
+	<li>The <a>authenticator</a> proves knowledge of \(sk\) as follows
+	  <ol>
+	    <li>BigInteger \(r_1 = RAND(p)\)</li>
+	    <li>ECPoint \(U_1 = P_1^{r_1}\)</li>
+	    <li>BigInteger \(c_1 = H(U_1 | P_1 | Q | n)\)</li>
+	    <li>BigInteger \(s_1 = r_1 + c_1 \cdot sk\)</li>
+	  </ol>
+	</li>
+	<li>The <a>authenticator</a> sends \(Q, c_1, s_1\) to the <a>ASM</a>, who forwards it to the issuer.</li>
+	<li>The issuer verifies that the <a>authenticator</a> is "authentic" and that \(Q\) was 
+	  indeed generated by the <a>authenticator</a>.
+	  In the case of an in-factory Join, this might be trivial; in the case of a remote 
+	  Join this typically requires the use of other cryptographic methods.  
+	  Since ECDAA-Join is a one-time operation, unlinkability is not a concern for that.
+	</li>
+	<li>The issuer verifies that \(Q \in G_1\) 
+	  and verifies \(H(P_1^{s_1} \cdot Q^{-c_1} | P_1 | Q | n) \stackrel{?}{=} c_1\).</li>
+	<li>The issuer creates credential \((A, B, C, D)\) as follows
+	  <ol>
+    	    <li>BigInteger \(l_J = RAND(p)\)</li>
+    	    <li>ECPoint \(A = P_1^{l_J}\)</li>
+    	    <li>ECPoint \(B = A^y\)</li>
+    	    <li>ECPoint \(C = A^x \cdot Q^{x y l_J}\)</li>
+    	    <li>ECPoint \(D = Q^{l_J y}\)</li>
+	  </ol>
+	</li>
+	<li> The issuer proves that it computed this credential correctly:
+	  <ol>
+	    <li>BigInteger \(r_2 = RAND(p)\)</li>
+	    <li>ECPoint \(U_2 = P_1^{r_2}\)</li>
+	    <li>ECPoint \(V_2 = Q^{r_2}\)</li>
+	    <li>BigInteger \(c_2 = H(U_2 | V_2 | P_1 | B | Q | D)\)</li>
+	    <li>BigInteger \(s_2 = r_2 + c_2 \cdot l_J \cdot y\)</li>
+	  </ol>
+	</li>
+	<li>The issuer sends \(A, B, C, D, c_2, s_2\) to the <a>ASM</a>. 
+	  The issuer authenticates \(B, D, c_2, s_2\) such that the <a>authenticator</a> can 
+	  verify they were created by the issuer.
+	</li>
+	<li>The <a>ASM</a> checks that \(A, B, C, D \in G_1\) and \(A \neq 1_{G_1}\)</li>
+	<li>The <a>ASM</a> checks \(H(P_1^{s_2} \cdot B^{-c_2} | Q^{s_2} \cdot D^{-c_2} | P_1 | B | Q | D) \stackrel{?}{=} c_2\) </li>
+	<li>The <a>ASM</a> checks \(e(A, Y) \stackrel{?}{=} e(B, P_2)\)</li>
+	<li>and the <a>ASM</a> checks that \(e(C, P_2) \stackrel{?}{=} e(A \cdot D, X)\)
+	</li>
+	<li>The <a>ASM</a> stores \(A, B, C, D\) and sends \(B, D, c_2, s_2\) to the <a>authenticator</a></li>
+	<li>The <a>authenticator</a> checks \(B, D \in G_1\) and \(B \neq 1_{G_1}\), 
+	  and verifies that \(B, D, c_2, s_2\) were sent by the issuer.</li>
+	<li>The <a>authenticator</a> checks \(H(P_1^{s_2} \cdot B^{-c_2} | Q^{s_2} \cdot D^{-c_2} | P_1 | B | Q | D) 
+	  \stackrel{?}{=} c_2\) </li>
+	<li>The <a>authenticator</a> stores \(B, D\) and ignores further join requests.
+	  <p class="note">These values belong to the ECDAA secret key \(sk\).  
+	    They should persist even in the case of a factory reset.</p>
+	</li>
+      </ol>
+    </section>
+    
+    <section class="informative">
+      <h4>ECDAA-Join Split between TPM and ASM</h4>
+      <div class="note">
+	<p>The Endorsement key credential (EK-C) and TPM2_ActivateCredentials are used for supporting the remote Join.
+	</p>
+      </div>
+
+      <p>This description is based on the principles described in [[TPMv2-Part1]] section 24
+	  and [[Arthur-Challener-2015]], page 109 ("Activating a Credential").
+      </p>
+      <ol>
+	<li>The <a>ASM</a> asks the ECDAA Issuer for a nonce.</li>
+	<li>The ECDAA Issue chooses a nonce BigInteger \(n = RAND(p)\) and sends \(n\) to the <a>ASM</a>.</li>
+	<li>The <a>ASM</a>
+	  <ol>
+	    <li>instructs the TPM to create a restricted key by 
+	      calling TPM2_Create, giving the public key template <code>TPMT_PUBLIC</code> [[TPMv2-Part2]]
+	      (including the public key \(Q\) in field <code>unique</code>) to the <a>ASM</a>.
+	    </li>
+	    <li>retrieves TPM Endorsement Key Certificate (EK-C) from the TPM</li>
+	    <li>calls TPM2_Commit(keyhandle, P1, s2, y2) where keyhandle is the handle of the restricted key
+	      generated before (see above), P1 is set to \(P_1\), and s2 and y2 are left empty. This call returns
+	      K, L, E, and ctr; where K and L will be empty.</li>
+	    <li>computes BigInteger \(c_1 = H(E | P_1 | Q | n)\)</li>
+	    <li>call TPM2_Sign(\(c_1\), ctr), returning \(s_1\).</li>
+	    <li>sends EK-C, <code>TPMT_PUBLIC</code> (including \(Q\) in field <code>unique</code>), \(c_1, s_1\)
+	      to the ECDAA Issuer.</li>
+	  </ol>
+	</li>
+	<li>The ECDAA Issuer 
+	  <ol>
+	    <li>verifies EK-C and its certificate chain. As a result the ECDAA Issuer 
+	      knows the TPM model related to EK-C.
+	    </li>
+	    <li>verifies that this EK-C was not used in a (successful) Join before</li>
+	    <li>Verifies that the <code>objectAttributes</code> in <code>TPMT_PUBLIC</code> [[TPMv2-Part2]]
+	      matches the following flags: 
+	      <code>fixedTPM</code> = 1; <code>fixedParent</code> = 1; <code>sensitiveDataOrigin</code> = 1; 
+	      <code>encryptedDuplication</code> = 0; 
+	      <code>restricted</code> = 1; <code>decrypt</code> = 0; <code>sign</code> = 1.
+	    </li>
+	    <li>examines the public key Q, i.e. it verifies that \(Q \in G_1\)</li>
+	    <li>checks \(H(P_1^{s_1} \cdot Q^{-c_1} | P_1 | Q | n) \stackrel{?}{=} c_1\)</li>
+	    <li>generates the ECDAA credential \((A, B, C, D)\) as follows
+	      <ol>
+    		<li>BigInteger \(l_J = RAND(p)\)</li>
+    		<li>ECPoint \(A = P_1^{l_J}\)</li>
+    		<li>ECPoint \(B = A^y\)</li>
+    		<li>ECPoint \(C = A^x \cdot Q^{x y l_J}\)</li>
+    		<li>ECPoint \(D = Q^{l_J y}\)</li>
+	      </ol>
+	    </li>
+	    <li> proves that it computed this credential correctly:
+	      <ol>
+		<li>BigInteger \(r_2 = RAND(p)\)</li>
+		<li>ECPoint \(U_2 = P_1^{r_2}\)</li>
+		<li>ECPoint \(V_2 = Q^{r_2}\)</li>
+		<li>BigInteger \(c_2 = H(U_2 | V_2 | P_1 | B | Q | D)\)</li>
+		<li>BigInteger \(s_2 = r_2 + c_2 \cdot l_J \cdot y\)</li>
+	      </ol>
+	    </li>
+	    <li>generates a <em>secret</em> (derived from a <em>seed</em>) and wraps the credential \(A, B, C, D\) 
+	      using that <em>secret</em>.
+	    </li>
+	    <li>encrypts the <em>seed</em> using the public key included in EK-C.</li>
+	    <li>uses <em>seed</em> and <em>name</em> in KDFa (see [[TPMv2-Part2]] section 24.4) 
+	      to derive HMAC and <em>symmetric encryption key</em>. Wrap the <em>secret</em> 
+	      in <em>symmetric encryption key</em> and protect it with the <em>HMAC key</em>.
+	      <p class="note">The parameter <em>name</em> in KDFa is derived from 
+		<code>TPMT_PUBLIC</code>, see [[TPMv2-Part1]], section 16.
+	      </p>
+	    </li>
+	    <li>sends the credential proof \(c_2, s_2\) and the wrapped object 
+	      including the credential from previous step to the <a>ASM</a>.
+	    </li>
+	  </ol>
+	</li>
+	<li>The <a>ASM</a> instructs the TPM (by calling TPM2_ActivateCredential) to
+	  <ol>
+	    <li>decrypt the <em>seed</em> using the TPM Endorsement key</li>
+	    <li>compute the <em>name</em> (for the ECDAA attestation key)</li>
+	    <li>use the <em>seed</em> in KDFa (with <em>name</em>) to derive the <em>HMAC key</em> 
+	      and the <em>symmetric encryption key</em>.</li>
+	    <li>use the <em>symmetric encryption key</em> to unwrap the <em>secret</em>.</li>
+	  </ol>
+	</li>	 
+	<li>The <a>ASM</a> 
+	  <ol>
+	    <li>unwraps the credential \(A, B, C, D\) using the <em>secret</em> received from the TPM.</li>
+	    <li>checks that \(A, B, C, D \in G_1\) and \(A \neq 1_{G_1}\)</li>
+	    <li>checks \(H(P_1^{s_2} \cdot B^{-c_2} | Q^{s_2} \cdot D^{-c_2} | P_1 | B | Q | D) \stackrel{?}{=} c_2\) </li>
+	    <li>checks \(e(A, Y) \stackrel{?}{=} e(B, P_2)\) and 
+	      \(e(C, P_2) \stackrel{?}{=} e(A \cdot D, X)\)</li>
+	    <li>stores \(A, B, C, D\) </li>
+	  </ol>
+	</li>
+      </ol>
+
+    </section>  
+  </section>
+
+  <section>
+    <h3>ECDAA-Sign</h3>
+    
+    <div class="note">
+      <p>One ECDAA-Sign operation is required for the client-side environment whenever a new 
+	credential is being registered at a relying party.</p>
+    </div>
+    
+    <section class="normativeDisclaimer">
+      <h3>ECDAA-Sign Algorithm</h3>
+      
+      <b>(signature, <a>KRD</a>) = EcdaaSign(String <a>AppID</a>)</b>
+      <p><em>Parameters</em></p>
+      <ul>
+	<li>p: System parameter prime order of group G1 (global constant)</li>
+	<li><a>AppID</a>: FIDO <a>AppID</a> (i.e. https-URL of TrustedFacets object)</li>
+      </ul>
+      <p><em>Algorithm outline</em></p>
+      <ol>
+	<li><a>KRD</a> = BuildAndEncodeKRD(); // all traditional Registration tasks are here</li>
+	<li>BigNumber \(l = RAND(p)\)</li>
+	<li>ECPoint \(R = A^l\);</li>
+	<li>ECPoint \(S = B^l\);</li>
+	<li>ECPoint \(T = C^l\);</li>
+	<li>ECPoint \(W = D^l\);</li>
+	<li>BigInteger \(r = RAND(p)\)</li>
+	<li>ECPoint \(U = S^r\)</li>
+	<li>BigInteger \(c = H(U | S | W | <a>AppID</a> | H(<a>KRD</a>))\)
+	</li>
+	<li>BigInteger \(s = r + c \cdot sk \pmod{p}\)</li>
+	<li>signature = (c, s, R, S, T, W)</li>
+	<li>return (signature, <a>KRD</a>) </li>
+      </ol>
+    </section>
+    
+    <section class="informative">
+      <h3>ECDAA-Sign Split between Authenticator and ASM</h3>
+      <div class="note">
+	<p>This split requires both the <a>authenticator</a> and <a>ASM</a> to be honest to achieve anonymity. 
+	  Only the <a>authenticator</a> must be trusted for unforgeability. 
+	  The communication between <a>ASM</a> and <a>authenticator</a> must be secure.
+	</p>
+      </div>
+      <p><em>Algorithm outline</em></p>
+      <ol>
+	<li>The <a>ASM</a> randomizes the credential
+	  <ol>
+	    <li>BigNumber \(l = RAND(p)\)</li>
+	    <li>ECPoint \(R = A^l\);</li>
+	    <li>ECPoint \(S = B^l\);</li>
+	    <li>ECPoint \(T = C^l\);</li>
+	    <li>ECPoint \(W = D^l\);</li>
+	  </ol>
+	</li>
+	<li>The <a>ASM</a> sends \(l, <a>AppID</a>\) to the <a>authenticator</a></li>
+	<li> The <a>authenticator</a> performs the following tasks
+	  <ol>
+	    <li><a>KRD</a> = BuildAndEncodeKRD(); // all traditional Registration tasks are here</li>
+	    <li>ECPoint \(S' = B^l\)</li>
+	    <li>ECPoint \(W' = D^l\)</li>
+	    <li>BigInteger \(r = RAND(p)\)</li>
+	    <li>ECPoint \(U = S^r\)</li>
+	    <li>BigInteger \(c = H(U | S' | W' | <a>AppID</a> | H(<a>KRD</a>))\)</li>
+	    <li>BigInteger \(s = r + c \cdot sk \pmod{p}\)</li>
+	    <li>Send \(c, s, <a>KRD</a>\) to the <a>ASM</a></li>
+	</ol></li>
+	<li>The <a>ASM</a> sets signature = (c, s, R, S, T, W) and outputs (signature, <a>KRD</a>)</li>
+      </ol>
+    </section>
+    
+    <section class="informative">
+      <h3>ECDAA-Sign Split between TPM and ASM</h3>
+      <div class="note">
+	<p> This algorithm is for the special case of a TPMv2 as <a>authenticator</a>.
+	  This case requires both the TPM and <a>ASM</a> to be honest for anonymity and unforgeability (see [[XYZF-2014]]). </p>
+      </div>
+      <p><em>Algorithm outline</em></p>
+      <ol>
+	<li> The <a>ASM</a> randomizes the credential
+	  <ol>
+	    <li>BigNumber \(l = RAND(p)\)</li>
+	    <li>ECPoint \(R = A^l\);</li>
+	    <li>ECPoint \(S = B^l\);</li>
+	    <li>ECPoint \(T = C^l\);</li>
+	    <li>ECPoint \(W = D^l\);</li>
+	  </ol>
+	</li>
+	<li>The <a>ASM</a> calls TPM2_Commit() with \(P1\) set to \(S\) and \(s2, y2\) empty buffers. 
+	  The <a>ASM</a> receives the result values \(K, L, E=S^r\) and ctr.  \(K\) and \(L\) are empty since
+	  \(s2, y2\) are empty buffers.
+	</li>
+	<li>The <a>ASM</a> calls TPM2_Create to generate the new authentication key pair.</li>
+	<li>The <a>ASM</a> calls TPM2_Certify() on the newly created key with ctr from the TPM2_Commit 
+	  and \(E, S, W, <a>AppID</a>\) as qualifying data (\(E=S^r\) is returned by step 2).
+	  The <a>ASM</a> receives signature \(c, s\) and attestation block <a>KRD</a> (i.e. TPMS_ATTEST structure in this case).
+	</li>
+	<li>The <a>ASM</a> sets signature = (c, s, R, S, T, W) and outputs (signature, <a>KRD</a>)</li>
+      </ol>
+    </section>
+  </section>
+
+  <section class="normativeDisclaimer">
+    <h3>ECDAA-Verify Operation</h3>
+    <div class="note">
+      <p>One ECDAA-Verify operation is required for the FIDO Server as part of each FIDO Registration.</p>
+    </div>
+
+    <b>boolean EcdaaVerify(signature, <a>AppID</a>, <a>KRD</a>, ModelName)</b>
+    <p><em>Parameters</em></p>
+    <ul>
+      <li>p: System parameter prime order of group \(G_1\) (global constant)</li>
+      <li>\(P_2\): System parameter generator of group \(G_2\) (global constant)</li>
+      <li>signature: \((c, s, R, S, T, W)\)</li>
+      <li><a>AppID</a>: FIDO <a>AppID</a></li>
+      <li><a>KRD</a>: Attestation Data object as defined in other specifications.</li>
+      <li>ModelName: the claimed FIDO <a>authenticator</a> model (i.e. either AAID or AAGUID)</li>
+    </ul>
+    <p><em>Algorithm outline</em></p>
+    <ol>
+      <li>Based on the claimed ModelName, look up \(X, Y\) from trusted source </li>
+      <li>Check that \(R, S, T, W \in G_1\), \(R \neq 1_{G_1}\), and \(S \neq 1_{G_1}\).</li>
+      <li>\(H(S^s \cdot W^{-c} | S | W | <a>AppID</a> | H(<a>KRD</a>)) \stackrel{?}{=} c\); fail if not equal
+	<div class="note review">
+	  <p>\(B = A^y = P_1^{l y}\)</p>
+	  <p>\(D = Q^{l_J y} = P_1^{sk l_J y} = B^{sk}\)</p>
+	  <p>\(S = B^l\) and \(W = D^l\)</p>
+	  <p>\(U = S^r\)</p>
+	  <p>\(S^s \cdot W^{-c} = S^{r + c sk} \cdot W^{-c} = U \cdot S^{c sk} \cdot W^{-c}\)<br />
+	      \( = U \cdot B^{l c sk} \cdot D^{-l c} = U \cdot B^{l c sk} \cdot B^{-l c sk} = U\)
+	    </p>
+	</div>
+      </li>
+      <li>\(e(R, Y) \stackrel{?}{=} e(S, P_2)\); fail if not equal 
+	<p class="note review">\(e(R, Y) = e(A^l, P_2^y); e(S, P_2) = e(B^l, P_2) = e(A^{l y}, P_2)\)</p>
+      </li>
+      <li>\(e(T, P_2) \stackrel{?}{=} e(R \cdot W, X)\); fail if not equal
+	<p class="note review">\(e(T, P_2) = e(C^l, P_2) = e(A^{x l} \cdot Q^{x l y l_J}, P_2); 
+	  e(A^l \cdot D^l, X) = e(A^l \cdot Q^{l y l_J}, P_2^x)\)</p>
+      </li>
+      <li>for (all sk' on RogueList) do if \(W \stackrel{?}{=} S^{sk'}\) fail;
+      <li>// perform all other processing steps for new credential registration
+	<div class="note">
+	  In the case of a TPMv2, i.e. <a>KRD</a> is a <code>TPMS_ATTEST</code> object. In this case the 
+	  verifier must check whether the <code>TPMS_ATTEST</code> object starts 
+	  with <code>TPM_GENERATED</code> magic number and whether its field 
+	  <code>objectAttributes</code> contains the flag <code>fixedTPM</code>=1 
+	  (indicating that the key was generated by the TPM).
+	</div>
+      </li>
+      <li>return true;</li>
+    </ol>
+    
+  </section>
+
+</section>
+
+<section class="normativeDisclaimer">
+  <h2>FIDO ECDAA Object Formats and Algorithm Details</h2>
+
+  <section>
+    <h3>Supported Curves for ECDAA</h3>	
+
+<!-- see [ISO/IEC 15946-5 : 2008 Clause 7.3 “BN curve”], which is 
+     equivalent to [IEEE P1363.3 (Draft 2) Clause A.11.5 BN Curves]. 
+-->
+    <p><b>Definition of G1</b></p>
+    G1 is an elliptic curve group E : \(y^2 = x^3 + ax + b\)
+    over \(F(q)\) with \(a=0\).  
+
+    <p><b>Definition of G2</b></p>
+    G2 is the p-torsion subgroup of \(E'(F_{q^2})\) where E' is a sextic twist of E.  
+    With E' : \(y'^2 = x'^3 + b'\).
+
+    <p>An element of \(F(q^2)\) is represented by a pair (a,b) where a + bX is an element of \(F(q)[X] / &lt;X^2+1&gt;\).  
+	We use angle brackets \(&lt;Y&gt;\) to signify the ideal generated by the enclosed value.</p>
+    <p class="note">In the literature the pair (a,b) is sometimes also written as a complex number \(a+b*i\).
+    </p>
+
+    <p><b>Definition of GT</b></p>
+    GT is an order-p subgroup of \(F_{q^{12}}\).
+
+    <p><b>Pairings</b></p>
+    We propose the use of Ate pairings as they are efficient (more efficient than Tate pairings) 
+    on Barreto-Naehrig curves [[DevScoDah2007]].
+
+    <p><b>Supported BN curves</b></p>
+
+    <div>
+      <p>We use pairing-friendly Barreto-Naehrig [[BarNae-2006]] [[ISO15946-5]] elliptic curves. 
+	The curves <code>TPM_ECC_BN_P256</code> and 
+	<code>TPM_ECC_BN_P638</code> curves are defined in [[TPMv2-Part4]].
+      </p>
+      <p>BN curves have a Modulus \(q = 36 \cdot u^4 + 36 \cdot u^3 + 24 \cdot u^2 + 6 \cdot u + 1\) [[ISO15946-5]] and
+	 a related order of the group \(p = 36 \cdot u^4 + 36 \cdot u^3 + 18 \cdot u^2 + 6 \cdot u + 1\) [[ISO15946-5]].
+      </p>
+
+      <ul>
+	<li><code>TPM_ECC_BN_P256</code> is a curve of form E(F(q)), where q is the field modulus 
+	  [[TPMv2-Part4]] [[BarNae-2006]].  This curve is identical to the P256 curve defined in [[ISO15946-5]] section C.3.5.
+	  <ul>
+	    <li>The values have been generated using u=-7 530 851 732 716 300 289.</li>
+	    <li>Modulus q = 115 792 089 237 314 936 872 688 561 244 471 742 058 375 878 355 761 205 198 700 409 522 629 664 518 163</li>
+	    <li>Group order p = 115 792 089 237 314 936 872 688 561 244 471 742 058 035 595 988 840 268 584 488 757 999 429 535 617 037</li>
+	    <li>p and q have length of 256 bit each.</li>
+	    <li>\(b\) = 3</li>
+	    <li>\(P_1\)_256 = (x=1, y=2)</li>
+	    <li>\(b'\) = (a=3, b=3)</li>
+	    <li>\(P_2\)_256 = (x,y), with
+	      <ul>
+		<li> \(P_2\)_256.x = (a=114 909 019 869 825 495 805 094 438 766 505 779 201 460 871 441 403 689 227 802 685 522 624 680 861 435, b=35 574 363 727 580 634 541 930 638 464 681 913 209 705 880 605 623 913 174 726 536 241 706 071 648 811)
+		</li>
+		<li>\(P_2\)_256.y = (a=65 076 021 719 150 302 283 757 931 701 622 350 436 355 986 716 727 896 397 520 706 509 932 529 649 684, b=113 380 538 053 789 372 416 298 017 450 764 517 685 681 349 483 061 506 360 354 665 554 452 649 749 368)
+		  </li>
+		</ul>
+	    </li>
+	  </ul>
+	</li>
+	<li><code>TPM_ECC_BN_P638</code> [[TPMv2-Part4]] uses 
+	  <ul>
+	    <li>The values have been generated using u=365 375 408 992 443 362 629 982 744 420 548 242 302 862 098 433</li>
+	    <li>Modulus q = 641 593 209 463 000 238 284 923 228 689 168 801 117 629 789 043 238 356 871 360 716 989 515 584 497 239 494 051 781 991 794 253 619 096 481 315 470 262 367 432 019 698 642 631 650 152 075 067 922 231 951 354 925 301 839 708 740 457 083 469 793 717 125 223</li>
+	    <li>The related order of the group is p = 641 593 209 463 000 238 284 923 228 689 168 801 117 629 789 043 238 356 871 360 716 989 515 584 497 239 494 051 781 991 794 252 818 101 344 337 098 690 003 906 272 221 387 599 391 201 666 378 807 960 583 525 233 832 645 565 592 955 122 034 352 630 792 289</li>
+	    <li>p and q have length of 638 bit each.</li>
+	    <li>\(b\) = 257</li>
+	    <li>\(P_1\)_638 = (x=641 593 209 463 000 238 284 923 228 689 168 801 117 629 789 043 238 356 871 360 716 989 515 584 497 239 494 051 781 991 794 253 619 096 481 315 470 262 367 432 019 698 642 631 650 152 075 067 922 231 951 354 925 301 839 708 740 457 083 469 793 717 125 222, y=16)
+	    </li>
+	    <li>\(b'\) = (a=771, b=1542)</li>
+	    <li>\(P_2\)_638 = (x, y), with
+	      <ul>
+		<li>\(P_2\)_638.x = (a=192 492 098 325 059 629 927 844 609 092 536 807 849 769 208 589 403 233 289 748 474 758 010 838 876 457 636 072 173 883 771 602 089 605 233 264 992 910 618 494 201 909 695 576 234 119 413 319 303 931 909 848 663 554 062 144 113 485 982 076 866 968 711 247, b=166 614 418 891 499 184 781 285 132 766 747 495 170 152 701 259 472 324 679 873 541 478 330 301 406 623 174 002 502 345 930 325 474 988 134 317 071 869 554 535 111 092 924 719 466 650 228 182 095 841 246 668 361 451 788 368 418 036 777 197 454 618 413 255)
+		</li>
+		<li>\(P_2\)_638.y = (a=622 964 952 935 200 827 531 506 751 874 167 806 262 407 152 244 280 323 674 626 687 789 202 660 794 092 633 841 098 984 322 671 973 226 667 873 503 889 270 602 870 064 426 165 592 237 410 681 318 519 893 784 898 821 343 051 339 820 566 224 981 344 169 470, b=514 285 963 827 225 043 076 463 721 426 569 583 576 029 220 880 138 564 906 219 230 942 887 639 456 599 654 554 743 732 087 558 187 149 207 036 952 474 092 411 405 629 612 957 921 369 286 372 038 525 830 610 755 207 588 843 864 366 759 521 090 861 911 494)
+		</li>
+	      </ul>
+	    </li>
+	  </ul>
+	</li>
+	<li><code>ECC_BN_DSD_P256</code> [[DevScoDah2007]] section 3 uses
+	  <ul>
+	    <li>The values have been generated using u=6 917 529 027 641 089 837</li>
+	    <li>Modulus q = 82434016654300679721217353503190038836571781811386228921167322412819029493183</li>
+	    <li>The related order of the 
+	      group is p = 82434016654300679721217353503190038836284668564296686430114510052556401373769</li>
+	    <li>p and q have length of 256 bit each.</li>
+	    <li>\(b\) = 3</li>
+	    <li>\(P_1\)_DSD_P256 = (1, 2)</li>
+	    <li>\(b'\) = (a=3, b=6)</li>
+	    <li>\(P_2\)_DSD_P256 = (x, y), with
+	      <ul>
+		<li>\(P_2\)_DSD_P256.x = (a=73 481 346 555 305 118 071 940 904 527 347 990 526 214 212 698 180 576 973 201 374 397 013 567 073 039,
+		  b=28 955 468 426 222 256 383 171 634 927 293 329 392 145 263 879 318 611 908 127 165 887 947 997 417 463)</li>
+		<li>\(P_2\)_DSD_P256.y = (a=3 632 491 054 685 712 358 616 318 558 909 408 435 559 591 759 282 597 787 781 393 534 962 445 630 353,
+		  b=60 960 585 579 560 783 681 258 978 162 498 088 639 544 584 959 644 221 094 447 372 720 880 177 666 763)</li>
+	      </ul>
+	    </li>
+	  </ul>
+	</li>
+	<li><code>ECC_BN_ISOP512</code> [[ISO15946-5]] section C.3.7 uses
+	  <ul>
+	    <li>The values have been generated using u=138 919 694 570 470 098 040 331 481 282 401 523 727</li>
+	    <li>Modulus q = 13 407 807 929 942 597 099 574 024 998 205 830 437 246 153 344 875 111 580 494 527 427 714 590 099 881 795 845 981 157 516 604 994 291 639 750 834 285 779 043 186 149 750 164 319 950 153 126 044 364 566 323</li>
+	    <li>The related order of the group is p = 13 407 807 929 942 597 099 574 024 998 205 830 437 246 153 344 875 111 580 494 527 427 714 590 099 881 680 053 891 920 200 409 570 720 654 742 146 445 677 939 306 408 461 754 626 647 833 262 056 300 743 149 </li>
+	    <li>p and q have length of 512 bit each.</li>
+	    <li>\(b\) = 3</li>
+	    <li>\(P_1\)_ISO_P512 = (x=1,y=2)</li>
+	    <li>\(b'\) = (a=3, b=3)</li>
+	    <li>\(P_2\)_ISO_P512 = (x, y), with
+	      <ul>
+		<li>\(P_2\)_ISO_P512.x = (a=3 094 648 157 539 090 131 026 477 120 117 259 896 222 920 557 994 037 039 545 437 079 729 804 516 315 481 514 566 156 984 245 473 190 248 967 907 724 153 072 490 467 902 779 495 072 074 156 718 085 785 269, b=3 776 690 234 788 102 103 015 760 376 468 067 863 580 475 949 014 286 077 855 600 384 033 870 546 339 773 119 295 555 161 718 985 244 561 452 474 412 673 836 012 873 126 926 524 076 966 265 127 900 471 529)
+		</li>
+		<li>\(P_2\)_ISO_P512.y = (a=7 593 872 605 334 070 150 001 723 245 210 278 735 800 573 263 881 411 015 285 406 372 548 542 328 752 430 917 597 485 450 360 707 892 769 159 214 115 916 255 816 324 924 295 339 525 686 777 569 132 644 242, b=9 131 995 053 349 122 285 871 305 684 665 648 028 094 505 015 281 268 488 257 987 110 193 875 868 585 868 792 041 571 666 587 093 146 239 570 057 934 816 183 220 992 460 187 617 700 670 514 736 173 834 408)
+		</li>
+	      </ul>
+	    </li>
+	  </ul>
+	</li>
+    </div>
+    <p class="note">Spaces are used inside numbers to improve readability.</p>
+
+    <p><b>Hash Algorithms</b></p>
+    <p>Depending on the curve, we use <code>H(x) = SHA256(x) mod p</code> or 
+      <code>H(x) = SHA512(x) mod p</code> as hash algorithm H:\( \{0, 1\}^* \rightarrow Z_p\).
+    </p>
+    <p>The argument of the hash function must always be converted to a byte string using the appropriate 
+      encoding function specific in section <a href='#object-encodings'></a>, e.g. according to section
+      <a href='#encoding-ecpoint2-values-as-byte-strings-ecpoint2tob'></a> in the case of <code>ECPoint2</code> points.
+    </p>
+    <p class="note">
+      We don't use <a href='http://grouper.ieee.org/groups/1363/IBC/material/P1363.3-D1-200805.pdf'>IEEE P1363.3</a> 
+      section 6.1.1 IHF1-SHA with security parameter t (e.g. t=128 or 256) 
+      as it is more complex and not supported by TPMv2.
+    </p>
+  </section>
+
+  <section>
+    <h3>ECDAA Algorithm Names</h3>
+
+    We define the following JWS-style algorithm names (see [[RFC7515]]):
+    <dl>
+      <dt>ED256</dt>
+      <dd><code>TPM_ECC_BN_P256</code> curve, using SHA256 as hash algorithm H.</dd>
+      <dt>ED256-2</dt>
+      <dd><code>ECC_BN_DSD_P256</code> curve, using SHA256 as hash algorithm H.</dd>
+      <dt>ED512</dt>
+      <dd><code>ECC_BN_ISOP512</code> curve, using SHA512 as hash algorithm H.</dd>
+      <dt>ED638</dt>
+      <dd><code>TPM_ECC_BN_P638</code> curve, using SHA512 as hash algorithm H.</dd>
+    </dl>
+
+  </section>
+
+  <section>
+    <h3>ecdaaSignature object</h3>
+
+    <p>
+      The fields c and s both have length N.
+      The fields R, S, T, W have equal length (2*N+1 each).  
+    </p>
+    <p>In the case of BN_P256 curve (with key length N=32 bytes), the fields 
+      R, S, T, W have length 2*32+1=65 bytes.  The fields c and s have length N=32 each.</p>
+    <p>The ecdaaSignature object is a binary object generated as 
+      the concatenation of the binary fields in the order described below (total length of 324 bytes for 256bit curves):
+    </p>
+    <table class="tlv">
+      <thead>
+	<tr>
+	  <th>Value</th>
+	  <th>Length (in Bytes)</th>
+	  <th>Description</th>
+	</tr>
+      </thead>      
+      <tbody>
+	<tr>
+	  <td>UINT8[] ECDAA_Signature_c</td>
+	  <td>N</td>
+	  <td>The c value, c=H(U | S | W | <a>KRD</a> | <a>AppID</a>) as returned by AuthnrEcdaaSign encoded 
+	    as byte string according to BigNumberToB.
+	    <p>Where 
+	      <ul>
+		<li>\(U = S^r\), with \(r = RAND(p)\) computed by the signer.</li>
+		<li><a>KRD</a> is the the entire to-be-signed object (e.g. TAG_UAFV1_KRD in the case of FIDO UAF).</li>
+		<li>\(S = B^l\), with \(l = RAND(p)\) computed by the signer and \(B = A^y\) computed in the ECDAA-Join</li>
+	      </ul>
+	    <p>
+	  </td>
+	</tr>
+	<tr>
+	  <td>UINT8[] ECDAA_Signature_s</td>
+	  <td>N</td>
+	  <td>The s value, s=r + c * sk (mod p), as returned by AuthnrEcdaaSign encoded 
+	    as byte string according to BigNumberToB.
+	    <p>Where
+	      <ul>
+		<li>r = RAND(p), computed by the signer at FIDO registration
+		  (see <a href='#ecdaa-sign-split-between-authenticator-and-asm'></a>)</li>
+		<li>p is the group order of G1</li>
+		<li>sk: is the <a>authenticator</a>'s attestation secret key, see above</li>
+	      </ul>
+	    </p>
+	  </td>
+	</tr>
+
+	<tr>
+	  <td>UINT8[] ECDAA_Signature_R</td>
+	  <td>2*N+1</td>
+	  <td>\(R = A^l\); computed by the <a>ASM</a> or the 
+	    <a>authenticator</a> at FIDO registration; encoded 
+	    as byte string according to ECPointToB.  Where
+	    <ul>
+	      <li>
+		l = RAND(p), i.e. random number 0&le;l&le;p. 
+		Computed by the <a>ASM</a> or the <a>authenticator</a> at FIDO registration.
+	      </li>
+  	      <li>
+		And where \(R = A^l\) denotes the scalar 
+		multiplication (of scalar l) of a curve point A.
+	      </li>
+	      <li>Where A has been provided by the ECDAA-Issuer as part of ECDAA-Join: \(A = P_1^{l_J}\), 
+		see <a href='#ecdaa-join-algorithm'></a>.
+	      </li>
+	      <li>Where \(P_1\) and p are system values, injected into the <a>authenticator</a> and \(l_J\) 
+		is a random number computed by the ECDAA-Issuer on Join.</li>
+	    </ul>
+          </td>
+	</tr>
+	<tr>
+	  <td>UINT8[] ECDAA_Signature_S</td>
+	  <td>2*N+1</td>
+	  <td>\(S = B^l\); computed by the <a>ASM</a> or the <a>authenticator</a> at 
+	    FIDO registration encoded as byte string according to ECPointToB.
+	    <p>Where B has been provided by the ECDAA-Issuer on Join: \(B = A^{y}\), 
+	      see <a href='#ecdaa-join-algorithm'></a>.</p>
+	  </td>
+	</tr>
+	<tr>
+	  <td>UINT8[] ECDAA_Signature_T</td>
+	  <td>2*N+1</td>
+	  <td>\(T = C^l\); computed by the <a>ASM</a> or the <a>authenticator</a> 
+	    at FIDO registration encoded as byte string according to ECPointToB.
+	    Where 
+	    <ul>
+	      <li>\(C = A^{x} \cdot Q^{x y l_J}\), provided by the ECDAA-Issuer on Join</li>
+	      <li>\(l_J = RAND(p)\) computed by the ECDAA-Issuer at Join 
+		(see <a href='#ecdaa-join-algorithm'></a>)</li>
+	      <li>x and y are components of the ECDAA-Issuer private key, iskk=(x,y).</li>
+	      <li>Q is the <a>authenticator</a> public key</li>
+	    </ul>
+	  </td>
+	</tr>
+	<tr>
+	  <td>UINT8[] ECDAA_Signature_W</td>
+	  <td>2*N+1</td>
+	  <td>\(W = D^l\); computed by the <a>ASM</a> or the <a>authenticator</a> at 
+	    FIDO registration encoded as byte string according to ECPointToB.
+	    <p>Where \(D = Q^{l_J y}\) is computed by the ECDAA-Issuer at Join 
+	      (see <a href='#ecdaa-join-algorithm'></a>).</p>
+	  </td>
+	</tr>
+      </tbody>
+    </table>
+  </section>
+</section>
+
+<section class="informative">
+  <h2>Considerations</h2>
+  A detailed security analysis of this algorithm can be found in [[FIDO-DAA-Security-Proof]].
+
+  <section>
+    <h3>Algorithms and Key Sizes</h3>
+    <p>The proposed algorithms and key sizes are chosen such that compatibility to TPMv2 is possible.</p>
+  </section>
+
+  <section>
+    <h3>Indicating the Authenticator Model</h3>
+    <p>
+      Some authenticators (e.g. TPMv2) do not have the ability to 
+      include their model (i.e. vendor ID and model name) in attested messages (i.e. the to-be-signed part
+      of the registration assertion).  The TPM's endorsement key certificate typically 
+      contains that information directly or at least it allows the model to be derived 
+      from the endorsement key certificate.
+    </p>
+    <p>
+      In FIDO, the relying party expects the ability to cryptographically verify the <a>authenticator</a>
+      model.
+    <p>
+      We require the ECDAA-Issuers public key (ipk=(X,Y,c,sx,sy)) 
+      to be dedicated to one single <a>authenticator</a> model (e.g. as identified by AAID or AAGUID).
+    </p>
+  </section>
+
+  <section>
+    <h3>Revocation</h3>
+    <p>
+      If the private ECDAA attestation key \(sk\) of an 
+      <a>authenticator</a> has been leaked, it can be revoked by adding
+      its value to a RogueList.  
+    </p>
+    <p>
+      The ECDAA-Verifier (i.e. FIDO Server) check for such revocations.  
+      See section <a href='#ecdaa-verify-operation'></a>.
+    </p>
+    <p>
+      The ECDAA-Issuer is expected to check revocation by other means:
+      <ol>
+	<li>if ECDAA-Join is done in-factory, it is assumed that produced devices are known to be 
+	  uncompomised (at time of production).</li>
+	<li>if a remote ECDAA-Join is performed, the (remote) ECDAA-Issuer already must use a 
+	  different method to remotely authenticate the <a>authenticator</a> (e.g. using some endorsement key).
+	  We expect the ECDAA-Issuer to perform a revocation check based on that information.
+	  This is even more flexible as it does not require access to the <a>authenticator</a>
+	  ECDAA private key \(sk\).
+	</li>
+      </ol>
+    </p>
+  </section>
+
+  <section>
+    <h3>Pairing Algorithm</h3>
+    <p>
+      The pairing algorithm <code>e</code> needs to be used by the <a>ASM</a> as part of the Join process and by the
+      verifier (i.e. FIDO relying party) as part of the verification (i.e. FIDO registration) process.
+    </p>
+    <p>
+      The result of such a pairing operation is only compared to the result of another 
+      pairing operation computed by the same entity.
+      As a consequence, it doesn't matter whether the <a>ASM</a> and the verifier use the exact same pairings or not
+      (as long as they both use valid pairings).
+    </p>
+    
+  </section>
+
+  <section>
+    <h3>Performance</h3>
+    <p>
+      For performance reasons the calculation of Sig2=(\(R, S, T, W\)) may be performed by the <a>ASM</a> running 
+      on the FIDO user device (as opposed to inside the <a>authenticator</a>).  
+      See section <a href='#ecdaa-sign-split-between-authenticator-and-asm'></a>.
+    </p>
+    <p>
+      The cryptographic computations to be performed inside the <a>authenticator</a> are limited to G1.
+      The ECDAA-Issuer has to perform two G2 point multiplications for computing the public key.
+      The Verifier (i.e. FIDO relying party) has to perform G1 operations and two pairing operations.
+    </p>
+    
+  </section>
+
+  <section>
+    <h3>Binary Concatentation</h3>
+    <p>
+      We use a simple byte-wise concatenation function for the different parameters, i.e.
+      H(a,b) = H(a | b).  
+    </p>
+    <p>This approach is as secure as the underlying hash algorithm since
+      the <a>authenticator</a> controls the length of the (fixed-length) values (e.g. U, S, W).  
+      The <a>AppID</a> is provided externally and has unverified structure and length.  However, it is only
+      followed by a fixed length entry - the (system defined) hash of <a>KRD</a>.  As a consequence, no parts 
+      of the <a>AppID</a> would ever be confused with the fixed length value.      
+    </p>
+  </section>
+
+  <section>
+    <h3>IANA Considerations</h3>    
+    This specification registers the algorithm names "ED256", "ED512", and "ED638" defined in section 
+    <a href='#fido-ecdaa-object-formats-and-algorithm-details'></a> 
+     with the IANA JSON Web Algorithms registry as defined in section 
+    "Cryptographic Algorithms for Digital Signatures and MACs" in [[RFC7518]]. 
+
+    <p>
+      <table class="tlv">
+	<tbody>
+	  <tr>
+	    <td>Algorithm Name</td>
+	    <td>"ED256"</td>
+	  </tr>
+	  <tr>
+	    <td>Algorithm Description</td>
+	    <td>FIDO ECDAA algorithm based on TPM_ECC_BN_P256 [[!TPMv2-Part4]] curve using SHA256 hash algorithm.</td>
+	  </tr>
+	  <tr>
+	    <td>Algorithm Usage Location(s)</td>
+	    <td>"alg", i.e. used with JWS.</td>
+	  </tr>
+	  <tr>
+	    <td>JOSE Implementation Requirements</td>
+	    <td>Optional</td>
+	  </tr>
+	  <tr>
+	    <td>Change Controller</td>
+	    <td>FIDO Alliance, <a href='https://fidoalliance.org/contact/'>Contact Us</a></td>
+	  </tr>
+	  <tr>
+	    <td>Specification Documents</td>
+	    <td>Sections <a href='#fido-ecdaa-attestation'></a>
+		and <a href='#fido-ecdaa-object-formats-and-algorithm-details'></a> of [[FIDOEcdaaAlgorithm]].</td>
+	  </tr>
+	  <tr>
+	    <td>Algorithm Analysis Document(s)</td>
+	    <td>[[FIDO-DAA-Security-Proof]]</td>
+	  </tr>
+	</tbody>
+      </table>	
+    </p>
+
+    <p>
+      <table class="tlv">
+	<tbody>
+	  <tr>
+	    <td>Algorithm Name</td>
+	    <td>"ED512"</td>
+	  </tr>
+	  <tr>
+	    <td>Algorithm Description</td>
+	    <td>ECDAA algorithm based on ECC_BN_ISOP512 [[ISO15946-5]] curve using SHA512 algorithm.</td>
+	  </tr>
+	  <tr>
+	    <td>Algorithm Usage Location(s)</td>
+	    <td>"alg", i.e. used with JWS.</td>
+	  </tr>
+	  <tr>
+	    <td>JOSE Implementation Requirements</td>
+	    <td>Optional</td>
+	  </tr>
+	  <tr>
+	    <td>Change Controller</td>
+	    <td>FIDO Alliance, <a href='https://fidoalliance.org/contact/'>Contact Us</a></td>
+	  </tr>
+	  <tr>
+	    <td>Specification Documents</td>
+	    <td>Sections <a href='#fido-ecdaa-attestation'></a>
+		and <a href='#fido-ecdaa-object-formats-and-algorithm-details'></a> of [[FIDOEcdaaAlgorithm]].</td>
+	  </tr>
+	  <tr>
+	    <td>Algorithm Analysis Document(s)</td>
+	    <td>[[FIDO-DAA-Security-Proof]]</td>
+	  </tr>
+	</tbody>
+      </table>	
+    </p>
+
+    <p>
+      <table class="tlv">
+	<tbody>
+	  <tr>
+	    <td>Algorithm Name</td>
+	    <td>"ED638"</td>
+	  </tr>
+	  <tr>
+	    <td>Algorithm Description</td>
+	    <td>ECDAA algorithm based on TPM_ECC_BN_P638 [[TPMv2-Part4]] curve using SHA512 algorithm.</td>
+	  </tr>
+	  <tr>
+	    <td>Algorithm Usage Location(s)</td>
+	    <td>"alg", i.e. used with JWS.</td>
+	  </tr>
+	  <tr>
+	    <td>JOSE Implementation Requirements</td>
+	    <td>Optional</td>
+	  </tr>
+	  <tr>
+	    <td>Change Controller</td>
+	    <td>FIDO Alliance, <a href='https://fidoalliance.org/contact/'>Contact Us</a></td>
+	  </tr>
+	  <tr>
+	    <td>Specification Documents</td>
+	    <td>Sections <a href='#fido-ecdaa-attestation'></a>
+		and <a href='#fido-ecdaa-object-formats-and-algorithm-details'></a> of [[FIDOEcdaaAlgorithm]].</td>
+	  </tr>
+	  <tr>
+	    <td>Algorithm Analysis Document(s)</td>
+	    <td>[[FIDO-DAA-Security-Proof]]</td>
+	  </tr>
+	</tbody>
+      </table>	
+    </p>
+
+  </section>
+</section>
+
+<section>
+  <h2>Acknowledgements</h2>
+  We thank Jan Camenisch, Manu Drijvers and Anja Lehmann from IBM Research, 
+  Zürich for their review of, and contributions to, this ECDAA algorithm. 
+</section>
+</body>
+</html>

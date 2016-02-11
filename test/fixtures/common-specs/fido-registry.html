@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>FIDO Registry of Predefined Values</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <script src='resources/respec-fido-common.js' class='remove' async></script>
+    <script type="text/javascript" class="remove">
+      var respecConfig = {
+      // specification status (e.g. WD, RD, ID, etc.). If in doubt use WD.
+      specStatus: "WD",
+       specVersion: "v1.3",
+       specFamily: "uaf",
+      
+      // shortName is what is termed specInRepoStemFN in..
+      // https://confluence.fidoalliance.org/display/ALL/FIDO+Alliance+filenaming+and+version+labeling+conventions
+      shortName: "fido-registry",
+      
+      // if your specification has a subtitle that goes below the main
+      // formal title, define it here
+      // subtitle   :  "an excellent document",
+      
+      // if you wish the publication date to be other than today, set this
+      // NOTE: UNCOMMENT THIS PRIOR TO RUNNING release-tool/release.pl for a release, 
+      //       whether internal or external (TODO: release-tool should take care of this)...
+      //publishDate: "2015-09-02", 
+      
+      // if the specification's copyright date is a range of years, specify
+      // the start date here:
+      copyrightStart: "2013",
+      
+      // if there is a previously published draft, uncomment this and set its YYYY-MM-DD date
+      // and its maturity status, OR, comment the latter two items out, and add an 
+      // explicit prevVersion URI pointing to the previously publicly published version...
+      //previousPublishDate: "",
+      //previousMaturity: "",
+      prevVersion: "https://fidoalliance.org/specs/fido-uaf-v1.0-ps-20141208/fido-uaf-reg-v1.0-ps-20141208.html",
+      
+      // if there a publicly available Editor's Draft, this is the link
+      edDraftURI: "",
+      
+      // if this is a LCWD, uncomment and set the end of its review period
+      // lcEnd: "2009-08-05",
+      
+      // editors, add as many as you like
+      // only "name" is required
+      editors: [
+                {
+                    name: "Rolf Lindemann",
+                    url: "mailto://rolf@noknok.com",
+                    company: "Nok Nok Labs, Inc.",
+                    companyURL: "https://www.noknok.com/"
+                },
+        ],
+
+            // authors, add as many as you like. 
+            // This is optional, uncomment if you have authors as well as editors.
+            // only "name" is required. Same format as editors.
+
+            authors: [
+                {
+                    name: "Davit Baghdasaryan",
+                    url: "",
+                    company: "Nok Nok Labs, Inc.",
+                    companyURL: "https://www.noknok.com/"
+                },
+                {
+                    name: "Brad Hill",
+                    url: "",
+                    company: "PayPal",
+                    companyURL: "https://www.paypal.com/"
+                },
+        ],
+
+            // name of the WG
+            wg: "FIDO Alliance",
+
+            // URI of the public WG page
+            wgURI: "https://fidoalliance.org/",
+
+            // name (with the @w3c.org) of the public mailing to which comments are due
+            //wgPublicList: "public-webappsec",
+
+
+            // local bibliography
+
+
+        };
+    </script>
+    <script src='resources/fido-refs.js' class='remove'></script>   
+</head>
+
+<body>
+  <!-- only modify this if a custom Status of this Document is needed -->
+  <section id='sotd'></section>
+  
+  <section id='abstract'>
+    <p>This document defines all the strings and constants reserved by FIDO protocols. 
+      The values defined in this document are referenced by various FIDO specifications.</p>
+  </section>
+  
+  <section>
+    <h2>Notation</h2>
+    
+    <p>Type names, attribute names and element names are written as <code>code</code>.</p>
+    
+    <p>String literals are enclosed in “”, e.g. “UAF-TLV”.</p>
+    
+    <p>In formulas we use “|” to denote byte wise concatenation operations.</p>
+    
+    <p>FIDO specific terminology used in this document is defined in [[!FIDOGlossary]].</p>
+
+    <p>Some entries are marked as <b>"(optional)"</b> in this spec.  The meaning of this is defined 
+      in other FIDO specifications referring to this document.
+    </p>
+
+    <section id="conformance">  <!-- inserts normative/non-normative & RFC2119 boilerplate -->
+      <!-- add any extra language your spec requires here -->
+    </section>
+  </section>
+  <section class="informative">
+    <h2>Overview</h2>
+    <p>This document defines the registry of FIDO-specific constants common 
+      to multiple FIDO protocol families.
+      It is expected that, over time, new constants will be added to this registry. For 
+      example new authentication algorithms and
+      new types of authenticator characteristics will require new constants to be defined 
+      for use within the specifications.</p>
+  </section>
+
+  <section class="normativeDisclaimer">
+    <h2>Authenticator Characteristics</h2>
+
+    <section>
+      <h3>User Verification Methods</h3>
+      <p>The <code>USER_VERIFY</code> constants are flags in a bitfield represented 
+	as a 32 bit long integer. They describe
+	the methods and capabilities of an UAF authenticator for <i>locally</i> verifying 
+	a user. The operational details of
+	these methods are opaque to the server. These constants are used in the 
+	authoritative metadata for an authenticator,
+	reported and queried through the UAF Discovery APIs, and used to form authenticator 
+	policies in UAF protocol messages.</p>
+      <p>All user verification methods must be performed locally by the authenticator 
+	in order to meet FIDO privacy principles. </p>
+      <dl>
+        <dt><code>USER_VERIFY_PRESENCE</code> <code>0x00000001</code></dt>
+        <dd>This flag MUST be set if the authenticator is able to confirm user presence 
+	  in any fashion. If this flag and no
+	  other is set for user verification, the guarantee is only that the authenticator 
+	  cannot be operated without some human
+	  intervention, not necessarily that the presence verification provides any level 
+	  of authentication of the human's identity.
+	  (e.g. a device that requires a touch to activate)</dd>
+        <dt><code>USER_VERIFY_FINGERPRINT</code> <code>0x00000002</code></dt>
+        <dd>This flag MUST be set if the authenticator uses any type of measurement of 
+	  a fingerprint for user verification.</dd>
+        <dt><code>USER_VERIFY_PASSCODE</code> <code>0x00000004</code></dt>
+        <dd>This flag MUST be set if the authenticator uses a local-only passcode 
+	  (i.e. a passcode not known by the server) for user verification.</dd>
+        <dt><code>USER_VERIFY_VOICEPRINT</code> <code>0x00000008</code></dt>
+        <dd>This flag MUST be set if the authenticator uses a voiceprint (also known as speaker recognition) 
+	  for user verification.</dd>
+        <dt><code>USER_VERIFY_FACEPRINT</code> <code>0x00000010</code></dt>
+        <dd>This flag MUST be set if the authenticator uses any manner of face recognition 
+	  to verify the user.</dd>
+        <dt><code>USER_VERIFY_LOCATION</code> <code>0x00000020</code></dt>
+        <dd>This flag MUST be set if the authenticator uses any form of location sensor 
+	  or measurement for user verification.</dd>
+        <dt><code>USER_VERIFY_EYEPRINT</code> <code>0x00000040</code></dt>
+        <dd>This flag MUST be set if the authenticator uses any form of eye biometrics 
+	  for user verification.</dd>
+        <dt><code>USER_VERIFY_PATTERN</code> <code>0x00000080</code></dt>
+        <dd>This flag MUST be set if the authenticator uses a drawn pattern for user verification.</dd>
+        <dt><code>USER_VERIFY_HANDPRINT</code> <code>0x00000100</code></dt>
+        <dd>This flag MUST be set if the authenticator uses any measurement of a full 
+	  hand (including palm-print, hand geometry or vein geometry) for user verification.</dd>
+        <dt><code>USER_VERIFY_NONE</code> <code>0x00000200</code></dt>
+        <dd>This flag MUST be set if the authenticator will respond without any 
+	  user interaction (e.g. Silent Authenticator).
+        </dd>
+        <dt><code>USER_VERIFY_ALL</code> <code>0x00000400</code></dt>
+        <dd>If an authenticator sets multiple flags for user verification types, it MAY 
+	  also set this flag to indicate that all verification methods will be enforced 
+	  (e.g. faceprint AND voiceprint). If flags for multiple
+          user verification methods are set and this flag is not set, verification with 
+	  only one is necessary (e.g. fingerprint OR passcode).</dd>
+      </dl>
+    </section>
+
+
+    <section>
+      <h3>Key Protection Types</h3>
+      <p>The <code>KEY_PROTECTION</code> constants are flags in a bit field 
+	represented as a 16 bit long integer.  They describe the method an 
+	authenticator uses to protect the private key material for FIDO registrations.
+	Refer to [[UAFAuthnrCommands]] for more details on the relevance of keys and 
+	key protection.  These constants are used in the authoritative metadata for an 
+	authenticator, reported and queried through the UAF Discovery APIs, and used to 
+	form authenticator policies in UAF protocol messages. </p>
+      <p>When used in metadata describing an authenticator, several of these flags are <em>exclusive</em> of 
+	others (i.e. can not be combined) - the certified metadata may have
+	at most one of the mutually exclusive bits set to 1. When used in authenticator 
+	policy, any bit may be set to 1, e.g. to indicate that a server is 
+	willing to accept authenticators using either <code>KEY_PROTECTION_SOFTWARE</code> or
+	<code>KEY_PROTECTION_HARDWARE</code>.</p>
+      <p class="note">These flags must be set according to the <i>effective</i> security of the 
+	keys, in order to follow the assumptions made in [[FIDOSecRef]].  For example, if a key
+	is stored in a secure element <i>but</i> software running on the FIDO User Device 
+	could call a function in the secure element to export the key either in the clear or using 
+	an arbitrary wrapping key, then the effective security is <code>KEY_PROTECTION_SOFTWARE</code> and 
+	not <code>KEY_PROTECTION_SECURE_ELEMENT</code>.
+      </p>
+      <dl>
+        <dt><code>KEY_PROTECTION_SOFTWARE</code> <code>0x0001</code></dt>
+        <dd>This flag MUST be set if the authenticator uses software-based key management. 
+	  Exclusive in authenticator metadata with
+          <code>KEY_PROTECTION_HARDWARE</code>, <code>KEY_PROTECTION_TEE</code>, 
+	  <code>KEY_PROTECTION_SECURE_ELEMENT</code>
+        </dd>
+        <dt><code>KEY_PROTECTION_HARDWARE</code> <code>0x0002</code></dt>
+        <dd>This flag SHOULD be set if the authenticator uses hardware-based key management. 
+	  Exclusive in authenticator metadata with
+          <code>KEY_PROTECTION_SOFTWARE</code>
+        </dd>
+        <dt><code>KEY_PROTECTION_TEE</code> <code>0x0004</code></dt>
+        <dd>This flag SHOULD be set if the authenticator uses the Trusted Execution 
+	  Environment [[TEE]] for key management. In authenticator metadata,
+	  this flag should be set in conjunction with <code>KEY_PROTECTION_HARDWARE</code>. 
+	  Mutually exclusive in authenticator metadata with
+          <code>KEY_PROTECTION_SOFTWARE</code>, <code>KEY_PROTECTION_SECURE_ELEMENT</code>
+        </dd>
+        <dt><code>KEY_PROTECTION_SECURE_ELEMENT</code> <code>0x0008</code></dt>
+        <dd>This flag SHOULD be set if the authenticator uses a 
+	  Secure Element [[SecureElement]] for key management. In authenticator metadata,
+	  this flag should be set in conjunction with <code>KEY_PROTECTION_HARDWARE</code>. 
+	  Mutually exclusive in authenticator metadata with
+	  <code>KEY_PROTECTION_TEE</code>, <code>KEY_PROTECTION_SOFTWARE</code>
+        </dd>
+        <dt><code>KEY_PROTECTION_REMOTE_HANDLE</code> <code>0x0010</code></dt>
+        <dd>This flag MUST be set if the authenticator does not store (wrapped) UAuth keys 
+	  at the client, but relies on a server-provided key handle.
+	  This flag MUST be set in conjunction with one of the other <code>KEY_PROTECTION</code> 
+	  flags to indicate how the local key handle wrapping key and operations are protected. 
+	  Servers MAY unset this flag in authenticator policy if they are not prepared to store and return
+	  key handles, for example, if they have a requirement to respond 
+	  indistinguishably to authentication attempts against userIDs that do and
+	  do not exist. Refer to [[UAFProtocol]] for more details.</dd>    
+      </dl>
+    </section>
+    
+    
+    <section>
+      <h3>Matcher Protection Types</h3>
+      <p>The <code>MATCHER_PROTECTION</code> constants are flags in a bit field 
+	represented as a 16 bit long integer.
+	They describe the method an authenticator uses to protect the matcher 
+	that performs user verification. 
+	These constants are used in the authoritative metadata for an authenticator, 
+	reported and queried through 
+	the UAF Discovery APIs, and used to form authenticator policies in 
+	UAF protocol messages.  Refer to [[UAFAuthnrCommands]]
+	for more details on the matcher component.</p>
+      <p class="note">These flags must be set according to the <i>effective</i> security of the 
+	matcher, in order to follow the assumptions made in [[FIDOSecRef]].  For example, if a passcode based
+	matcher is implemented in a secure element, but the passcode is expected to be 
+	provided as unauthenticated parameter, then the effective security 
+	is <code>MATCHER_PROTECTION_SOFTWARE</code> and 
+	not <code>MATCHER_PROTECTION_ON_CHIP</code>.
+      </p>
+      <dl>
+        <dt><code>MATCHER_PROTECTION_SOFTWARE</code> <code>0x0001</code></dt>
+        <dd>This flag MUST be set if the authenticator's matcher is running in software. 
+	  Exclusive in authenticator metadata with
+          <code>MATCHER_PROTECTION_TEE</code>,
+          <code>MATCHER_PROTECTION_ON_CHIP</code>
+        </dd>
+        <dt><code>MATCHER_PROTECTION_TEE</code> <code>0x0002</code></dt>
+        <dd>This flag SHOULD be set if the authenticator's matcher is running inside 
+	  the Trusted Execution Environment [[TEE]]. Mutually exclusive in authenticator metadata with
+          <code>MATCHER_PROTECTION_SOFTWARE</code>,
+          <code>MATCHER_PROTECTION_ON_CHIP</code>
+        </dd>
+        <dt><code>MATCHER_PROTECTION_ON_CHIP</code> <code>0x0004</code></dt>
+        <dd>This flag SHOULD be set if the authenticator's matcher is running on the chip. 
+	  Mutually exclusive in authenticator metadata with <code>MATCHER_PROTECTION_TEE</code>,
+          <code>MATCHER_PROTECTION_SOFTWARE</code>
+        </dd>
+      </dl>
+    </section>
+	
+    
+    <section>
+      <h3>Authenticator Attachment Hints</h3>
+      <p>The <code>ATTACHMENT_HINT</code> constants are flags in a bit field 
+	represented as a 32 bit long. They describe the method an
+	authenticator uses to communicate with the FIDO User Device. These constants are reported and
+	queried through the UAF Discovery APIs [[UAFAppAPIAndTransport]], and used to form Authenticator 
+	policies in UAF protocol messages. Because the connection
+	state and topology of an authenticator may be transient, these values are 
+	only hints that can be used by server-supplied policy
+	to guide the user experience, e.g. to prefer a device that is connected and 
+	ready for authenticating or confirming a low-value transaction,
+	rather than one that is more secure but requires more user effort.</p> 
+      <p class="note">These flags are not a mandatory part of authenticator metadata and,
+	when present, only indicate possible states that may be reported during 
+	authenticator discovery.</p>
+      <dl>
+        <dt><code>ATTACHMENT_HINT_INTERNAL</code> <code>0x0001</code></dt>
+        <dd>This flag MAY be set to indicate that the authenticator is permanently attached 
+	  to the FIDO User Device.
+          <p>A device such as a smartphone may have authenticator functionality 
+	    that is able to be used both locally and remotely.
+	    In such a case, the FIDO client MUST filter and exclusively 
+	    report only the relevant bit during Discovery and when performing policy matching.</p>
+          <p>This flag cannot be combined with any other <code>ATTACHMENT_HINT</code> flags.</p>
+        </dd>
+        <dt><code>ATTACHMENT_HINT_EXTERNAL</code> <code>0x0002</code></dt>
+        <dd>This flag MAY be set to indicate, for a hardware-based authenticator, that 
+	  it is removable or remote from the FIDO User Device. 
+	  <p>A device such as a smartphone may have 
+	    authenticator functionality that is able to be used
+	    both locally and remotely. In such a case, the FIDO UAF Client MUST filter and 
+	    exclusively report only the relevant bit during
+	    discovery and when performing policy matching.</p>
+	</dd>
+	
+        <dt><code>ATTACHMENT_HINT_WIRED</code> <code>0x0004</code></dt>
+        <dd>This flag MAY be set to indicate that an external authenticator currently has an exclusive 
+	  wired connection, e.g. through USB, Firewire
+	  or similar, to the FIDO User Device.</dd>
+	
+        <dt><code>ATTACHMENT_HINT_WIRELESS</code> <code>0x0008</code></dt>
+        <dd>This flag MAY be set to indicate that an external authenticator communicates with the FIDO User Device
+	  through a personal area or otherwise non-routed wireless protocol, such as Bluetooth or NFC.</dd>
+	
+        <dt><code>ATTACHMENT_HINT_NFC</code> <code>0x0010</code></dt>
+        <dd>This flag MAY be set to indicate that an external authenticator is able to communicate by NFC 
+	  to the FIDO User Device. As part of
+	  authenticator metadata, or when reporting characteristics through discovery, if this flag is set, the
+          <code>ATTACHMENT_HINT_WIRELESS</code> flag SHOULD also be set as well.</dd>
+	
+        <dt><code>ATTACHMENT_HINT_BLUETOOTH</code> <code>0x0020</code></dt>
+        <dd>This flag MAY be set to indicate that an external authenticator is able to communicate using 
+	  Bluetooth with the FIDO User Device.
+	  As part of authenticator metadata, or when reporting characteristics through 
+	  discovery, if this flag is set, the
+          <code>ATTACHMENT_HINT_WIRELESS</code> flag SHOULD also be set.</dd>
+	
+        <dt><code>ATTACHMENT_HINT_NETWORK</code> <code>0x0040</code></dt>
+        <dd>This flag MAY be set to indicate that the authenticator is connected to the FIDO User Device
+	  ver a non-exclusive network (e.g. over a TCP/IP LAN or WAN, as opposed 
+	  to a PAN or point-to-point connection).</dd>
+        <dt><code>ATTACHMENT_HINT_READY</code> <code>0x0080</code></dt>
+        <dd>Thif flag MAY be set to indicate that an external authenticator is in a "ready" state. This flag 
+	  is set by the ASM at its discretion.
+	  <p class="note">Generally this should indicate that the device is immediately available to 
+	    perform user verification without additional
+	    actions such as connecting the device or creating a new biometric 
+	    profile enrollment, but the exact meaning may vary for
+	    different types of devices. For example, a USB authenticator may only 
+	    report itself as ready when it is plugged in,
+	    or a Bluetooth authenticator when it is paired and connected, but an 
+	    NFC-based authenticator may always report itself as ready.</p>
+	</dd>
+	
+        <dt><code>ATTACHMENT_HINT_WIFI_DIRECT</code> <code>0x0100</code></dt>
+        <dd>This flag MAY be set to indicate that an external authenticator is able to communicate using 
+	  WiFi Direct with the FIDO User Device.
+	  As part of authenticator metadata and when reporting characteristics 
+	  through discovery, if this flag is set, the
+          <code>ATTACHMENT_HINT_WIRELESS</code> flag SHOULD also be set.</dd>
+      </dl>
+    </section>
+    <section>
+      <h3>Transaction Confirmation Display Types</h3>
+      <p>The <code>TRANSACTION_CONFIRMATION_DISPLAY</code> constants are flags 
+	in a bit field represented as a 16 bit long
+	integer. They describe the availability and implementation of a 
+	transaction confirmation display capability required
+	for the transaction confirmation operation. These constants are 
+	used in the authoritative metadata for an authenticator,
+	reported and queried through the UAF Discovery APIs, and used to 
+	form authenticator policies in UAF protocol messages.
+	Refer to [[UAFAuthnrCommands]] for more details on the security aspects 
+	of TransactionConfirmation Display.</p>
+      <dl>
+        <dt><code>TRANSACTION_CONFIRMATION_DISPLAY_ANY</code> <code>0x0001</code></dt>
+        <dd>This flag MUST be set to indicate that a transaction confirmation 
+      display, of any type, is available on this authenticator. 
+      Other <code>TRANSACTION_CONFIRMATION_DISPLAY</code>  flags MAY also be set if this flag is set. 
+      If the authenticator does not support a transaction confirmation display, then the value of 
+      <code>TRANSACTION_CONFIRMATION_DISPLAY</code>  MUST be set to 0.
+      </dd>
+        <dt><code>TRANSACTION_CONFIRMATION_DISPLAY_PRIVILEGED_SOFTWARE</code> 
+	  <code>0x0002</code></dt>
+        <dd>This flag MUST be set to indicate, that a software-based transaction confirmation 
+	  display operating in a privileged context is available on this authenticator. 
+	  <p>A FIDO client that is capable of providing this 
+	    capability MAY set this bit (in conjunction with <code>TRANSACTION_CONFIRMATION_DISPLAY_ANY</code>) 
+	    for all authenticators of type
+            <code>ATTACHMENT_HINT_INTERNAL</code>, even if the authoritative metadata for the 
+	    authenticator does not indicate this capability.</p>
+	  <p class="note">Software based transaction confirmation displays might be implemented within 
+	    the boundaries of the ASM rather than by the authenticator itself [[UAFASM]].</p>
+	  This flag is mutually exclusive with <code>TRANSACTION_CONFIRMATION_DISPLAY_TEE</code> 
+	  and <code>TRANSACTION_CONFIRMATION_DISPLAY_HARDWARE</code>.
+	</dd>
+        <dt><code>TRANSACTION_CONFIRMATION_DISPLAY_TEE</code> <code>0x0004</code></dt>
+        <dd>This flag SHOULD be set to indicate that the authenticator implements a transaction confirmation 
+	  display in a Trusted Execution Environment ([[TEE]], [[TEESecureDisplay]]).
+	  This flag is mutually exclusive with
+	  <code>TRANSACTION_CONFIRMATION_DISPLAY_PRIVILEGED_SOFTWARE</code> and 
+	  <code>TRANSACTION_CONFIRMATION_DISPLAY_HARDWARE</code>.
+	</dd>
+        <dt><code>TRANSACTION_CONFIRMATION_DISPLAY_HARDWARE</code> <code>0x0008</code></dt>
+        <dd>This flag SHOULD be set to indicate that a transaction confirmation display based on 
+	  hardware assisted capabilities is available on this authenticator.
+	  This flag is mutually exclusive with 
+	  <code>TRANSACTION_CONFIRMATION_DISPLAY_PRIVILEGED_SOFTWARE</code> 
+	  and <code>TRANSACTION_CONFIRMATION_DISPLAY_TEE</code>.
+	</dd>
+        <dt><code>TRANSACTION_CONFIRMATION_DISPLAY_REMOTE</code> <code>0x0010</code></dt>
+        <dd>This flag SHOULD be set to indicate that the transaction confirmation display 
+	  is provided on a distinct device from the FIDO User Device.
+	  This flag can be combined with any other flag.
+	</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h3>Tags used for crypto algorithms and types</h3>
+      <p>These tags indicate the specific authentication algorithms, 
+	public key formats and other crypto relevant data.</p>
+
+      <section>
+        <h4>Authentication Algorithms</h4>
+        <p>The <code>ALG_SIGN</code> constants are 16 bit long integers indicating the specific
+	  signature algorithm and encoding.</p>
+	<p class="note">FIDO UAF supports RAW and DER signature encodings in order to allow small footprint
+	  authenticator implementations. 
+	</p>
+
+        <dl>
+          <dt><code>ALG_SIGN_SECP256R1_ECDSA_SHA256_RAW</code> <code>0x0001</code></dt>
+          <dd>An ECDSA signature on the NIST secp256r1 curve which MUST have raw R and S buffers, 
+	    encoded in big-endian order. 
+	    <p>I.e. <code>[R (32 bytes), S (32 bytes)]</code></p>
+	    <p>
+	      This algorithm is suitable for authenticators using the following key representation 
+	      formats:
+	    </p>
+	    <ul>
+	      <li>ALG_KEY_ECC_X962_RAW</li>
+	      <li>ALG_KEY_ECC_X962_DER</li>
+	    </ul>
+	  </dd>
+          
+	  <dt><code>ALG_SIGN_SECP256R1_ECDSA_SHA256_DER</code> <code>0x0002</code></dt>
+          <dd>DER [[!ITU-X690-2008]] encoded ECDSA signature [[!RFC5480]] on the NIST secp256r1 curve. 
+	    <p>I.e. a DER encoded <code>SEQUENCE { r INTEGER, s INTEGER }</code></p>
+	    <p>
+	      This algorithm is suitable for authenticators using the following key representation 
+	      formats:
+	    </p>
+	    <ul>
+	      <li>ALG_KEY_ECC_X962_RAW</li>
+	      <li>ALG_KEY_ECC_X962_DER</li>
+	    </ul>
+	  </dd>	      	      
+          
+	  <dt><code>ALG_SIGN_RSASSA_PSS_SHA256_RAW</code> <code>0x0003</code></dt>
+          <dd>RSASSA-PSS [[!RFC3447]] signature MUST have raw S buffers, 
+	    encoded in big-endian order [[!RFC4055]] [[!RFC4056]].
+	    The default parameters as specified in [[!RFC4055]] MUST be assumed, i.e.
+	    <ul>
+	      <li>Mask Generation Algorithm MGF1 with SHA256</li>
+	      <li>Salt Length of 32 bytes, i.e. the length of a SHA256 hash value.</li>
+	      <li>Trailer Field value of 1, which represents the trailer field with hexadecimal value <code>0xBC</code>.
+	    </ul>
+	    <p>I.e. <code>[ S (256 bytes) ]</code></p>
+
+	    <p>
+	      This algorithm is suitable for authenticators using the following key representation 
+	      formats:
+	    </p>
+	    <ul>
+	      <li>ALG_KEY_RSA_2048_RAW</li>
+	      <li>ALG_KEY_RSA_2048_DER</li>
+	    </ul>
+          </dd>
+
+          <dt><code>ALG_SIGN_RSASSA_PSS_SHA256_DER</code> <code>0x0004</code></dt>
+          <dd>DER [[!ITU-X690-2008]] encoded OCTET STRING (not BIT STRING!) containing the RSASSA-PSS [[!RFC3447]] 
+	    signature [[!RFC4055]] [[!RFC4056]].
+	    The default parameters as specified in [[!RFC4055]] MUST be assumed, i.e.
+	    <ul>
+	      <li>Mask Generation Algorithm MGF1 with SHA256</li>
+	      <li>Salt Length of 32 bytes, i.e. the length of a SHA256 hash value.</li>
+	      <li>Trailer Field value of 1, which represents the trailer field with hexadecimal value <code>0xBC</code>.
+	    </ul>
+	    <p>I.e. a DER encoded <code>OCTET STRING</code> (including its tag and length bytes).</p>
+	    <p>
+	      This algorithm is suitable for authenticators using the following key representation 
+	      formats:
+	    </p>
+	    <ul>
+	      <li>ALG_KEY_RSA_2048_RAW</li>
+	      <li>ALG_KEY_RSA_2048_DER</li>
+	    </ul>
+	  </dd>
+          
+          <dt><code>ALG_SIGN_SECP256K1_ECDSA_SHA256_RAW</code> <code>0x0005</code></dt>
+          <dd>An ECDSA signature on the secp256k1 curve which  MUST have raw R and S buffers, 
+	    encoded in big-endian order. 
+	    <p>I.e.<code>[R (32 bytes), S (32 bytes)]</code></p>
+	    <p>
+	      This algorithm is suitable for authenticators using the following key representation 
+	      formats:
+	    </p>
+	    <ul>
+	      <li>ALG_KEY_ECC_X962_RAW</li>
+	      <li>ALG_KEY_ECC_X962_DER</li>
+	    </ul>
+	  </dd>
+	  
+          <dt><code>ALG_SIGN_SECP256K1_ECDSA_SHA256_DER</code> <code>0x0006</code></dt>
+          <dd>DER [[!ITU-X690-2008]] encoded ECDSA signature [[RFC5480]] on the secp256k1 curve.
+	    <p>I.e. a DER encoded <code>SEQUENCE { r INTEGER, s INTEGER }</code></p>
+	    <p>
+	      This algorithm is suitable for authenticators using the following key representation 
+	      formats:
+	    </p>
+	    <ul>
+	      <li>ALG_KEY_ECC_X962_RAW</li>
+	      <li>ALG_KEY_ECC_X962_DER</li>
+	    </ul>
+	  </dd>
+
+	  <dt><code>ALG_SIGN_SM2_SM3_RAW</code> <code>0x0007</code> (optional)</dt>
+          <dd>
+	    Chinese SM2 elliptic curve based signature algorithm combined with SM3 hash algorithm
+	    [[!OSCCA-SM2]][[!OSCCA-SM3]]. We use the 256bit curve [[!OSCCA-SM2-curve-param]].
+	    <p>
+	      This algorithm is suitable for authenticators using the following key representation 
+	      format: ALG_KEY_ECC_X962_RAW.
+	    </p>
+	  </dd>
+
+	  <dt><code>ALG_SIGN_RSA_EMSA_PKCS1_SHA256_RAW</code> <code>0x0008</code></dt>
+	  <dd>
+	    This is the EMSA-PKCS1-v1_5 signature as defined in [[!RFC3447]].  This means that the encoded message EM 
+	    will be the input to the cryptographic signing algorithm RSASP1 as defined in [[!RFC3447]].  
+	    The result s of RSASP1 is then
+	    encoded using function I2OSP to produce the raw signature octets.
+	    <ul>
+	      <li><code>EM = 0x00 | 0x01 | PS | 0x00 | T</code></li>
+	      <li>with the padding string PS with length=emLen - tLen - 3 octets having the value 0xff for each octet, e.g.
+		<code>(0x) ff ff ff ff ff ff ff ff</code></li>
+	      <li>with the DER [[!ITU-X690-2008]] encoded DigestInfo value T: 
+		<code>(0x)30 31 30 0d 06 09 60 86 48 01 65 03 04 02 01 05 00 04 20 | H</code>, 
+		where H denotes the bytes of the SHA256 hash value.</li>
+	    </ul>
+	    <p>
+	      This algorithm is suitable for authenticators using the following key representation 
+	      formats:
+	    </p>
+	    <ul>
+	      <li>ALG_KEY_RSA_2048_RAW</li>
+	      <li>ALG_KEY_RSA_2048_DER</li>
+	    </ul>
+	    <p class="note">
+	      Implementers should verify that their implementation of 
+	      the PKCS#1 V1.5 signature follows the recommendations in 
+	      [[RFC3218]] to protect against adaptive chosen-ciphertext attacks such as Bleichenbacher.
+	    </p>
+	  </dd>
+
+	  <dt><code>ALG_SIGN_RSA_EMSA_PKCS1_SHA256_DER</code> <code>0x0009</code></dt>
+	  <dd>
+	    DER [[!ITU-X690-2008]] encoded OCTET STRING (not BIT STRING!) containing the EMSA-PKCS1-v1_5 
+	    signature as defined in [[!RFC3447]].  This means that the encoded message EM 
+	    will be the input to the cryptographic signing algorithm RSASP1 as defined in [[!RFC3447]].  
+	    The result s of RSASP1 is then
+	    encoded using function I2OSP to produce the raw signature.  The raw signature is DER [[!ITU-X690-2008]] 
+	    encoded as an OCTET STRING to produce the final signature octets.
+	    <ul>
+	      <li><code>EM = 0x00 | 0x01 | PS | 0x00 | T</code></li>
+	      <li>with the padding string PS with length=emLen - tLen - 3 octets having the value 0xff for each octet, e.g.
+		<code>(0x) ff ff ff ff ff ff ff ff</code></li>
+	      <li>with the DER encoded DigestInfo value T: <code>(0x)30 31 30 0d 06 09 60 86 48 01 65 03 04 02 01 05 00
+                   04 20 | H</code>, where H denotes the bytes of the SHA256 hash value.</li>
+	    </ul>
+	    <p>
+	      This algorithm is suitable for authenticators using the following key representation 
+	      formats:
+	    </p>
+	    <ul>
+	      <li>ALG_KEY_RSA_2048_RAW</li>
+	      <li>ALG_KEY_RSA_2048_DER</li>
+	    </ul>
+	    <p class="note">
+	      Implementers should verify that their implementation of 
+	      the PKCS#1 V1.5 signature follows the recommendations in 
+	      [[RFC3218]] to protect against adaptive chosen-ciphertext attacks such as Bleichenbacher.
+	    </p>
+	  </dd>
+        </dl>	
+      </section>
+	  
+      <section>
+        <h4>Public Key Representation Formats</h4>
+        <p>The <code>ALG_KEY</code> constants are 16 bit long integers indicating the specific
+	  Public Key algorithm and encoding.</p>
+	<p class="note">FIDO UAF supports RAW and DER encodings in order to allow small footprint
+	  authenticator implementations. By definition, the authenticator must encode the 
+	  public key as part of the registration assertion.
+	</p>
+
+        <dl>
+          <dt><code>ALG_KEY_ECC_X962_RAW</code> <code>0x0100</code></dt>
+          <dd>Raw ANSI X9.62 formatted Elliptic Curve public key [[!SEC1]].
+	    <p>I.e. <code>[0x04, X (32 bytes), Y (32 bytes)]</code>.  Where the 
+	      byte <code>0x04</code> denotes the uncompressed point compression method.</p>
+	  </dd>
+	  
+          <dt><code>ALG_KEY_ECC_X962_DER</code> <code>0x0101</code></dt>
+          <dd>DER [[!ITU-X690-2008]] encoded ANSI X.9.62 formatted  
+	    <code>SubjectPublicKeyInfo</code> [[!RFC5480]] specifying an elliptic curve public key.    
+	    <p>I.e. a DER encoded <code>SubjectPublicKeyInfo</code> as defined in [[!RFC5480]].</p>
+	    <p>Authenticator implementations MUST generate <code>namedCurve</code> 
+	      in the <code>ECParameters</code> object 
+	      which is included in the <code>AlgorithmIdentifier</code>. A FIDO UAF Server MUST accept
+	      <code>namedCurve</code> in the <code>ECParameters</code> object 
+	      which is included in the <code>AlgorithmIdentifier</code>.
+	    </p>
+	  </dd>
+	  
+          <dt><code>ALG_KEY_RSA_2048_RAW</code> <code>0x0102</code></dt>
+          <dd>Raw encoded RSASSA-PSS public key [[!RFC3447]].
+	    <p>That is, <code>[n (256 bytes), e (N-n bytes)]</code>.  
+	      Where <code>N</code> is the total length of the field.</p>
+	    <p>This total length should be taken from the object containing this key, 
+	      e.g. the TLV encoded field.</p>
+	  </dd>
+
+          <dt><code>ALG_KEY_RSA_2048_DER</code> <code>0x0103</code></dt>
+          <dd>ASN.1 DER [[!ITU-X690-2008]] encoded RSA [[!RFC3447]] public key [[!RFC4055]].
+	    <p>That is a DER encoded <code>SEQUENCE { n INTEGER, e INTEGER }</code>.</p>
+	  </dd>
+        </dl>
+      </section>
+    </section>
+      
+  <section id=tof>
+  </section>
+</body>
+
+</html>

@@ -1,5 +1,6 @@
 module.exports = {
 	clean: clean_directory,
+	maifest: load_manifests,
 	refs: update_refs,
 	html: modify_html_files,
 	copy: copy_files,
@@ -9,7 +10,7 @@ module.exports = {
 	commit: github_commit
 };
 
-var uafManifest = {
+var coreManifest = {
 	files: [
 		"fido-uaf-README.txt",
 		"fido-uaf-overview.html",
@@ -68,21 +69,25 @@ function clean_directory() {
 		return;
 	}
 
-	// this.log("Removing", this.templatePath());
-	// fse.removeSync (this.templatePath());
-
+	// TODO: check if release dir exists
 	this.log.debug("Destination directory: " + this.destinationPath() + " ...");
 	fse.removeSync (this.destinationPath());
-
-	// check if release dir exists
-
-	// remove <sepc>-specs
-	// remove common-specs
-	// remove resources
 }
 
+function load_manifests() {
+	coreManifest = require (this.templatePath(".fido-manifest.json"));
+	console.log ("coreManifest");
+	console.log (coreManifest);
 
+	commonManifest = require (this.templatePath("common/.fido-manifest.json"));
+	console.log ("commonManifest");
+	console.log (commonManifest);
 
+	resourcesManifest = require (this.templatePath("resources/.fido-manifest.json"));
+	console.log ("resourcesManifest");
+	console.log (resourcesManifest);
+	fuckyou()
+}
 
 // edit HTML, release.pl:622-671
 function modify_html_files() {
@@ -120,7 +125,7 @@ function copy_manifest_files (manifest, path) {
 // release.pl: 285-329
 function copy_files() {
 	this.log.debug ("Copying files from spec manifest...");
-	copy_manifest_files.call (this, uafManifest, ".");
+	copy_manifest_files.call (this, coreManifest, ".");
 	this.log.debug ("Copying files from resources manifest...");
 	copy_manifest_files.call (this, resourcesManifest, "resources");
 }

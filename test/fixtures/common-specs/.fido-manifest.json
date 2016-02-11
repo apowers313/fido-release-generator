@@ -1,0 +1,12 @@
+{
+	"files": [
+		"fido-metadata-service.html",
+		"fido-registry.html",
+		"fido-appid-and-facets.html",
+		"fido-security-ref.html",
+		"fido-glossary.html",
+		"img"
+		],
+	"templates": [],
+	"config": {}
+}

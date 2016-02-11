@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <title>FIDO UAF APDU</title>
+      <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+      <!--
+         === NOTA BENE ===
+         For the three scripts below, if your spec resides on dev.w3 you can check them
+         out in the same tree and use relative links so that they'll work offline,
+        -->
+      <script src='resources/respec-fido-common.js' class='remove' async></script>
+      <script type="text/javascript" class="remove">
+            var respecConfig = {
+                // specification status (e.g. WD, LCWD, NOTE, etc.). If in doubt use ED.
+                // Member-SUBM
+                specStatus: "WD",
+                specVersion: "v1.3",
+                specFamily: "uaf",   // specFamily is here for common-specs due to release-tool publishing
+                                      // and their being placed in to a release dir with whichever specFamily
+                                      // at release build time -- so the value of this var in the .html files in 
+                                      // common-specs repo will depend upon whichever spec family last 
+                                      // built a release snapshot
+                
+                // shortName is what is termed specInRepoStemFN in..
+                // https://confluence.fidoalliance.org/display/ALL/FIDO+Alliance+filenaming+and+version+labeling+conventions
+                shortName:  "fido-uaf-apdu",
+                
+                // if your specification has a subtitle that goes below the main
+                // formal title, define it here
+                // subtitle   :  "an excellent document",
+                
+                // if you wish the publication date to be other than today, set this
+                // NOTE: UNCOMMENT THIS PRIOR TO RUNNING release-tool/release.pl for a release,
+                //       whether internal or external (TODO: release-tool should take care of this)...
+                //publishDate: "2014-12-08",
+                
+                // if the specification's copyright date is a range of years, specify
+                // the start date here:
+                copyrightStart: "2013",
+                
+                // if there is a previously published draft, uncomment this and set its YYYY-MM-DD date
+                // and its maturity status, OR, comment the latter two items out, and add an
+                // explicit prevVersion URI pointing to the previously publicly published version...
+                //previousPublishDate: "",
+                //previousMaturity: "",
+                prevVersion: "",
+                
+                // if there a publicly available Editor's Draft, this is the link
+                edDraftURI: "",
+                
+                // if this is a LCWD, uncomment and set the end of its review period
+                // lcEnd: "2009-08-05",
+                
+                // editors, add as many as you like
+                // only "name" is required
+                editors:  [
+                           { name: "Naama Bak", url: "mailto:naama.bak@morpho.com",
+                           company: "Morpho", companyURL: "https://www.morpho.com/" }
+                           ],
+                           
+                // authors, add as many as you like.
+                // This is optional, uncomment if you have authors as well as editors.
+                // only "name" is required. Same format as editors.
+                           
+                authors:  [
+                    { name: "Virginie Galindo", url: "mailto:Virginie.Galindo@gemalto.com",
+                     company: "Gemalto", companyURL: "https://www.gemalto.com/" },
+                    { name: "Rolf Lindemann", url: "mailto:rolf@noknok.com",
+                      company: "Nok Nok Labs, Inc.", companyURL: "https://www.noknok.com/" },
+                    { name: "Ullrich Martini", url: "mailto:Ullrich.Martini@gi-de.com",
+                      company: "Giesecke & Devrient", companyURL: "https://www.gi-de.com/" },
+                    { name: "Chris Edwards", url: "mailto:Chris.Edwards@intercede.com",
+                      company: "Intercede", companyURL: "https://www.intercede.com/" },
+                    { name: "Jeff Hodges", url: "mailto:jeff.hodges@paypal.com",
+                      company: "Paypal", companyURL: "https://www.paypal.com/" }
+                ],
+                                      
+                // name of the WG
+                wg:           "FIDO Alliance",
+                                      
+                // URI of the public WG page
+                wgURI:        "https://fidoalliance.org/",
+                                      
+                // name (with the @w3c.org) of the public mailing to which comments are due
+                //wgPublicList: "public-webappsec",
+                                      
+            };
+      </script>
+      <script src='resources/fido-refs.js' class='remove'></script>
+        
+    </head>
+    <body>
+        
+        <!-- only put content here if you want a custom status of document not
+         the specification-maturity-appropriate boilerplate -->
+        <section id='sotd'></section>
+        
+        <section id='abstract'>
+            <p>This specification defines a mapping of FIDO UAF Authenticator
+            commands to Application Protocol Data Units (APDUs) thus facilitating
+            UAF authenticators based on Secure Elements.
+            </p>
+        </section>
+        
+        <section>
+            <h2>Notation</h2>
+            
+            <p>Type names, attribute names and element names are written as <code>code</code>.
+            
+            <p>String literals are enclosed in “”, e.g. “UAF-TLV”.
+            
+            <p>In formulas we use “|” to denote byte wise concatenation
+            operations.
+            
+            <p>
+            The notation <code>base64url(byte[8..64])</code>  reads as 8-64 bytes of data
+            encoded in base64url, "Base 64 Encoding with URL and Filename
+            Safe Alphabet" [[!RFC4648]] <i>without padding</i>.  </p>
+            
+            <p>UAF specific terminology used in this document is defined in
+            [[FIDOGlossary]].</p>
+            
+            <p>All diagrams, examples, notes in this specification are non-normative.</p>
+            
+            <section>
+                <h3>Key Words</h3>
+                
+                <p>The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL
+                NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “MAY”, and
+                “OPTIONAL” in this document are to be interpreted as
+                described in [[RFC2119]].</p>
+            </section>
+        </section>
+        
+        <section class="informative">
+            <h2>Introduction</h2>
+            <p>This specification defines the interface between
+            the FIDO UAF Authenticator Specific Module (ASM) [[UAFASM]]
+            and authenticators based upon "Secure Element" technology.
+            The applicable secure element form factors are UICC
+            (SIM card), embedded Secure Element (eSE), µSD, NFC card, and USB token.
+            
+            Their common characteristic is they
+            communicate using  Application Programming Data Units
+            (APDU) in compliance with [[ISOIEC-7816-4-2013]].
+            </p>
+            <p>
+            Implementation of this specification is optional in the UAF
+            framework, however, products claiming to implement the transport of
+            UAF messages over APDUs should implement it.
+            </p>
+            <p>
+            This specification first describes the various fashions
+            in which Secure Elements can be incorporated into UAF
+            authenticator implementations &mdash;
+            known as <em>SE-based authenticators</em> or just <em>SE authenticators</em>
+            &mdash; and which components are
+            responsible for handling user verification as well as
+            cryptographic operations.
+            
+            The specification then describes the
+            overall architecture of an SE-based authenticator stack from the ASM down to
+            the secure element, the role of the "UAF Applet" running in
+            the secure element, and outlines the nominal communication
+            flow between the ASM and the SE.
+            
+            It then defines the mapping of UAF Authenticator commands
+            to APDUs, as well as the FIDO-specific variants of the VERIFY APDU command.
+            </p>
+            
+            
+            <div class="note">
+                <p>
+                This specification does not define how an SE-based
+                authenticator stack may be implemented, e.g.,
+                its integration with TEE or
+                biometric sensors.
+                
+                However, SE-based authenticator vendors should reflect
+                such implementation characteristics in the authenticator
+                metadata such that FIDO Relying Parties wishing to be
+                informed of said characteristics may
+                have access to it.
+                </p>
+            </div>
+            
+        </section>
+        
+        <section class="informative">
+            <h2>SE-based Authenticator Implementation Use Cases</h2>
+            
+            <p>
+            Secure elements can be leveraged in different scenarios in
+            the UAF technology. It can support user gestures (used to
+            unlock access to FIDO credentials) or it can be involved in the
+            actual cryptographic operations related to FIDO authentication.
+            In this specification, we will be considering the following
+            SE-based authenticator implementation use cases:
+            <ol>
+                <li>The Secure Element (SE) <em>is</em> the (silent) Authenticator.</li>
+                <li>The SE is part of the Authenticator which is composed of a
+                    Trusted Application (TEE) based User Verification component,
+                    potentially a TEE based transaction confirmation display and
+                    the crypto kernel inside the SE (<dfn>Hybrid SE Authenticator</dfn>).</li>
+                <li>The authenticator (Hybrid SE Authenticator) consists of
+                    <ul>
+                        <li>the SE implementing the matcher and the crypto kernel</li>
+                        <li>and a specific software module (e.g. running on the FIDO User Device)
+                            to capture the user verification data (e.g. PIN, Face, Fingerprint). </li>
+                    </ul>
+                </li>
+            </ol>
+            </p>
+            <section>
+                <h3>Hybrid SE Authenticator</h3>
+                <p>
+                In FIDO UAF, the access to
+                credentials for performing the actual authentication can be
+                protected by a user verification step. This user verification
+                step can be based on a PIN, a biometric or other methods.
+                The authenticator functionality  might be implemented in different components, including
+                combinations such as TEE and SE, or fingerprint sensor and
+                SE. In that case the SE implements only a part of the authenticator functionality.</p>
+                <div class="note">
+                    <p>
+                    The reason for using such hybrid configuration is that Secure
+                    Elements do not have any user interface and hence cannot
+                    directly distinguish physical user interaction from
+                    programmatic communication (e.g. by malware).  The ability to
+                    require a physical user interaction that cannot be emulated by
+                    malware is essential for protecting against scalable attacks
+                    (see [[FIDOSecRef]]).  On the other hand, TEEs (or biometric
+                    sensors implemented in separate hardware) which can provide a
+                    trusted user interface typically do not offer the same level of
+                    key protection as Secure Elements.
+                    </p>
+		    <p>Strictly spoken, a Hybrid SE Authenticator (voluntarily) uses the 
+		      Authenticator Command interface [[UAFAuthnrCommands]] <em>inside</em> 
+		      the authenticator, e.g. between the crypto kernel
+		      and the user verification component.
+		    </p>
+                </div>
+                <p>
+                Examples of hybrid SE authenticators are:
+                <ol>
+                    <li>User PIN code capture and verification are implemented entirely
+                        in a TEE relying on Trusted User Interface and secure storage
+                        capabilities of the TEE and, once the PIN code is verified, the
+                        FIDO UAF crypto operations are performed in the SE.</li>
+                    <li>User fingerprint is captured via a fingerprint sensor, the
+                        fingerprint match is performed in the TEE, relying on matching
+                        algorithms. Once the fingerprint has been positively checked,
+                        the cryptographic operations are executed in the Secure
+                        Element.</li>
+                    <li>The user verification is implemented as match-on-chip in
+                        separate hardware and FIDO UAF cryptographic operations are
+                        implemented in the SE.</li>
+                </ol>
+                </p>
+                <p>
+                In all those cases, the hybrid nature of the authenticator will
+                be managed by the software-based host, regardless of its nature (TEE, SW, Biometric sensor..). There are a number of possible
+                interactions between the ASM and the SE actually
+                implementing the verification and the cryptographic operations
+                to consider within those use cases.
+                </p>
+                <ol>
+                    <li>PIN user verification where the user interaction for the PIN
+                        entry is performed externally to the SE.  The PIN may then be
+                        passed within a VERIFY command to the SE, followed by the
+                        actual cryptographic operations (such as the Register and Sign UAF authenticator commands).</li>
+                    <li>Biometric user verification where the sample capture and
+                        matching is performed externally to the SE (e.g. in TEE or in a
+                        match-on-chip FP sensor). This would then only need to send to
+                        the SE the actual cryptographic operation needed in this
+                        session (such as the Register and Sign UAF authenticator commands).</li>
+                    <li>User verification sample (Faceprint, Fingerprint..) capture is performed externally to the SE.  The
+                        sample is then sent to a match-on-card applet in the SE that
+                        behaves as a global PIN to enable access to the cryptographic
+                        operation required within this session.</li>
+                    
+                </ol>
+                
+                
+                <section>
+                    <h4>Architecture of the Hybrid SE Authenticator</h4>
+                    <p>In order to support an Hybrid SE Authenticator, a dedicated
+                    software-based host must be created which knows how the SE
+                    applet works. The communication between the SE applet and the
+                    host is defined based on [[ISOIEC-7816-4-2013]].
+                    
+                    Whether a PC or mobile device the architecture is still the
+                    same, as defined below:
+                    <ul>
+                        <li><code>Application Layer</code>: This component is responsible for acquiring
+                            the user verification sample and mapping UAF commands to APDU
+                            commands.</li>
+                        <li><code>Communication layer</code>: This is the [[ISOIEC-7816-4-2013]] APDUs
+                            interface, which provides methods to list and select readers,
+                            connect to a Secure Element and interact with it.</li>
+                        <li><code>SE Access OS APIs</code> : OMA, PC/SC, NFC API, CCID…</li>
+                        <li><code>Secure Element</code> : UICC, micro SD, eSE, Dual Interface card..</li>
+                        
+                    </ul>
+                    </p>
+                    <figure>
+                        <img src="./img/fido-uaf-se-based-authnr.png"
+                        onerror="./img/fido-uaf-se-based-authnr.png"
+                        alt= "UAF ASM API Architecture"
+                        />
+                        <figcaption>
+                            Architecture of Hybrid SE Authenticator
+                        </figcaption>
+                    </figure>
+                    
+                    <p>
+                    APDU command-response paire are handled as indicated in
+                    [[ISOIEC-7816-4-2013]].
+                    </p>
+                </section>
+                <section>
+                    <h4>Communication flow between the ASM and the Hybrid SE Authenticator</h4>
+                    <p>
+                    The host is the entity communicating with the SE and which knows
+                    how the SE and the applet running in the SE can be accessed. The host could
+                    be a Trusted Application (TA) which runs inside a TEE or simply an
+                    application which runs in the normal world.
+                    </p>
+                    
+                    
+                    <p>
+                    The following diagram illustrates how the Host of the Hybrid SE Authenticator MAY map the UAF commands to APDU commands. In this diagram, the User Verification
+                    Module is considered inside the SE applet.
+                    </p>
+                    <div class="note">
+                        <p>
+                        If the User Verification Module is inside the Host, for
+                        example in the context of the TEE, the <code>UserVerificationToken</code>
+                        shall be generated in the Host and not in the SE. As a
+                        result step 6 (Figure 2) should be executed in the Host instead of the SE.
+                        </p>
+                    </div>
+                    
+                    <figure>
+                        <img src="./img/fido-uaf-apdu-mapping-sequence-diagram.png"
+                        onerror="./img/fido-uaf-apdu-mapping-sequence-diagram.png"
+                        alt= "UAF ASM API Architecture"
+                        style="width: 80%; height: 80%"/>
+                        <figcaption>
+                            Communication flow between the ASM and the Hybrid SE Authenticator
+                        </figcaption>
+                    </figure>
+                </section>
+            </section>                
+        </section>
+        
+        
+        <section class="normativeDisclaimer">            
+            <h2>FIDO UAF Applet and APDU commands</h2>
+            
+            <div>
+                <p>The APDU commands decribed in this document MUST be encoded in big-endian. 
+		  Since FIDO UAF authenticator commands [[UAFAuthnrCommands]] are little-endian encoded, the host SHALL 
+		  swap the byte order of the UAF authenticator commands as neccessary.
+                <p>
+            </div>
+            <section>
+                <h3>UAF Applet in the Authenticator</h3>
+                <section>
+                    <h4>Application Identifier</h4>
+		    The FIDO UAF AID is defined in [[UAFRegistry]].
+
+                </section>
+                <section>
+                    <h4>User Verification</h4>
+                    <p>The User verification is based on the submission of a
+                    PIN/password (i.e., knowledge based) or a biometric template
+                    (i.e., biometric based).
+                    </p>
+                    
+                    
+                    <p>In this document, the envisaged user verification methods are PIN and biometric based.
+                    </p>
+                    
+                </section>
+                <section>
+                    <h4>Cryptographic operations</h4>
+                    <p>The SE applet must be able to perform a set of cryptographic
+                    operations, such as key generation and signature computation. The
+                    cryptographic operations are defined in [[UAFAuthnrCommands]].
+                    
+                    The SE applet must be able also to create data structures that
+                    can be parsed by FIDO Server.
+                    
+                    The SE applet SHALL use the cryptographic algorithms indicated
+                    in [[UAFRegistry]].</p>
+                </section>
+            </section>
+            
+            <section>
+                <h3>APDU Commands for FIDO UAF</h3>
+                <section>
+                    <h4>Class byte coding</h4>
+                    <p>CLA indicates the class of the command.</p>
+		    <table>
+		      <tr><td>
+			  <table title="Table 2: Class byte coding" class="tlv">
+                            <caption style='caption-side:bottom'>
+                              Table 2: Class byte coding
+                            </caption>
+                            <tr>
+                              <th>Commands</th>
+                              <th>CLA</th>
+                            </tr>
+                            <tr>
+                              <td>SELECT, VERIFY, GET RESPONSE</td>
+                              <td>ISO</td>
+                            </tr>
+                            <tr>
+                              <td>VERIFY, UAF, GET RESPONSE</td>
+                              <td>proprietary (bit8 = 1)</td>
+                            </tr>
+			  </table>
+		      </td></tr>
+		    </table>
+
+                    <div class="note">
+                        <p>
+                        If the payload of an APDU command is longer than 255 bytes,
+                        command chaining as described in [[ISOIEC-7816-4-2013]] should be used,
+                        even though CLA is proprietary.
+                        </p>
+                    </div>
+                </section>
+                <section>
+                    <h4>APDU command "UAF"</h4>
+                    <section>
+                        <h5>Mapping between FIDO UAF authenticator commands and APDU commands</h5>
+                        <p>
+                        This section describes the mapping between FIDO UAF authenticator commands and
+                        APDU commands.
+                        </p>
+                        <p>
+                        The mapping consists of encapsulating the entire UAF Authenticator Command in
+                        the payload of the APDU command.
+                        </p>
+                        <p>
+                        The host SHALL set the INS byte to <b>“0x36”</b> for all UAF commands
+                        The SE SHALL read the UAF command number and data from the 
+                        payload in the data part of the command.
+                        </p>
+                        <p>
+                        The payload of the APDU command is encoded according to [[UAFAuthnrCommands]], the first 2
+                        bytes of each command are the UAF command number. Upon command
+                        reception, the SE applet MUST parse the first TLV tag (2 bytes)
+                        and figure out which UAF command is being issued. The SE applet SHALL
+                        parse the rest of the FIDO Authenticator Command payload according
+                        to [[UAFAuthnrCommands]].
+                        </p>
+                        <p>
+                        The mapping of UAF Authentiucator Commands to APDU commands is defined in
+                        the following table:
+                        
+                        </p>
+			<table><tr><td>			      
+                              <table title="Table 3: "UAF" APDU command" class="tlv">
+				<caption style='caption-side:bottom'>
+                                  Table 3: UAF APDU command
+				</caption>
+				<tr>
+                                  <th>CLA</th>
+                                  <th>INS</th>
+                                  <th>P1</th>
+                                  <th>P2</th>
+                                  <th>Lc</th>
+                                  <th>Data In</th>
+                                  <th>Le</th>
+				</tr>
+				<tr>
+                                  <td>Proprietary(See Table 2)</td>
+                                  <td>0x36</td>
+                                  <td>0x00</td>
+                                  <td>0x00</td>
+                                  <td>Variable</td>
+                                  <td>UAF Authenticator Command structure</td>
+                                  <td>None</td>
+				</tr>				
+                              </table>
+			</td></tr></table>
+                        <p>
+                        The UAF Authenticator Command structures are defined in part
+                        <code>6.2</code> of [[UAFAuthnrCommands]].</p>
+                        <div class="note">
+                            <p>If the <code>UserVerificationToken</code> is
+                            supported, The ASM must set the <code>TAG_USERVERIFY_TOKEN</code> flag in the
+                            value of the <code>UserVerificationToken</code>, received previously
+                            contained in either a <code>Register</code> or <code>Sign</code> command. Please
+                            refer to the <b>FIG 1</b> in Use-Case section.
+                            <p>
+                        </div>
+                    </section>
+                    <section>
+                        <h5>Response message and status conditions of an "UAF" APDU command</h5>
+                    
+                        <p>
+                        The status word of an "UAF" APDU response is handled at the Host level;
+                        the host must interpret and map the status word based on the
+                        table below.
+                        </p>
+                        <p>
+                        If the status word is equals to <b>“9000”</b>, the host shall return
+                        back to the ASM the entire data field of the APDU response. It
+                        the status word is “61xx”, the host shall issue <code>GET RESPONSE</code>
+                        (see below) until no more data is available, concatenate these
+                        response parts and then return the entire response. Otherwise,
+                        the host has to build an UAF TLV response with the mapped status
+                        codes <code>TAG_STATUS_CODE</code>, using the following table.
+                        </p>
+                        <p>
+                        For example, if the status word returned by the Applet is
+                        <b>“6A88”</b>, the host shall put <code>UAF_CMD_STATUS_USER_NOT_ENROLLED</code>
+                        in the status codes of the UAF TLV response.
+                        </p>
+                        
+                        <table title="Table 4: Mapping between APDU Status Codes and FIDO Status Codes" 
+			       class="tlv">
+                            <caption style='caption-side:bottom'>
+                              Table 4: Mapping between APDU Status Codes and 
+			      FIDO Status Codes [[UAFAuthnrCommands]]
+                            </caption>
+                            <tr>
+                                <th>APDU STATUS CODE</th>
+                                <th>FIDO UAF STATUS CODE</th>
+                                <th>NAME</th>
+                                <th>DESCRIPTION</th>
+                                
+                            </tr>
+                            <tr>
+                                <td><b>9000</b></td>
+                                <td>0x00</td>
+                                <td>UAF_CMD_STATUS_OK</td>
+                                <td>Success.</td>
+                            </tr>
+                            <tr>
+                                <td><b>61xx</b></td>
+                                <td>0x00</td>
+                                <td>UAF_CMD_STATUS_OK</td>
+                                <td>Success, xx bytes available for GET RESPONSE.</td>
+                            </tr>
+                            
+                            <tr>
+                                <td><b>6982</b></td>
+                                <td>0x02</td>
+                                <td>UAF_CMD_STATUS_ACCESS_DENIED</td>
+                                <td>Access to this operation is denied.</td>
+                            </tr>
+                            <tr>
+                                <td><b>6A88</b></td>
+                                <td>0x03</td>
+                                <td>UAF_CMD_STATUS_USER_NOT_ENROLLED</td>
+                                <td>User is not enrolled with the authenticator.</td>
+                            </tr>
+                            <tr>
+                                <td><b>N/A</b></td>
+                                <td>0x04</td>
+                                <td>UAF_CMD_STATUS_CANNOT_RENDER_TRANSACTION_CONTENT</td>
+                                <td>Transaction content cannot be rendered.</td>
+                            </tr>
+                            <tr>
+                                <td><b>N/A</b></td>
+                                <td>0x05</td>
+                                <td>UAF_CMD_STATUS_USER_CANCELLED</td>
+                                <td>User has cancelled the operation.</td>
+                            </tr>
+                            <tr>
+                                <td><b>6400</b></td>
+                                <td>0x06</td>
+                                <td>UAF_CMD_STATUS_CMD_NOT_SUPPORTED</td>
+                                <td>Command not supported.</td>
+                            </tr>
+                            <tr>
+                                <td><b>6A81</b></td>
+                                <td>0x07</td>
+                                <td>UAF_CMD_STATUS_ATTESTATION_NOT_SUPPORTED</td>
+                                <td>Required attestation not supported.</td>
+                            </tr>
+                            <tr>
+                                <td><b>6A80</b></td>
+                                <td>0x08</td>
+                                <td>UAF_CMD_STATUS_PARAMS_INVALID</td>
+                                <td>The request was rejected due to an incorrect data field.</td>
+                            </tr>
+                            <tr>
+                                <td><b>6983</b></td>
+                                <td>0x09</td>
+                                <td>UAF_CMD_STATUS_KEY_DISAPPEARED_PERMANENTLY</td>
+                                <td>The UAuth key which is relevant for this command disappeared
+                                    from the authenticator and cannot be restored.</td>
+                            </tr>
+                            <tr>
+                                <td><b>N/A</b></td>
+                                <td>0x0a</td>
+                                <td>UAF_CMD_STATUS_TIMEOUT</td>
+                                <td>The operation in the authenticator took longer than expected.</td>
+                            </tr>
+                            <tr>
+                                <td><b>N/A</b></td>
+                                <td>0x0e</td>
+                                <td>UAF_CMD_STATUS_USER_NOT_RESPONSIVE</td>
+                                <td>The user took too long to follow an instruction.</td>
+                            </tr>
+                            <tr>
+                                <td><b>All other codes</b></td>
+                                <td>0x01</td>
+                                <td>UAF_CMD_STATUS_ERR_UNKNOWN</td>
+                                <td>An unknown error</td>
+                            </tr>
+                        </table>
+                        
+                        <p>
+                        The response message of an UAF APDU command is defined in the
+                        following table :
+                        </p>
+                        <table title="Table 5: Response message of an UAF APDU command" class="tlv">
+			  <caption style='caption-side:bottom'>
+                            Table 5: Response message of an "UAF" APDU command
+			  </caption>
+              <tr>
+                  <th>Data field</th>
+                  <th>SW1 - SW2</th>
+                  
+              </tr>
+              <tr>
+                  <td>not present</td>
+                  <td><p><b>“6982”</b> – The request was rejected due to user verification
+                      being required.</p>
+                      
+                      <p><b>“6A80”</b> – The request was rejected due to an incorrect data
+                      field.</p>
+                      
+                      <p><b>“6A81”</b> – Required attestation not supported</p>
+                      
+                      <p><b>“6A88”</b> – The user is not enrolled with the SE</p>
+                      
+                      <p><b>“6400”</b> – Execution error, undefined UAF command</p>
+                      
+                      <p><b>“6983”</b> – Authentication data not usable, Auth key disappeared</p></td>
+              </tr>
+              <tr>
+                  <td>UAF Authenticator Command response [[UAFAuthnrCommands]]</td>
+                  <td><p><b>“61xx”</b> – Success, xx bytes available for GET RESPONSE.</p>
+                      
+                      <p><b>“9000”</b> – Success</p></td>
+              </tr>
+
+                        </table>
+		    </section>
+                </section>
+                <section>
+                    <h4>APDU Command "SELECT"</h4>
+                    <p>A successful SELECT AID allows the host to know that the applet
+                    is active in the SE, and to open a logical channel with this
+                    end.
+                    </p>
+                    <p>
+                    In Android smartphones apps are not allowed to use the basic
+                    channel to the SIM because this channel is reserved for the
+                    baseband processor and the GSM/UMTS/LTE activities. In this
+                    case the app must select the applet in a logical channel.
+                    </p>
+                    <p>
+                    The host must send a <code>SELECT APDU</code> command to the SE applet before
+                    any others commands.
+                    </p>
+                    <p>
+                    Please, refer to [[ISOIEC-7816-4-2013]] for APDU definition.
+                    </p>
+                    <p>As a result, the command for selecting the applet using the FIDO UAF AID is :</p>
+		    <table><tr><td>			      
+			  <table title="Table 6: SELECT AID command" class="tlv">
+                            <caption style='caption-side:bottom'>
+                              Table 6: SELECT AID command
+                            </caption>
+                            <tr>
+                              <th>CLA</th>
+                              <th>INS</th>
+                              <th>P1</th>
+                              <th>P2</th>
+                              <th>Lc</th>
+                              <th>Data In</th>
+                              <th>Le</th>
+                            </tr>
+                            <tr>
+                              <td>ISO</td>
+                              <td>0xA4</td>
+                              <td>ISO</td>
+                              <td>ISO</td>
+                              <td>0x08</td>
+                              <td>0xA000000647AF0001</td>
+                              <td>None</td>
+                            </tr>                        
+			  </table>
+		    </td></tr></table>
+
+                    <div class="note">
+                        <p>Authenticator vendors may use this command to send back to
+                        the host the authenticator capabilities, especially the
+                        information which allows the Host to know whether the 
+			  <code>UserVerificationToken</code> is supported or not.
+                        <p>
+                    </div>
+                </section>
+                <section>
+                    <h4>APDU Command "VERIFY"</h4>
+                    <p>
+                    This command is used to request access rights using a PIN or
+                    Biometric sample. The SE applet shall verify the sample data
+                    given by the Host against the reference PIN or Biometric held
+                    in the SE.</p>
+                    <p>
+                    Please refer to [[ISOIEC-7816-4-2013]] and [[ISOIEC-19794]] for Personal verification
+                    through biometric methods.
+                    </p>
+                    <p>
+                    If the verification is successful and <code>UserVerificationToken</code> is
+                    supported by the SE applet, a token SHALL be generated and
+                    sent to the Host. Without having this token, the Host cannot
+                    invoke special UAF commands such as Register or Sign.</p>
+                    <p>
+                    The support of <code>UserVerificationToken</code> can be checked by
+                    examining the contents of the <code>GetInfo</code> reponse
+                    inthe <code>AuthenticatorType</code> TAG or the response of <code>SELECT APDU</code> 
+		    command [[UAFAuthnrCommands]].</p>
+                    
+                    Refer to [[FIDOGlossary]] for more information about
+                    <code>UserVerificationToken</code>.
+                    
+                    <section>
+                        <h5>Command structure</h5>
+                        <table title="Table 7: VERIFY command encoding for PIN verification" class="tlv">
+                            <caption style='caption-side:bottom'>
+                                Table 7: VERIFY command encoding for PIN verification
+                            </caption>
+                            <tr>
+                                <th>CLA</th>
+                                <th>INS</th>
+                                <th>P1</th>
+                                <th>P2</th>
+                                <th>Lc</th>
+                                <th>Data In</th>
+                                <th>Le</th>
+                            </tr>
+                            <tr>
+                                <td>ISO or Proprietary: see [[ISOIEC-7816-4-2013]]</td>
+                                <td>0x20 (for PIN) or 0x21 (for biometry)</td>
+                                <td>0x00</td>
+                                <td>See Table 8</td>
+                                <td>Variable</td>
+                                <td>Verification data</td>
+                                <td>None or expected Le for <code>UserVerificationToken</code></td>
+                            </tr>
+                            
+                        </table>
+                        
+                        <p>
+                        
+                        </p>
+			<table><tr><td>			      
+                              <table title="Table 8: Coding of P2: qualifiers of the reference data" class="tlv">
+				<caption style='caption-side:bottom'>
+                                  Table 8: Coding of P2: qualifiers of the reference data
+				</caption>
+				<tr>
+                                  <th>b8</th>
+                                  <th>b7</th>
+                                  <th>b6</th>
+                                  <th>b5</th>
+                                  <th>b4</th>
+                                  <th>b3</th>
+                                  <th>b2</th>
+                                  <th>b1</th>
+                                  <th>Meaning</th>
+				</tr>
+				<tr>
+                                  <td>0</td>
+                                  <td>0</td>
+                                  <td>0</td>
+                                  <td>0</td>
+                                  <td>0</td>
+                                  <td>0</td>
+                                  <td>0</td>
+                                  <td>0</td>
+                                  <td>No information given</td>                                  
+				</tr>
+				<tr>
+                                  <td>1</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>Local reference data (Application)</td>                                
+				</tr>
+				<tr>
+                                  <td>0</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>Global reference data (Card)</td>                                
+				</tr>
+				<tr>
+                                  <td>-</td>
+                                  <td>0</td>
+                                  <td>0</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>00:ISO-Variant defined by [[ISOIEC-7816-4-2013]]</td>
+				</tr>
+				<tr>
+                                  <td>-</td>
+                                  <td>0</td>
+                                  <td>1</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>01:proprietary CLA for UAF: <code>UserVerificationToken</code> in the
+                                    response</td>                                  
+				</tr>
+				<tr>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>-</td>
+                                  <td>X</td>
+                                  <td>X</td>
+                                  <td>X</td>
+                                  <td>X</td>
+                                  <td>X</td>
+                                  <td>User verification DO reference</td>                                  
+				</tr>				
+                              </table>
+			</td></tr></table>
+                    </section>
+                    <section>
+                        <h5>Response message and status conditions</h5>
+                        <table title="Table 9: Response message and status conditions" class="tlv">
+                            <caption style='caption-side:bottom'>
+                                Table 9: Response message and status conditions
+                            </caption>
+                            <tr>
+                                <th>Data Out</th>
+                                <th>SW1 - SW2</th>
+                                
+                            </tr>
+                            <tr>
+                                <td>Absent (ISO-Variant) or <code>UserVerificationToken</code> (proprietary)</td>
+                                <td> See Table 7 and Table 8, [[ISOIEC-7816-4-2013]] when relevant, e.g.
+                                    <b>"6700"</b></td>
+                            </tr>
+                        </table>
+                        
+                        <div class="note">
+                            <p>An SE applet that does not support <code>UserVerificationToken</code>,
+                            may use the [[ISOIEC-7816-4-2013]] VERIFY command. In this case,
+                            the VERIFY command must be securely bound to <code>Register</code> and
+                            <code>Sign</code> commands, so a secure bound method shall be implemented in
+                            the SE applet, such as Secure Messaging.
+                            <p>
+                        </div>
+                        
+                    </section>
+                </section>
+            </section>
+            <section>
+                <h3>Managing Long APDU Commands and Responses</h3>
+                <p>
+                If a Secure Element is able to send a complete response 
+                (e.g. extended length APDU, block chaining), <code>GET RESPONSE</code> 
+                APDU command SHALL be used, as defined in <code>ISO Variant</code> section.
+                Otherwise, the proprietary solution SHALL be used, as defined in
+                section <code>Proprietary Variant</code>.
+                </p>
+                <section>
+                    <h4>ISO Variant</h4>
+                    <p>
+                    The [[ISOIEC-7816-4-2013]] GET RESPONSE command is used in order to
+                    retrieve big data returned by APDU command "UAF".
+                    </p>
+                </section>
+                <section>
+                    <h4>Proprietary Variant</h4>
+                    <p>
+                    In order to avoid using Get Response APDU command which is not
+                    supported by all devices and terminals, a propriatry method is defined 
+		    for managing the long data answers at application level.
+                    </p>
+                    <p>
+                    When using the proprietary variant, the response to the UAF APDU command 
+		    SHALL include the Tag <b>"0x2813"</b>, that specifies the length of the response.
+                    </p>
+                    
+                    <p>
+                    Response Data Out description
+                    </p>
+                    <dl>
+		      <dt>Tag</dt>
+		      <dd><b>0x2813</b></dd>
+		      <dt>Length</dt>
+		      <dd>variable (2 bytes)</dd>
+		      <dt>Value</dt>
+		      <dd>Length of the returned data (2 bytes), data</dd>
+                    </dl>
+                    <p>
+                    In the case where the data does not fit into a single Data Out
+                    message, the host SHALL repeat the "UAF" 
+                    command with P2 = 1 value mentioning this is a repetition of the
+                    incoming APDU to get all the data. This process SHALL be
+                    repeated until the entire data are collected by the host.
+                    </p>
+                    <p>
+                    Here is an example of an APDU Reponse which contains more than 255 bytes in the payload.
+                    </p>
+                    <figure>
+                        <img src="./img/fido-uaf-apdu-long-apdu-method.png"
+                        onerror="./img/fido-uaf-apdu-long-apdu-method.png"
+                        alt= "Long APDU management"
+                        style="width: 70%; height: 70%"/>
+                        <figcaption>
+                            Long APDU management using the defined proporitary method
+                        </figcaption>
+                    </figure>
+                    
+                </section>
+            </section>            
+        </section>
+        
+        <section class="informative">
+            <h2>Security considerations</h2>
+            
+            Guaranteeing trust and
+            security in a fragmented architecture such as the one levering
+            on SE is a challenge that
+            the Host has to address regardless of its nature (TEE or Software based), 
+	    which results in different challenges from a
+            security and architecture perspective.  One could list the
+            following ones:
+            <ul>
+                <li>use of a trusted user interface to enter a PIN
+                    on the device,</li>
+                <li>secure transmission of PIN or fingerprint minutiae,</li>
+                <li>minutiae extraction format,</li>
+                <li>integrity of data transmitted between a Host and a SE.</li>
+            </ul>
+            
+            <p>
+            Hence, we will only consider
+            here, security challenges affecting the interface between the Host
+            and the SE.
+            </p>
+            <p>
+            A possible way to maintain the integrity and confidentiality
+            when APDUs commands are exchanged is to enable a secure
+            channel between the Host and the SE. While this is left to
+            implementation, there are several technologies allowing to
+            build a secure channel between a SE and a devices,
+            that may be implemented.
+            </p>
+            <ul>
+                <li>Secure channel between a trusted application in a TEE and an
+                    applet in a SE [[GlobalPlatform-TEE-SE]].</li>
+                <li>Secure channel between a device and an applet in a secure
+                    element [[GlobalPlatform-Card]].</li>
+                <li>Secure channel between a device and a SE
+                    [[ETSI-Secure-Channel]].</li>
+                
+            </ul>
+        </section>
+        
+    </body>
+</html>

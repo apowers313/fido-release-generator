@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>FIDO Technical Glossary</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <script src='resources/respec-fido-common.js' class='remove' async></script>
+    <script type="text/javascript" class="remove">
+      var respecConfig = {
+            // specification status (e.g. WD, RD, ID, etc.). If in doubt use WD.
+            specStatus: "WD",
+            specVersion: "v1.3",
+            specFamily: "uaf",    // specFamily is here for common-specs due to release-tool publishing
+                                      // and their being placed in to a release dir with whichever specFamily
+                                      // at release build time -- so the value of this var in the .html files in 
+                                      // common-specs repo will depend upon whichever spec family last 
+                                      // built a release snapshot
+
+      // shortName is what is termed specInRepoStemFN in..
+      // https://confluence.fidoalliance.org/display/ALL/FIDO+Alliance+filenaming+and+version+labeling+conventions
+        shortName:  "fido-glossary",
+
+        // if your specification has a subtitle that goes below the main
+        // formal title, define it here
+        // subtitle   :  "an excellent document",
+
+      // if you wish the publication date to be other than today, set this
+      // NOTE: UNCOMMENT THIS PRIOR TO RUNNING release-tool/release.pl for a release, 
+      //       whether internal or external (TODO: release-tool should take care of this)...
+      //publishDate: "2015-09-02",
+
+
+        // if the specification's copyright date is a range of years, specify
+        // the start date here:
+        copyrightStart: "2013",
+
+        // if there is a previously published draft, uncomment this and set its YYYY-MM-DD date
+        // and its maturity status
+
+        //previousPublishDate:  "2014-02-09",
+        //previousMaturity:  "RD",
+	prevVersion: "http://fidoalliance.org/specs/fido-uaf-v1.0-ps-20141208/fido-glossary-v1.0-ps-20141208.html",
+
+
+        // if there a publicly available Editor's Draft, this is the link
+        edDraftURI: "",
+
+        // if this is a LCWD, uncomment and set the end of its review period
+        // lcEnd: "2009-08-05",
+
+        // editors, add as many as you like
+        // only "name" is required
+        editors:  [
+          { name: "Rolf Lindemann", url: "mailto://rolf@noknok.com",
+            company: "Nok Nok Labs, Inc.", companyURL: "https://www.noknok.com/" }
+          
+        ],
+
+        // authors, add as many as you like. 
+        // This is optional, uncomment if you have authors as well as editors.
+        // only "name" is required. Same format as editors.
+
+        authors:  [
+          { name: "Davit Baghdasaryan", url: "davit@noknok.com",
+            company: "Nok Nok Labs, Inc.", companyURL: "https://www.noknok.com/" },
+          { name: "Brad Hill", url: "bhill@paypal.com",
+            company: "PayPal", companyURL: "https://www.paypal.com/" },
+	         { name: "Jeff Hodges", url: "jeff.hodges@kingsmountain.com", 
+	         	 company: "PayPal", companyURL: "https://www.paypal.com/" }
+        ],
+
+        // name of the WG
+        wg:           "FIDO Alliance",
+
+        // URI of the public WG page
+        wgURI:        "https://fidoalliance.org/",
+
+        // name (with the @w3c.org) of the public mailing to which comments are due
+        //wgPublicList: "public-webappsec",
+
+
+	// local bibliography
+
+
+      };
+  </script>
+  <script src='resources/fido-refs.js' class='remove'></script>
+
+
+  </head>
+
+ <body>
+    <!-- only modify this if a custom Status of this Document is needed -->
+    <section id='sotd'></section>
+
+    <section id='abstract'>
+      <p>This document defines all the strings and constants reserved by UAF protocols. The
+      values defined in this document are referenced by various UAF specifications.</p>
+    </section>
+
+    <section>
+      <h2>Notation</h2>
+
+        <p>Type names, attribute names and element names are written as <code>code</code>.</p>
+
+        <p>String literals are enclosed in “”, e.g. “UAF-TLV”.</p>
+
+        <p>In formulas we use “|” to denote byte wise concatenation
+        operations.</p>
+
+        <section>
+        <h3>Key Words</h3>
+
+         <p>The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL
+         NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “MAY”, and
+         “OPTIONAL” in this document are to be interpreted as described in [[!RFC2119]].</p>
+        </section>
+    </section>
+    <section>
+      <h2>Introduction</h2>
+      <p>This document is the FIDO Alliance glossary of normative technical terms.</p>
+      
+      <p>This document is not an exhaustive compendium of all FIDO technical terminology because the 
+	FIDO terminology is built upon existing terminology. Thus many terms that are commonly used 
+	within this context are not listed. They may be found in the glossaries/documents/specifications 
+	referenced in the bibliography. Terms defined here that are not attributed to other 
+	glossaries/documents/specifications are being defined here.</p>
+      <p>This glossary is expected to evolve along with the FIDO Alliance specifications and documents.</p>
+    </section>
+
+    <section>
+      <h2>Definitions</h2>
+      <dl>
+	<dt>AAID</dt>
+        <dd><p>Authenticator Attestation ID.  See Attestation ID.</p></dd>
+	<dt>Application</dt>
+	<dd><p>A set of functionality provided by a common entity (the application owner, aka the Relying Party), 
+	  and perceived by the user as belonging together.</p>
+	</dd>
+	<dt>Application Facet</dt>
+	<dd><p>An (application) facet is how an application is implemented on various platforms.  
+	  For example, the application MyBank may have an Android app, an iOS app, and a Web app.  
+	  These are all facets of the MyBank application.</p>
+	</dd>
+	<dt>Application Facet ID</dt>
+	<dd><p>A platform-specific identifier (URI) for an application facet.</p>
+	  <ul>
+	    <li>For Web applications, the facet id is the RFC6454 origin [[RFC6454]].</li>
+	    <li>For Android applications, the facet id is the URI android:apk-key-hash:<i>&lt;hash-of-apk-signing-cert&gt;</i></li>
+	    <li>For iOS, the facet id is the URI ios:bundle-id:<i>&lt;ios-bundle-id-of-app&gt;</i></li>
+	  </ul>
+	</dd>
+	<dt>AppID</dt>
+	<dd><p>The AppID is an identifier for a set of different Facets of a relying party's application.  
+	  The AppID is a URL pointing to the TrustedFacets, i.e. list of FacetIDs related to this AppID.</p>
+	</dd>
+	<dt>Attestation</dt>
+	<dd><p>In the FIDO context, attestation is how Authenticators make claims to a Relying Party 
+	  that the keys they generate, and/or certain measurements they report, originate from genuine 
+	  devices with certified characteristics.</p>
+	</dd>
+	<dt>Attestation Certificate</dt>
+	<dd><p>A public key certificate related to an Attestation Key.</p>
+	</dd>
+	<dt>Authenticator Attestation ID / AAID</dt>
+	<dd><p>A unique identifier assigned to a model, class or batch of FIDO Authenticators 
+	  that all share the same characteristics, and which a Relying Party can use to look 
+	  up an Attestation Public Key and Authenticator Metadata for the device.</p>
+	</dd>
+	<dt>Attestation [Public / Private] Key</dt>
+	<dd><p>A key used for FIDO Authenticator attestation.</p>
+	</dd>
+	<dt>Attestation Root Certificate</dt>
+	<dd><p>A root certificate explicitly trusted by the FIDO Alliance, to which Attestation Certificates chain to.</p>
+	</dd>
+	<dt>Authentication</dt>
+	<dd><p>Authentication is the process in which user employs their FIDO Authenticator to 
+	  prove possession of a registered key to a relying party.</p>
+	</dd>
+	<dt>Authentication Algorithm</dt>
+	<dd><p>The combination of signature and hash algorithms used for authenticator-to-relying party authentication.</p>
+	</dd>
+	<dt>Authentication Scheme</dt>
+	<dd><p>The combination of an Authentication Algorithm with a message syntax or framing that is used by 
+	  an Authenticator when constructing a response.</p>
+	</dd>
+	<dt>Authenticator, Authnr</dt>
+	<dd><p>See FIDO Authenticator.</p>
+	</dd>
+	<dt>Authenticator, 1stF / First Factor</dt>
+	<dd><p>A FIDO Authenticator that transactionally provides a username and at 
+	  least two authentication factors: cryptographic key material (something you have) 
+	  plus user verification (something you know / something you are) and so can be used by 
+	  itself to complete an authentication.</p>
+	  <p>It is assumed that these authenticators have an internal matcher. The matcher is 
+	    able to verify an already enrolled user. If there is more than one user enrolled – the 
+	    matcher is also able to identify the right user.</p>
+	  <p>Examples of such authenticator is a biometric sensor or a PIN based verification. 
+	    Authenticators which only verify presence, such as a physical button, or perform no 
+	    verification at all, cannot act as a first-factor authenticator.</p>
+	</dd>
+	<dt>Authenticator, 2ndF / Second Factor</dt>
+	<dd>A FIDO Authenticator which acts only as a second factor.  Second-factor authenticators always 
+	  require a single key handle to be provided before responding to a <code>Sign</code> command.  
+	  They might or might not have a user verification method.
+	  It is assumed that these authenticators may or may not have an internal matcher.
+	</dd>
+	<dt>Authenticator Attestation</dt>
+	<dd>The process of communicating a cryptographic assertion to a relying party 
+	  that a key presented during authenticator registration was created and protected by a 
+	  genuine authenticator with verified characteristics.
+	</dd>
+	<dt>Authenticator Metadata</dt>
+	<dd><p>Verified information about the characteristics of a certified authenticator, associated 
+	  with an AAID and available from the FIDO Alliance.  FIDO Servers are expected to have access 
+	  to up-to-date metadata to be able to interact with a given authenticator.</p>
+	</dd>
+	<dt>Authenticator Policy</dt>
+	<dd><p>A JSON data structure that allows a relying party to communicate to a FIDO Client the 
+	  capabilities or specific authenticators that are allowed or disallowed for use in a given 
+	  operation.</p>
+	</dd>
+	<dt>ASM / Authenticator Specific Module</dt>
+	<dd><p>Software associated with a FIDO Authenticator that provides a uniform interface between 
+	  the hardware and FIDO Client software.</p>
+	</dd>
+	<dt>AV</dt>
+	<dd><p>ASM Version</p>
+	</dd>
+	<dt>Bound Authenticator</dt>
+	<dd><p>A FIDO Authenticator or combination of authenticator and ASM, which uses an access control 
+	  mechanism to restrict the use of registered keys to trusted FIDO Clients and/or trusted 
+	  FIDO User Devices. Compare to a <em>Roaming Authenticator</em>.</p>
+	</dd>
+	<dt>Certificate</dt>
+	<dd><p>An X.509v3 certificate defined by the profile specified in [[RFC5280]] and its successors.</p> 
+	</dd>
+	<dt>Channel Binding</dt>
+	<dd><p>See: [[RFC5056]], [[RFC5929]] and [[ChannelID]].
+	  A channel binding allows applications to establish that the two end-points 
+	  of a secure channel at one network layer are the same as at a higher layer 
+	  by binding authentication to the higher layer to the channel at the lower layer.</p>
+	</dd>
+	<dt>Client</dt>
+	<dd><p>This term is used “in context”, and may refer to a FIDO UAF Client or some 
+	  other type of client, e.g. a TLS client. See FIDO Client.</p>
+	</dd>
+	<dt>Confused Deputy Problem</dt>
+	<dd>
+	  <p>
+	    A confused deputy is a computer program that is innocently
+	    fooled by some other party into misusing its authority. It
+	    is a specific type of privilege escalation.</p>
+	</dd>
+	<dt>Correlation Handle</dt>
+	<dd><p>Any piece of information that may allow, in the context of FIDO protocols, implicit 
+	  or explicit association and or attribution of multiple actions, believed by the user 
+	  to be distinct and unrelated, back to a single unique entity.   An example of a 
+	  correlation handle outside of the FIDO context is a client certificate used in 
+	  traditional TLS mutual authentication: because it sends the same data to multiple 
+	  Relying Parties, they can therefore collude to uniquely identify and track the user 
+	  across unrelated activities. [[AnonTerminology]]</p>
+	</dd>
+	<dt>Deregistration</dt>
+	<dd><p>A phase of a FIDO protocol in which a Relying Party tells a FIDO Authenticator to 
+	  forget a specified piece of (or all) locally managed key material associated with a 
+	  specific Relying Party account, in case such keys are no longer considered valid by 
+	  the Relying Party.</p>
+	</dd>
+	<dt>Discovery</dt>
+	<dd><p>A phase of a FIDO protocol in which a Relying Party is able to determine the 
+	  availability of FIDO capabilities at the client’s device, including metadata about 
+	  the available authenticators.</p>
+	</dd>
+	
+	<dt>E(K,D)</dt>
+	<dd><p>Denotes the Encryption of data D with key K</p>
+	</dd>
+	
+	<dt>ECDSA</dt>
+	<dd><p>Elliptic Curve Digital Signature Algorithm, as defined by ANSI X9.62 [[ECDSA-ANSI]].</p>
+	</dd>
+	
+	<dt>Enrollment</dt>
+	<dd><p>The process of making a user known to an authenticator.  This might be a 
+	  biometric enrollment as defined in [[NSTCBiometrics]] or involve processes 
+	  such as taking ownership of, and setting a PIN or password for, a non-biometric 
+	  cryptographic storage device.  Enrollment may happen as part of a FIDO protocol 
+	  ceremony, or it may happen outside of the FIDO context for multi-purpose authenticators.</p>
+	</dd>
+	<dt>Facet</dt>
+	<dd><p>See Application Facet</p>
+	</dd>
+	<dt>Facet ID</dt>
+	<dd><p>See Application Facet ID</p>
+	</dd>
+	<dt>FIDO Authenticator</dt>
+	<dd><p>An authentication entity that meets the FIDO Alliance’s requirements 
+	  and which has related metadata.</p>
+	  <p>A FIDO Authenticator is responsible for user verification, and maintaining 
+	    the cryptographic material required for the relying party authentication.</p>
+	  <p>It is important to note that a FIDO Authenticator is only considered such for, 
+	    and in relation to, its participation in FIDO Alliance protocols.  Because the 
+	    FIDO Alliance aims to utilize a diversity of existing and future hardware, 
+	    many devices used for FIDO may have other primary or secondary uses.  
+	    To the extent that a device is used for non-FIDO purposes such as local 
+	    operating system login or network login with non-FIDO protocols, it is not 
+	    considered a FIDO Authenticator and its operation in such modes is <i>not</i> 
+	    subject to FIDO Alliance guidelines or restrictions, including those related 
+	    to security and privacy.</p>
+	  <p>A FIDO Authenticator may be referred to as simply an authenticator 
+	    or abbreviated as “authnr”.  Important distinctions in an authenticator’s 
+	    capabilities and user experience may be experienced depending on whether 
+	    it is a roaming or bound authenticator, and whether it is a first-factor, 
+	    or second-factor authenticator.</p>
+	  <p>It is assumed by registration assertion schemes that the authenticator has 
+	    exclusive control over the data being signed by the attestation key.</p>
+	  <p>Some authentication assertion schemes (e.g. TAG_UAFV1_AUTH_ASSERTION)  
+	    assume the authenticator to have exclusive control over the data being 
+	    signed by the <code>Uauth key</code>.</p>
+	</dd>
+	    <dt>FIDO Client</dt>
+	    <dd><p>This is the software entity processing the UAF or U2F protocol 
+	      messages on the FIDO User Device. FIDO Clients may take one of two forms:</p>
+	      <ul>
+	       <li>A software component implemented in a user agent 
+		 (either web browser or native application).</li>
+	       <li>A standalone piece of software shared by several user agents. 
+		 (web browsers or native applications).</li>
+	      </ul>
+	    </dd>
+	    <dt>FIDO Data / FIDO Information</dt>
+	    <dd><p>Any information gathered or created as part of completing a FIDO transaction.  
+	      This includes but is not limited to, biometric measurements of or reference data for 
+	      the user and FIDO transaction history.</p>
+	    </dd>
+	    <dt>FIDO Server</dt>
+	    <dd><p>Server software typically deployed in the relying party’s 
+	      infrastructure that meets UAF protocol server requirements.</p>
+	    </dd>
+	    <dt>FIDO UAF Client</dt>
+	    <dd><p>See FIDO Client.</p>
+	    </dd>
+	    <dt>FIDO User Device</dt>
+	    <dd><p>The computing device where the FIDO Client operates, and from 
+	      which the user initiates an action that utilizes FIDO.</p>
+	    </dd>
+	    <dt>Key Identifier (KeyID)</dt>
+	    <dd>
+	      <p>The KeyID is an opaque identifier for a key
+		registered by an authenticator with a FIDO Server, for
+		first-factor authenticators. It is used in concert
+		with an AAID to identify a particular authenticator
+		that holds the necessary key. Thus key identifiers
+		must be unique within the scope of an AAID.
+	      </p>
+	      <p>
+		One possible implementation is that the KeyID is the SHA256 hash of the <code>KeyHandle</code>
+		managed by the ASM.
+	      </p>
+	    </dd>
+
+	    <dt>KeyHandle</dt>
+	    <dd><p>A key container created by a FIDO Authenticator, containing a private key 
+	      and (optionally) other data (such as Username).  A key handle may be wrapped 
+	      (encrypted with a key known only to the authenticator) or unwrapped.  In the 
+	      unwrapped form it is referred to as a <em>raw key handle</em>.  Second-factor authenticators must 
+	      retrieve their key handles from the relying party to function. First-factor authenticators 
+	      manage the storage of their own key handles, either internally 
+	      (for roaming authenticators) or via the associated ASM (for bound authenticators).</p>
+	    </dd>
+
+	    <dt>Key Registration</dt>
+	    <dd><p>The process of securely establishing a key between FIDO Server and FIDO Authenticator.</p>
+	    </dd>
+	    <dt>KeyRegistrationData (KRD)</dt>
+	    <dd><p>A <code>KeyRegistrationData</code> object is created and returned by an authenticator 
+	      as the result of the authenticator's <code>Register</code> command. The KRD object contains 
+	      items such as the authenticator's AAID, the newly generated UAuth.pub key, as 
+	      well as other authenticator-specific information such as algorithms used by the 
+	      authenticator for performing cryptographic operations, and counter values. The 
+	      KRD object is signed using the authenticator's attestation private key.</p>
+	    </dd>
+	    <dt>KHAccessToken</dt>
+	    <dd><p>A secret value that acts as a guard for authenticator commands.  
+	      KHAccessTokens are generated and provided by an ASM.</p>
+	    </dd>
+	    <dt>Matcher</dt>
+	    <dd><p>A component of a FIDO Authenticator which is able to perform (local) 
+	      user verification, e.g. biometric comparison [[ISOBiometrics]], PIN verification, etc.</p>
+	    </dd>
+	    <dt>Matcher Protections</dt>
+	    <dd>
+	      The security mechanisms that an authenticator may use to
+	      protect the matcher component. 
+	    </dd>
+	    <dt>Persona</dt>
+	    <dd><p>All relevant data stored in an authenticator 
+	      (e.g. cryptographic keys) are related to a single "persona" (e.g. “business” or “personal” persona). 
+	      Some administrative interface (not standardized by FIDO) provided by the authenticator 
+	      may allow maintenance and switching of personas.</p>
+	      <p>The user can switch to the “Personal” Persona and register new accounts. 
+		After switching back to the “Business” Persona, these accounts will not be 
+		recognized by the authenticator (until the User switches back to “Personal” Persona again).</p>
+	      <p>This mechanism may be used to provide an additional
+		measure of privacy to the user, where the user wishes to
+		use the same authenticator in multiple contexts, without
+		allowing correlation via the authenticator across those
+		contexts.</p>
+	    </dd>
+	    <dt>PersonaID</dt>
+	    <dd><p>An identifier provided by an ASM, PersonaID is used to associate 
+	      different registrations.  It can be used to create virtual identities on a 
+	      single authenticator, for example to differentiate “personal” and “business” 
+	      accounts.  PersonaIDs can be used to manage privacy settings on the authenticator.</p>
+	    </dd>
+	    <dt>Reference Data</dt>
+	    <dd><p>A (biometric) reference data (also called template) is a digital reference 
+	      of distinct characteristics that have been extracted from a biometric sample. 
+	      Biometric reference data is used during the biometric user verification 
+	      process [[ISOBiometrics]]. Non-biometric reference data is used
+	      in conjunction with PIN-based user verification.</p>
+	    </dd>
+	    <dt>Registration</dt>
+	    <dd><p>A FIDO protocol operation in which a user generates and associates new 
+	      key material with an account at the Relying Party, subject to policy set 
+	      by the server, and acceptable attestation that the authenticator and 
+	      registration matches that policy.</p>
+	    </dd>
+	    <dt>Registration Scheme</dt>
+	    <dd><p>The registration scheme defines how the authentication key is being 
+	      exchanged between the FIDO Server and the FIDO Authenticator.</p>
+	    </dd>
+	    <dt>Relying Party</dt>
+	    <dd><p>A web site or other entity that uses a FIDO protocol to directly 
+	      authenticate users (i.e., performs peer-entity authentication). Note that if 
+	      FIDO is composed with federated identity management protocols (e.g., SAML, 
+	      OpenID Connect, etc.), the identity provider will also be playing the role 
+	      of a FIDO Relying Party.</p>
+	    </dd>
+	    <dt>Roaming Authenticator</dt>
+	    <dd><p>A FIDO Authenticator configured to move between different 
+	      FIDO Clients and FIDO User Devices lacking an established trust relationship by:</p>
+	      <ol>
+	       <li>Using only its own internal storage for registrations</li>
+	       <li>Allowing registered keys to be employed without access control mechanisms 
+		 at the API layer.  (Roaming authenticators still may perform user verification.)</li>
+	      </ol>
+	     <p>Compare to Bound Authenticator.</p>
+	    </dd>
+	    <dt>S(K, D)</dt>
+	    <dd><p>Signing of data D with key K</p>
+	    </dd>
+	    <dt>Server Challenge</dt>
+	    <dd><p>A random value provided by the FIDO Server in the UAF protocol requests.</p>
+	    </dd>
+	    <dt>Sign Counter</dt>
+	    <dd><p>A monotonically increasing counter maintained by the Authenticator. 
+	      It is increased on every use of the UAuth.priv key. This value can 
+	      be used by the FIDO Server to detect cloned authenticators.</p>
+	    </dd>
+	    <dt>SignedData</dt>
+	    <dd><p>A <code>SignedData</code> object is created and returned by an authenticator as 
+	      the result of the authenticator's <code>Sign</code> command. The to-be-signed data 
+	      input to the signature operation is represented in the returned SignedData 
+	      object as intact values or as hashed values. The SignedData object 
+	      also contains general information about the authenticator and its mode, 
+	      a nonce, information about authenticator-specific cryptographic algorithms, 
+	      and a use counter. The <code>SignedData</code> object is signed using a relying 
+	      party-specific UAuth.priv key.</p>
+	    </dd>
+	    <dt>Silent Authenticator</dt>
+	    <dd><p>FIDO Authenticator that does not prompt the user or perform any user verification.</p>
+	    </dd>
+	    <dt>Step-up Authentication</dt>
+	    <dd><p>An authentication which is performed on top of an already authenticated session.</p>
+	      <p>Example: The user authenticates the session initially
+		using a username and password, and the web site later
+		requests a FIDO authentication on top of this
+		authenticated session.</p>
+	      <p>One reason for requesting step-up authenication could
+		be a request for a high value resource.</p>
+	      <p>FIDO U2F is always used as a step-up authentication.
+		FIDO UAF could be used as step-up authentication, but
+		it could also be used as an initial authentication
+		mechanism.</p>
+	      <p>Note: In general, there is no implication that the
+		step-up authentication method itself is "stronger"
+		than the initial authentication.  Since the step-up
+		authentication is performed on top of an existing
+		authentication, the resulting combined authentication
+		strength will increase most likely, but it will never
+		decrease.</p>
+	    </dd>
+	    <dt>Template</dt>
+	    <dd><p>See reference data.</p>
+	    </dd>
+	    <dt>TLS</dt>
+	    <dd><p>Transport Layer Security</p>
+	    </dd>
+	    <dt>Token</dt>
+	    <dd><p>In FIDO U2F, the term Token is often used to mean what is called an 
+	      authenticator in UAF. Also, note that other uses of “token”, e.g. KHAccessToken, 
+	      User Verification Token, etc., are separately distinct. If they are not explicitly 
+	      defined, their meaning needs to be determined from context.</p>
+	    </dd>
+	    <dt>Transaction Confirmation</dt>
+	    <dd><p>An operation in the FIDO protocol that allows a relying party to request that a 
+	      FIDO Client, and authenticator with the appropriate capabilities, display some 
+	      information to the user, request that the user authenticate locally to their 
+	      FIDO Authenticator to confirm the information, and provide proof-of-possession of previously 
+	      registered key material and an attestation of the confirmation back to the relying party.</p>
+	    </dd>
+	    <dt>Transaction Confirmation Display</dt>
+	    <dd><p>This is a feature of FIDO Authenticators able to show content of a message 
+	      to a user, and protect the integrity of this message.  It could be implemented using 
+	      the GlobalPlatform specified TrustedUI [[TEESecureDisplay]].</p>
+	    </dd>
+	    <dt>TrustedFacets</dt>
+	    <dd><p>The data structure holding a list of trusted FacetIDs. The AppID is used to retrieve 
+	      this data structure.</p>
+	    </dd>
+	    <dt>TTEXT</dt>
+	    <dd><p>Transaction Text, i.e. text to be confirmed in the case of transaction confirmation.</p>
+	    </dd>
+	    <dt>Type-length-value/tag-length-value (TLV)</dt>
+	    <dd>
+	      <p>A mechanism for encoding data such that the type,
+	      length and value of the data are given. Typically, the
+	      type and length data fields are of a fixed size. This
+	      format offers some advantages over other data encoding
+	      mechanisms, that make it suitable for some of the FIDO
+	      UAF protocols.</p>
+	    </dd>
+	    <dt>Universal Second Factor (U2F)</dt>
+	    <dd><p>The FIDO protocol and family of authenticators which
+	      enable a cloud service to offer its users the options of
+	      using an easy–to–use, strongly–secure open
+	      standards–based second-factor device for authentication.
+	      The protocol relies on the server to know the (expected)
+	      user before triggering the authentication.</p>
+	    </dd>
+	    <dt>Universal Authentication Framework (UAF)</dt>
+	    <dd><p>.  The FIDO Protocol and family of authenticators
+	      which enable a service to offer its users flexible and
+	      interoperable authentication.  This protocol allows
+	      triggering the authentication before the server knows
+	      the user.</p>
+	    </dd>
+	    <dt>UAF Client</dt>
+	    <dd><p>See FIDO Client.</p>
+	    </dd>
+	    <dt>UAuth.pub / UAuth.priv / UAuth.key</dt>
+	    <dd><p>User authentication keys generated by FIDO Authenticator. UAuth.pub is the 
+	      public part of key pair. UAuth.priv is the private part of the key. UAuth.key 
+	      is the more generic notation to refer to UAuth.priv.</p>
+	    </dd>
+            <dt>UINT8</dt>
+            <dd><p>An 8 bit (1 byte) unsigned integer.</p>
+            </dd>
+	    <dt>UINT16</dt>
+	    <dd><p>A 16 bit (2 bytes) unsigned integer.</p>
+	    </dd>
+	    <dt>UINT32</dt>
+	    <dd><p>A 32 bit (4 bytes) unsigned integer.</p>
+	    </dd>
+	    <dt>UPV</dt>
+	    <dd><p>UAF Protocol Version</p>
+	    </dd>
+	    <dt>User</dt>
+	    <dd><p>Relying party’s user, and owner of the FIDO Authenticator.</p>
+	    </dd>
+	    <dt>User Agent</dt>
+	    <dd><p>The user agent is a client application that is acting on behalf of a 
+	      user in a client-server system.  Examples of user agents include 
+	      web browsers and mobile apps.</p>
+	    </dd>
+	    <dt>User Verification</dt>
+	    <dd><p>The process by which a FIDO Authenticator locally authorizes use of 
+	      key material, for example through a touch, pin code, fingerprint match or other biometric.</p>
+	    </dd>
+	    <dt>User Verification Token</dt>
+	    <dd><p>The user verification token is generated by
+	      Authenticator and handed to the ASM after successful
+	      user verification. Without having this token, the ASM
+	      cannot invoke special commands such as <code>Register</code> or <code>Sign</code>.</p>
+	      <p>The lifecycle of the user verification token is
+		managed by the authenticator.  The concrete techniques
+		for generating such a token and managing its lifecycle
+		are vendor-specific and non-normative.</p>
+	    </dd>
+	    <dt>Username</dt>
+	    <dd><p>A human-readable string identifying a user’s account at a relying party.</p>
+	    </dd>
+	    <dt>Verification Factor</dt>
+	    <dd><p>The specific means by which local user verification is accomplished. 
+	      e.g. fingerprint, voiceprint, or PIN.</p>
+	      <p>This is also known as modality.</p>
+	    </dd>
+	    <dt>Web Application, Client-Side</dt>
+	    <dd><p>The portion of a relying party application built on
+	      the "Open Web Platform" which executes in the context of
+	      the user agent.  When the term “Web Application” appears
+	      unqualified or without specific context in FIDO
+	      documents, it generally refers to either the client-side
+	      portion or the combination of both client-side and
+	      server-side pieces of such an application.</p>
+	    </dd>
+	    <dt>Web Application, Server-Side</dt>
+	    <dd><p>The portion of a relying party application that
+	      executes on the web server, and responds to HTTP
+	      requests.  When the term “Web Application” appears
+	      unqualified or without specific context in FIDO
+	      documents, it generally refers to either the client-side
+	      portion or the combination of both client-side and
+	      server-side pieces of such an application.</p>
+	    </dd>
+	  </dl>
+    </section>
+
+    <section id=tof>
+    </section>
+  </body>
+</html>

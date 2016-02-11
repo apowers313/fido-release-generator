@@ -1,0 +1,1776 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>FIDO UAF Authenticator-Specific Module API</title>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"></meta>
+    <script src='resources/respec-fido-common.js' class='remove' async></script>
+    <script type="text/javascript" class="remove">
+      var respecConfig = {
+      // specification status (e.g. WD, LCWD, NOTE, etc.). If in doubt use ED.
+      // Member-SUBM
+      specStatus: "WD",
+      specVersion: "v1.3",
+      specFamily: "uaf",
+
+      // shortName is what is termed specInRepoStemFN in..
+      // https://confluence.fidoalliance.org/display/ALL/FIDO+Alliance+filenaming+and+version+labeling+conventions
+      shortName:  "fido-uaf-asm-api",
+      
+      // if your specification has a subtitle that goes below the main
+      // formal title, define it here
+      // subtitle   :  "an excellent document",
+      
+      // if you wish the publication date to be other than today, set this
+      // NOTE: UNCOMMENT THIS PRIOR TO RUNNING release-tool/release.pl for a release, 
+      //       whether internal or external (TODO: release-tool should take care of this)...
+      //publishDate: "2015-09-02", 
+      
+      // if the specification's copyright date is a range of years, specify
+      // the start date here:
+      copyrightStart: "2013",
+      
+      // if there is a previously published draft, uncomment this and set its YYYY-MM-DD date
+      // and its maturity status, OR, comment the latter two items out, and add an 
+      // explicit prevVersion URI pointing to the previously publicly published version...
+      //previousPublishDate: "",
+      //previousMaturity: "",
+      prevVersion: "https://fidoalliance.org/specs/fido-uaf-v1.0-ps-20141208/fido-uaf-asm-api-v1.0-ps-20141208.html",
+      
+      // if there a publicly available Editor's Draft, this is the link
+      edDraftURI: "",
+      
+      // if this is a LCWD, uncomment and set the end of its review period
+      // lcEnd: "2009-08-05",
+      
+      // editors, add as many as you like
+      // only "name" is required
+      editors:  [
+         { name: "Dr. Rolf Lindemann", url: "mailto:rolf@noknok.com",
+           company: "Nok Nok Labs, Inc.", companyURL: "https://www.noknok.com/" },
+	 { name: "John Kemp", url: "mailto:john@jkemp.net",
+           company: "FIDO Alliance", companyURL: "https://fidoalliance.org/" }
+       ],
+
+      // authors, add as many as you like.
+      // This is optional, uncomment if you have authors as well as editors.
+      // only "name" is required. Same format as editors.
+
+      authors: [
+	 { name: "Davit Baghdasaryan", url: "mailto:davit@noknok.com",
+           company: "Nok Nok Labs, Inc.", companyURL: "https://www.noknok.com/" },
+         { name: "Brad Hill", url: "mailto:bhill@paypal.com",
+           company: "PayPal, Inc.", companyURL: "http://www.paypal.com/" },
+         { name: "Roni Sasson", url: "mailto:Roni.Sasson@discretix.com",
+           company: "Discretix, Inc.", companyURL: "http://www.discretix.com/" },
+         { name: "Jeff Hodges", url: "mailto:Jeff.Hodges@KingsMountain.com",
+           company: "PayPal, Inc.", companyURL: "http://www.paypal.com/" },
+         { name: "Ka Yang", url: "mailto:kyang@noknok.com",
+           company: "Nok Nok Labs, Inc.", companyURL: "https://www.noknok.com/" }
+      ],
+
+      // name of the WG
+      wg:           "FIDO Alliance",
+
+      // URI of the public WG page
+      wgURI:        "https://fidoalliance.org/",
+
+      // name (with the @w3c.org) of the public mailing to which comments are due
+      //wgPublicList: "public-webappsec",
+
+
+      // local bibliography
+
+
+      };
+    </script>
+    <script src='resources/fido-refs.js' class='remove'></script>
+
+  </head>
+  <body>
+    <section id='sotd'></section>
+
+    <section id="abstract">
+      <p>
+	UAF authenticators may be connected to a user device
+	via various physical interfaces (SPI, USB, Bluetooth, etc). The UAF Authenticator-Specific
+	Module (ASM) is a software interface on top of UAF
+	authenticators which gives a standardized way for FIDO UAF
+	Clients to detect and access the functionality of UAF
+	authenticators and hides internal communication complexity from FIDO UAF Client.
+      </p>
+
+      <p class="fido-normal">This document describes the internal functionality of ASMs,
+	defines the UAF ASM API and explains how FIDO UAF Clients should use the API.
+      </p>
+
+      <p class="fido-normal">This document's intended audience is FIDO authenticator and FIDO
+	FIDO UAF Client vendors.
+      </p>
+    </section>
+
+    <section>
+      <h2>Notation</h2>
+      
+      <p>Type names, attribute names and element names are written as <code>code</code>.</p>
+      
+      <p>String literals are enclosed in “”, e.g. “UAF-TLV”.</p>
+      
+      <p>In formulas we use “|” to denote byte wise concatenation
+	operations.</p>
+      
+      <p>DOM APIs are described using the ECMAScript [[!ECMA-262]] bindings
+	for WebIDL [[!WebIDL-ED]].</p>
+
+      <p>The notation base64url refers to "Base 64 Encoding with URL and Filename
+	Safe Alphabet" [[!RFC4648]] <i>without padding</i>.  </p>
+
+      <p>Following [[!WebIDL-ED]], dictionary members are optional unless they are 
+	explicitly marked as <code>required</code>.</p>
+      
+      <p>WebIDL dictionary members MUST NOT have a value of null.</p>
+      
+      <p>Unless otherwise specified, if a WebIDL dictionary member is DOMString, 
+	it MUST NOT be empty.</p>
+      
+      <p>Unless otherwise specified, if a WebIDL dictionary member is a List, 
+	it MUST NOT be an empty list.</p>
+      
+      <p>UAF specific terminology used in this document is defined in
+	[[!FIDOGlossary]].</p>
+
+      <p>All diagrams, examples, notes in this specification are non-normative.</p>
+      
+      <p class="note">
+	Note: Certain dictionary members need to be present in order to
+	comply with FIDO requirements. Such members are marked in the
+	WebIDL definitions found in this document, as
+	<code>required</code>. The keyword <code>required</code> has been
+	introduced by [[WebIDL-ED]], which is a work-in-progress. If you
+	are using a WebIDL parser which implements [[WebIDL]], then you
+	may remove the keyword <code>required</code> from your WebIDL and
+	use other means to ensure those fields are present.  
+      </p>
+
+      <section>
+	<h3>Key Words</h3>
+	
+	<p>The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL
+	  NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “MAY”, and
+	  “OPTIONAL” in this document are to be interpreted as
+	  described in [[!RFC2119]].</p>
+      </section>
+    </section>
+    
+    <section class="informative">
+      <h2>Overview</h2>
+      <p>
+        UAF authenticators may be connected to a user device via various physical interfaces
+        (SPI, USB, Bluetooth, etc). The UAF Authenticator-Specific module (ASM) is a software interface
+        on top of UAF authenticators which gives a standardized way for FIDO UAF Clients to detect and
+        access the functionality of UAF authenticators, and hides internal communication
+        complexity from clients.
+      </p>
+      <p>The ASM is a platform-specific
+	software component offering an API to FIDO UAF Clients, enabling
+	them to discover and communicate with one or more available
+	authenticators.
+      </p>
+      <p>A single ASM may report on behalf of multiple authenticators.</p>
+      <p>The intended audience for this document is FIDO UAF authenticator and
+	FIDO UAF Client vendors.
+      </p>
+
+      <div class="note">
+        <p>
+          Platform vendors might choose to not expose the ASM API defined in this document 
+	  to applications.
+          They might instead choose to expose ASM functionality through some other API
+          (such as, for example, the Android KeyStore API, or iOS KeyChain API).
+          In these cases it's important to make sure that the underlying ASM communicates 
+	  with the FIDO UAF authenticator in a
+          manner defined in this document.
+        </p>
+      </div>
+	
+	
+      <p>The FIDO UAF protocol and its various operations is described in the
+	FIDO UAF Protocol Specification [[!UAFProtocol]]. The following
+	simplified architecture diagram illustrates the interactions
+	and actors this document is concerned with:
+      </p>
+      <figure>
+	<img src="./img/fido-uaf-asm-api-arch.png"  
+	     onerror="./img/fido-uaf-asm-api-arch.png"  
+	     alt= "UAF ASM API Architecture"/>
+	<figcaption>
+          UAF ASM API Architecture
+	</figcaption>
+      </figure>
+      <section>
+	<h3>Code Example format</h3>
+	<p>ASM requests and responses are presented in WebIDL format.</p>
+      </section>
+    </section>
+    
+    <section class="normativeDisclaimer">
+      <h2>ASM Requests and Responses</h2>
+
+      <p class="fido-normal">The ASM API is defined in terms of JSON-formatted [[ECMA-404]] request 
+	and reply messages. In order to send a request to an ASM, a FIDO UAF Client 
+	creates an appropriate object (e.g., in ECMAscript), "stringifies" it (also known 
+	as serialization) into a JSON-formated string, and sends it to the ASM. The 
+	ASM de-serializes the JSON-formatted string, processes the request, constructs 
+	a response, stringifies it, returning it as a JSON-formatted string.
+      </p>
+
+      <div class="note">
+        <p>
+          The ASM request processing rules in this document
+          explicitly assume that the underlying authenticator
+          implements the "UAFV1TLV" assertion scheme
+          (e.g. references to TLVs and tags) as described in
+          [[!UAFProtocol]].  If an authenticator supports a
+          different assertion scheme then the corresponding
+          processing rules must be replaced with appropriate
+          assertion scheme-specific rules.
+        </p>
+      </div>
+
+      <p>
+	Authenticator implementers MAY create custom authenticator command interfaces other 
+	than the one defined in [[!UAFAuthnrCommands]]. 
+	Such implementations are not required to 
+	implement the exact message-specific processing steps described in this section. 
+	However, 
+	<ol>
+	  <li>the command interfaces MUST present the ASM with external behavior equivalent 
+	    to that described below in order for the ASM to properly respond to the client 
+	    request messages (e.g. returning appropriate UAF status codes for specific 
+	    conditions).</li>
+	  <li>all authenticator implementations MUST support an assertion scheme 
+	    as defined [[UAFRegistry]] and MUST return the related objects, i.e. 
+	  <code>TAG_UAFV1_REG_ASSERTION</code> and <code>TAG_UAFV1_AUTH_ASSERTION</code> as defined in [[!UAFAuthnrCommands]].</li>
+	</ol>
+      </p>
+
+
+      <section>
+        <h3>Request enum</h3>
+        <dl title='enum Request' class='idl'>
+          <dt>GetInfo</dt>
+          <dd>GetInfo</dd>
+          <dt>Register</dt>
+          <dd>Register</dd>
+          <dt>Authenticate</dt>
+          <dd>Authenticate</dd>
+          <dt>Deregister</dt>
+          <dd>Deregister</dd>
+          <dt>GetRegistrations</dt>
+          <dd>GetRegistrations</dd>
+          <dt>OpenSettings</dt>
+          <dd>OpenSettings</dd>
+        </dl>
+	
+      </section>
+
+      <section>
+	<h3>StatusCode Interface</h3>
+	If the ASM needs to return an error received from the authenticator, it SHALL map the status code received from 
+	the authenticator to the appropriate ASM status code as specified here.
+	<p>
+	  If the ASM doesn't understand the authenticator's status code, it SHALL treat it as 
+	  <code>UAF_CMD_STATUS_ERR_UNKNOWN</code>
+	  and map it to <code>UAF_ASM_STATUS_ERROR</code> if it cannot be handled otherwise.
+	</p>
+	<p>If the caller of the ASM interface (i.e. the FIDO Client) doesn't understand a status code returned by the ASM, 
+	  it SHALL treat it as <code>UAF_ASM_STATUS_ERROR</code>.  This might occur when new error codes are introduced.
+	</p>
+
+	<dl title='interface StatusCode' class='idl'>
+	  <dt>const short UAF_ASM_STATUS_OK = 0x00</dt>
+	  <dd>No error condition encountered.</dd>
+	  <dt>const short UAF_ASM_STATUS_ERROR = 0x01</dt>
+	  <dd>An unknown error has been encountered during the processing.</dd>
+	  <dt>const short UAF_ASM_STATUS_ACCESS_DENIED = 0x02</dt>
+	  <dd>Access to this request is denied.</dd>
+	  <dt>const short UAF_ASM_STATUS_USER_CANCELLED = 0x03</dt>
+	  <dd>Indicates that user explicitly canceled the request.</dd>
+	  <dt>const short UAF_ASM_STATUS_CANNOT_RENDER_TRANSACTION_CONTENT = 0x04</dt>
+	  <dd>Transaction content cannot be rendered, e.g. format doesn't fit authenticator's need.</dd>
+	  <dt>const short UAF_ASM_STATUS_KEY_DISAPPEARED_PERMANENTLY = 0x09</dt>
+	  <dd>Indicates that the UAuth key disappeared from the authenticator and canot be restored.</dd>
+	  <dt>const short UAF_ASM_STATUS_AUTHENTICATOR_DISCONNECTED = 0x0b</dt>
+	  <dd>Indicates that the authenticator is no longer connected to the ASM.</dd>
+	  <dt>const short UAF_ASM_STATUS_USER_NOT_RESPONSIVE = 0x0e</dt>
+	  <dd>The user took too long to follow an instruction, e.g. didn't swipe the finger within the accepted time.</dd>
+	  <dt>const short UAF_ASM_STATUS_INSUFFICIENT_AUTHENTICATOR_RESOURCES = 0x0f</dt>
+	  <dd>Insufficient resources in the authenticator to perform the requested task.</dd>
+	</dl>
+
+	<section>
+	  <h4>Mapping Authenticator Status Codes to ASM Status Codes</h4>
+	  <p>
+	    Authenticators are returning a status code in their responses to the ASM.  The ASM needs to act on those
+	    responses and also map the status code returned by the authenticator to an ASM status code.
+	  </p>
+	  <p>The mapping of authenticator status codes to ASM status codes is specified here: </p>
+	  <table class="tlv">
+	    <thead>
+	      <tr>
+		<th>Authenticator Status Code</th>
+		<th>ASM Status Code</th>
+		<th>Comment</th>
+	      </tr>
+	    </thead>
+	    <tbody>
+	      <tr>
+		<td><code>UAF_CMD_STATUS_OK</code></td>
+		<td><code>UAF_ASM_STATUS_OK</code></td>
+		<td>Pass-through success status.</td>
+	      </tr>
+	      <tr>
+		<td><code>UAF_CMD_STATUS_ERR_UNKNOWN</code></td>
+		<td><code>UAF_ASM_STATUS_ERROR</code></td>
+		<td>Pass-through unspecific error status.</td>
+	      </tr>
+	      <tr>
+		<td><code>UAF_CMD_STATUS_ACCESS_DENIED</code></td>
+		<td><code>UAF_ASM_STATUS_ACCESS_DENIED</code></td>
+		<td>Pass-through status code.</td>
+	      </tr>
+	      <tr>
+		<td><code>UAF_CMD_STATUS_USER_NOT_ENROLLED</code></td>
+		<td><code>UAF_ASM_STATUS_ACCESS_DENIED</code></td>
+		<td>According to [[UAFAuthnrCommands]], this might only occur at the <em>Sign</em> command 
+		  as the authenticator must trigger enrollment at the <em>Register</em> command if required.
+		  The Uauth key needs to be protected by one of the authenticator's 
+		  user verification methods at all times.  So if this occurs it is considered an internal error.
+		</td>
+	      </tr>
+	      <tr>
+		<td><code>UAF_CMD_STATUS_CANNOT_RENDER_TRANSACTION_CONTENT</code></td>
+		<td><code>UAF_ASM_STATUS_CANNOT_RENDER_TRANSACTION_CONTENT</code></td>
+		<td>Pass-through status code as it indicates a problem to be resolved by the entity providing the
+		  transaction text.
+		</td>
+	      </tr>
+	      <tr>
+		<td><code>UAF_CMD_STATUS_USER_CANCELLED</code></td>
+		<td><code>UAF_ASM_STATUS_USER_CANCELLED</code></td>
+		<td>Map to <code>UAF_ASM_STATUS_USER_CANCELLED</code>. </td>
+	      </tr>
+	      <tr>
+		<td><code>UAF_CMD_STATUS_CMD_NOT_SUPPORTED</code></td>
+		<td><code>UAF_ASM_STATUS_OK</code> or <code>UAF_ASM_STATUS_ERROR</code></td>
+		<td>If the ASM is able to handle that command on behalf of the authenticator (e.g. 
+		  removing the key handle in the case of <em>Dereg</em> command for a bound authenticator),
+		  the <code>UAF_ASM_STATUS_OK</code> must be returned. Map the status code 
+		  to <code>UAF_ASM_STATUS_ERROR</code>
+		  otherwise.
+		</td>
+	      </tr>
+	      <tr>
+		<td><code>UAF_CMD_STATUS_ATTESTATION_NOT_SUPPORTED</code></td>
+		<td><code>UAF_ASM_STATUS_ERROR</code></td>
+		<td>Indicates an ASM issue as the ASM has obviously not requested one of 
+		  the supported attestation types
+		  indicated in the authenticator's response to the <em>GetInfo</em> command.</td>
+	      </tr>
+	      <tr>
+		<td><code>UAF_CMD_STATUS_PARAMS_INVALID</code></td>
+		<td><code>UAF_ASM_STATUS_ERROR</code></td>
+		<td>Indicates an ASM issue as the ASM has obviously not provided the correct parameters to the 
+		  authenticator when sending the command.
+		</td>
+	      </tr>
+	      <tr>
+		<td><code>UAF_CMD_STATUS_KEY_DISAPPEARED_PERMANENTLY</code></td>
+		<td><code>UAF_ASM_STATUS_KEY_DISAPPEARED_PERMANENTLY</code></td>
+		<td>Pass-through status code.  It indicates that the Uauth key disappeared permanently and the 
+		  RP App might want to trigger re-registration of the authenticator.
+		</td>
+	      </tr>
+	      <tr>
+		<td><code>UAF_STATUS_CMD_TIMEOUT</code></td>
+		<td><code>UAF_ASM_STATUS_ERROR</code></td>
+		<td>Retry operation and map to <code>UAF_ASM_STATUS_ERROR</code> if the problem persists.</td>
+	      </tr>
+	      <tr>
+		<td><code>UAF_CMD_STATUS_USER_NOT_RESPONSIVE</code></td>
+		<td><code>UAF_ASM_STATUS_USER_NOT_RESPONSIVE</code></td>
+		<td>Pass-through status code.  The RP App might want to retry the operation once the user
+		  pays attention to the application again.
+		</td>
+	      </tr>
+	      <tr>
+		<td><code>UAF_CMD_STATUS_INSUFFICIENT_RESOURCES</code></td>
+		<td><code>UAF_ASM_STATUS_INSUFFICIENT_AUTHENTICATOR_RESOURCES</code></td>
+		<td>Pass-through status code. </td>
+	      </tr>
+	      <tr>
+		<td>Any other status code</td>
+		<td><code>UAF_ASM_STATUS_ERROR</code></td>
+		<td>Map any unknown error code to <code>UAF_ASM_STATUS_ERROR</code>.
+		  This might happen when an ASM communicates with an authenticator implementing a newer 
+		  UAF specification than the ASM.
+		</td>
+	      </tr>
+	    </tbody>
+	  </table>
+	</section>	
+      </section>
+
+      <section>
+
+	<h3>ASMRequest Dictionary</h3>
+	
+	<p>All ASM requests are represented as <code>ASMRequest</code> objects.</p>
+	<dl title='dictionary ASMRequest' class = 'idl'>
+	  <dt>required Request requestType</dt>
+	  <dd>Request type</dd>
+	  <dt>Version asmVersion</dt>
+	  <dd>ASM message version to be used with this request.
+            For the definition of the <code>Version</code> dictionary see [[!UAFProtocol]].
+            The <dfn>asmVersion</dfn> MUST be 1.3 (i.e. major version is 1 and minor version is 3) for this version 
+	    of the specification.
+	  </dd>
+	  <dt>unsigned short authenticatorIndex</dt>
+	  <dd>Refer to the <code>GetInfo</code> request for more details. 
+	    Field <code>authenticatorIndex</code> MUST NOT be set
+	    for <code>GetInfo</code> request.</dd>
+	  <dt>object args</dt>
+	  <dd>Request-specific arguments. If set, this attribute MAY take
+	    one of the following types:
+	    <ul>
+	      <li><code>RegisterIn</code></li>
+	      <li><code>AuthenticateIn</code></li>
+            <li><code>DeregisterIn</code></li>
+	    </ul>
+	  </dd>
+	  <dt>Extension[] exts</dt>
+	  <dd>List of UAF extensions.
+            For the definition of the <code>Extension</code> dictionary see [[!UAFProtocol]].
+	  </dd>
+	</dl>
+      </section>
+      
+      <section>
+	<h3>ASMResponse Dictionary</h3>
+	
+	<p class="fido-normal">All ASM responses are represented as <code>ASMResponse</code> objects.
+	</p>
+	
+	<dl title='dictionary ASMResponse' class='idl'>
+	  <dt>required short statusCode</dt>
+	  <dd>MUST contain one of the values defined in the <code>StatusCode</code> interface</dd>
+	  <dt>object responseData</dt>
+	  <dd>Request-specific response data. This attribute MUST have one of
+	    the following types:
+            <ul>
+              <li><code>GetInfoOut</code></li>
+              <li><code>RegisterOut</code></li>
+              <li><code>AuthenticateOut</code></li>
+              <li><code>GetRegistrationOut</code></li>
+            </ul>
+	  </dd>
+	  <dt>Extension[] exts</dt>
+	  <dd>List of UAF extensions.
+            For the definition of the <code>Extension</code> dictionary see [[!UAFProtocol]].
+	  </dd>
+	</dl>
+	
+      </section>
+
+      <section>
+	<h3>GetInfo Request</h3>
+	
+	<p>Return information about available authenticators.</p>
+	<ol>
+	  <li>Enumerate all of the authenticators this ASM supports</li>
+	  <li>Collect information about all of them</li>
+	  <li>Assign indices to them (<code>authenticatorIndex</code>)</li>
+	  <li>Return the information to the caller</li>
+	</ol>
+	<p class="note">
+          Where possible, an <code>authenticatorIndex</code> should be
+          a persistent identifier that uniquely identifies an
+          authenticator over time, even if it is repeatedly
+          disconnected and reconnected.  This avoids possible
+          confusion if the set of available authenticators changes
+          between a <code>GetInfo</code> request and subsequent ASM requests,
+          and allows a FIDO client to perform caching of information about removable
+          authenticators for a better user experience.</p>
+
+	<p>For a GetInfo request, the following <a>ASMRequest</a> member(s) MUST
+        have the following value(s). The remaining  <a>ASMRequest</a> members
+        SHOULD be omitted:</p>
+	<ul>
+	  <li><code>ASMRequest.requestType</code> MUST be set to <code>GetInfo</code></li>
+	</ul>
+	
+	<p>For a GetInfo response, the following <a>ASMResponse</a> member(s) MUST
+          have the following value(s). The remaining  <a>ASMResponse</a> members
+          SHOULD be omitted:</p>
+	<ul>
+	  <li><code>ASMResponse.statusCode</code> MUST have one of the following values</li>
+	  <ul>
+	    <li><code>UAF_ASM_STATUS_OK</code></li>
+	    <li><code>UAF_ASM_STATUS_ERROR</code></li>
+	  </ul>
+          <li><code>ASMResponse.responseData</code> MUST be an object of type <code>GetInfoOut</code>.
+	    In the case of an error the values of the fields might be empty (e.g. array with no members).
+	  </li>
+	</ul>
+	See section <a href='#mapping-authenticator-status-codes-to-asm-status-codes'></a>for details 
+	on the mapping of authenticator status codes to ASM status codes.
+
+	<section>
+	  <h3>GetInfoOut Dictionary</h3>
+	  
+	  <dl title='dictionary GetInfoOut' class='idl'>
+	    
+	    <dt>required AuthenticatorInfo[] Authenticators</dt>
+	    <dd>List of authenticators reported by the current ASM. MAY be empty an empty list.</dd>
+	  </dl>
+	  
+	</section>
+	
+	<section>	  
+	  <h3>AuthenticatorInfo Dictionary</h3>
+	  <dl title='dictionary AuthenticatorInfo' class='idl'>
+	    <dt>required unsigned short authenticatorIndex</dt>
+	    <dd>Authenticator index. Unique, within the scope of all
+	      authenticators reported by the ASM, index
+	      referring to an authenticator. This index is used by the UAF
+	      Client to refer to the appropriate authenticator in further requests.</dd>
+	    <dt>required Version[] asmVersions</dt>
+	    <dd>A list of ASM Versions that this authenticator can be used with.
+              For the definition of the <code>Version</code> dictionary see [[!UAFProtocol]].
+            </dd>
+            <dt>required boolean isUserEnrolled</dt>
+            <dd>Indicates whether a user is enrolled with this authenticator. Authenticators which
+              don't have user verification technology MUST always return true.
+              Bound authenticators which support different profiles per operating system (OS) user 
+	      MUST report enrollment status for the current OS user.</dd>
+	    <dt>required boolean hasSettings</dt>
+	    <dd>A boolean value indicating whether the authenticator has its own
+	      settings. If so, then a FIDO UAF Client can launch these settings by
+	      sending a <code>OpenSettings</code> request.</dd>
+	    <dt>required AAID aaid</dt>
+	    <dd>The "Authenticator Attestation ID" (AAID), which identifies the type and
+	      batch of the authenticator. See [[UAFProtocol]] for the definition of the AAID structure. 
+	    </dd>
+            <dt>required DOMString assertionScheme</dt>
+	    <dd>The assertion scheme the authenticator uses for attested data and
+	      signatures.
+	      <p>AssertionScheme identifiers are defined in the UAF Protocol
+		specification [[UAFProtocol]].</p>
+	    </dd>
+	    <dt>required unsigned short authenticationAlgorithm</dt>
+	    <dd>Indicates the authentication algorithm that the authenticator uses.
+	      Authentication algorithm identifiers are defined in are defined 
+	      in [[!FIDORegistry]] with <code>ALG_</code> prefix.</dd>	    
+            <dt>required unsigned short[] attestationTypes</dt>
+            <dd>Indicates attestation types supported by the authenticator.
+              Attestation type TAGs are defined in [[!UAFRegistry]] 
+	      with <code>TAG_ATTESTATION</code> prefix</dd>
+	    <dt>required unsigned long userVerification</dt>
+	    <dd>A set of bit flags indicating the user verification method(s)
+	      supported by the authenticator. The values are defined by the
+	      <code>USER_VERIFY</code> constants in [[!FIDORegistry]].</dd>
+	    <dt>required unsigned short keyProtection</dt>
+	    <dd>A set of bit flags indicating the key protections used by the
+	      authenticator. The values are defined by the <code>KEY_PROTECTION</code>
+	      constants in [[!FIDORegistry]].</dd>
+            <dt>required unsigned short matcherProtection</dt>
+            <dd>A set of bit flags indicating the matcher protections used by the
+              authenticator. The values are defined by the <code>MATCHER_PROTECTION</code>
+              constants in [[!FIDORegistry]].</dd>
+	    <dt>required unsigned long attachmentHint</dt>
+	    <dd>A set of bit flags indicating how the authenticator is currently
+	      connected to the system hosting the FIDO UAF Client software. The
+	      values are defined by the <code>ATTACHMENT_HINT</code> constants defined in
+	      [[!FIDORegistry]].
+              <p class="note">Because the connection state and topology of an authenticator
+		may be transient, these values are only hints that can be used
+		by server-supplied policy to guide the user experience, e.g. to
+		prefer a device that is connected and ready for authenticating
+		or confirming a low-value transaction, rather than one that is
+		more secure but requires more user effort. These values are not
+		reflected in authenticator metadata and cannot be relied on by
+		the relying party, although some models of authenticator may
+		provide attested measurements with similar semantics as part of
+		UAF protocol messages.
+	      </p>
+	    </dd>
+	    <dt>required boolean isSecondFactorOnly</dt>
+	    <dd>Indicates whether the authenticator can be used only as a second
+	      factor.</dd>
+            <dt>required boolean isRoamingAuthenticator</dt>
+            <dd>Indicates whether this is a roaming authenticator or not.</dd>
+          <dt>required DOMString[] supportedExtensionIDs</dt>
+          <dd>List of supported UAF extension Ids. MAY be an empty list.</dd>
+	    <dt>required unsigned short tcDisplay</dt>
+	    <dd>A set of bit flags indicating the availability and type of
+	      the authenticator's transaction confirmation display. The values are 
+	      defined by the <code>TRANSACTION_CONFIRMATION_DISPLAY</code>
+	      constants in [[FIDORegistry]].
+	      <p>This value MUST be 0 if transaction confirmation is not 
+		supported by the authenticator.</p>
+	    </dd>	    
+            <dt>DOMString tcDisplayContentType</dt>
+            <dd>Supported transaction content type [[!FIDOMetadataStatement]].
+	      <p>This value MUST be present if transaction confirmation is supported, 
+		i.e. <code>tcDisplay</code> is non-zero.</p>
+	    </dd>
+            <dt>DisplayPNGCharacteristicsDescriptor[] tcDisplayPNGCharacteristics</dt>
+            <dd>Supported transaction Portable Network Graphic (PNG) type [[!FIDOMetadataStatement]].
+	      For the definition of the <code>DisplayPNGCharacteristicsDescriptor</code> 
+	      structure see [[!FIDOMetadataStatement]].
+	      <p>This list MUST be present if PNG-image based transaction confirmation is supported, 
+		i.e. <code>tcDisplay</code> is non-zero and <code>tcDisplayContentType</code> is <code>image/png</code>.</p>
+	    </dd>	    	    	    
+          <dt>DOMString title</dt>
+          <dd>A human-readable short title for the authenticator. It should be
+              localized for the current locale.
+              <p class="note">If the ASM doesn't return a title, the FIDO UAF Client 
+		must provide a title to the calling App.
+                See section "Authenticator interface" in [[UAFAppAPIAndTransport]].</p>
+          </dd>
+
+          <dt>DOMString description</dt>
+          <dd>Human-readable longer description of what the authenticator
+            represents.
+            <div class="note">
+              <p>This text should be localized for current locale.</p>
+              <p>The text is intended to be displayed to the user.  It might deviate from the description
+                specified in the metadata statement for the authenticator [[FIDOMetadataStatement]].</p>
+              <p>If the ASM doesn't return a description, the FIDO UAF Client 
+		will provide a description to the calling application.
+                See section "Authenticator interface" in [[UAFAppAPIAndTransport]].</p>
+            </div>
+          </dd>
+	    <dt>DOMString icon</dt>
+	    <dd>Portable Network Graphic (PNG) format image file representing the 
+	      icon encoded as a data: url [[RFC2397]].
+	      <p class="note">If the ASM doesn't return an icon, the FIDO UAF Client 
+		will provide a default icon to the calling application.
+		See section "Authenticator interface" in [[UAFAppAPIAndTransport]].</p>
+	    </dd>
+	  </dl>
+	</section>
+      </section>
+      <section>	
+	<h3>Register Request</h3>
+	
+	<p>Verify the user and return an authenticator-generated UAF
+	  registration assertion.
+	</p>
+
+
+    <p>For a Register request, the following <a>ASMRequest</a> member(s) MUST
+              have the following value(s). The remaining  <a>ASMRequest</a> members
+              SHOULD be omitted:</p>
+
+	<ul>
+	  <li><code>ASMRequest.requestType</code> MUST be set to <code>Register</code></li>
+	  <li><code>ASMRequest.<a>asmVersion</a></code> MUST be set to the desired version</li>
+	  <li><code>ASMRequest.authenticatorIndex</code> MUST be set to the target authenticator index</li>
+	  <li><code>ASMRequest.args</code> MUST be set to an object of type <code>RegisterIn</code>
+	  </li>
+	</ul>
+
+    <p>For a Register response, the following <a>ASMResponse</a> member(s) MUST
+              have the following value(s). The remaining  <a>ASMResponse</a> members
+              SHOULD be omitted:</p>
+
+	<ul>
+	  <li><code>ASMResponse.statusCode</code> MUST have one of the following values:
+	    <ul>
+	      <li><code>UAF_ASM_STATUS_OK</code></li>
+	      <li><code>UAF_ASM_STATUS_ERROR</code></li>
+	      <li><code>UAF_ASM_STATUS_ACCESS_DENIED</code></li>
+              <li><code>UAF_ASM_STATUS_USER_CANCELLED</code></li>
+              <li><code>UAF_ASM_STATUS_AUTHENTICATOR_DISCONNECTED</code></li>
+              <li><code>UAF_ASM_STATUS_USER_NOT_RESPONSIVE</code></li>
+	      <li><code>UAF_ASM_STATUS_INSUFFICIENT_AUTHENTICATOR_RESOURCES</code></li>
+	    </ul>
+	  </li>
+	  <li><code>ASMResponse.responseData</code> MUST be an object of type <code>RegisterOut</code>.
+	    In the case of an error the values of the fields might be empty (e.g. empty strings).
+	  </li>
+	</ul>
+
+	<section>
+	  <h3>RegisterIn Object</h3>
+	  
+	  <dl title='dictionary RegisterIn' class='idl'>
+	    <dt>required DOMString appID</dt>
+	    <dd>The FIDO server Application Identity.</dd>
+	    <dt>required DOMString username</dt>
+	    <dd>Human-readable user account name</dd>
+	    <dt>required DOMString finalChallenge</dt>
+	    <dd>base64url-encoded challenge data [[!RFC4648]]</dd>
+            <dt>required unsigned short attestationType</dt>
+            <dd>Single requested attestation type</dd>
+	  </dl>
+	</section>
+
+	<section>
+	  <h3>RegisterOut Object</h3>
+	  
+	  <dl title='dictionary RegisterOut' class='idl'>
+	    <dt>required DOMString assertion</dt>
+	    <dd>FIDO UAF authenticator registration assertion, base64url-encoded</dd>
+            <dt>required DOMString assertionScheme</dt>
+            <dd>Assertion scheme. 	      
+	      <p>AssertionScheme identifiers are defined in the UAF Protocol
+		specification [[UAFProtocol]].</p>
+	    </dd>
+	  </dl>
+	</section>
+
+	<section>
+	  <h3>Detailed Description for Processing the Register Request</h3>
+	  
+	  <p class="fido-normal">Refer to [[!UAFAuthnrCommands]] document for more information about
+	    the TAGs and structure mentioned in this paragraph.</p>
+	  
+	  <ol>
+	    <li>Locate authenticator using <code>authenticatorIndex</code>.  
+	      If the authenticator cannot be located, then fail with <code>UAF_ASM_STATUS_AUTHENTICATOR_DISCONNECTED</code>.
+	    </li>
+	    <li>If a user is already enrolled with this authenticator (such as
+	      biometric enrollment, PIN setup, etc. for example) then the ASM MUST request that the
+	      authenticator verifies the user.
+
+              <p class="note">
+                If the authenticator supports <code>UserVerificationToken</code> 
+		(see [[!UAFAuthnrCommands]]), then the ASM
+                must obtain this token in order to later include it with 
+		the <code>Register</code> command.
+              </p>
+	      <ul>
+		<li>If verification fails, return <code>UAF_ASM_STATUS_ACCESS_DENIED</code></li>
+	      </ul>
+	    </li>
+	    <li>If the user is not enrolled with the authenticator then take the user
+	      through the enrollment process.
+	      <ul>
+		<li>If enrollment fails, return <code>UAF_ASM_STATUS_ACCESS_DENIED</code></li>
+	      </ul>
+	    </li>
+	    <li>Construct <code>KHAccessToken</code> (see section 
+	      <a href='#khaccesstoken'>KHAccessToken</a> for more
+	      details)</li>
+	    <li>Hash the provided <code>RegisterIn.finalChallenge</code> using the 
+	      authenticator-specific hash function (<code>FinalChallengeHash</code>)
+	      <p>An authenticator's preferred hash function information MUST meet the 
+		algorithm defined in the <code>AuthenticatorInfo.authenticationAlgorithm</code> field.</p>
+	    </li>
+	    <li>Create a <code>TAG_UAFV1_REGISTER_CMD</code> structure and pass it to the authenticator
+	      <ol>
+		<li>Copy <code>FinalChallengeHash</code>, <code>KHAccessToken</code>, 
+		  <code>RegisterIn.Username</code>,
+		  <code>UserVerificationToken</code>, <code>RegisterIn.AppID</code>, 
+		  <code>RegisterIn.AttestationType</code>
+		  <ol>
+                    <li>Depending on <code>AuthenticatorType</code> some arguments may be optional. 
+		      Refer to [[!UAFAuthnrCommands]]
+                      for more information on authenticator types and their required arguments.</li>
+		  </ol>
+		</li>
+              </ol>
+	    </li>
+	    <li>Invoke the command and receive the response.  If the authenticator returns an error, 
+	      handle that error appropriately.  If the connection to the authenticator gets lost and cannot be restored, 
+	      return <code>UAF_ASM_STATUS_AUTHENTICATOR_DISCONNECTED</code>. If the operation finally 
+	      fails, map the authenticator error code to the the appropriate ASM error code (see 
+	      section <a href='#mapping-authenticator-status-codes-to-asm-status-codes'></a> for details).
+	    </li>
+	    <li>Parse <code>TAG_UAFV1_REGISTER_CMD_RESP</code>
+              <ol>
+                <li>Parse the content of <code>TAG_AUTHENTICATOR_ASSERTION</code> 
+		  (e.g. <code>TAG_UAFV1_REG_ASSERTION</code>) and
+                  extract <code>TAG_KEYID</code></li>
+              </ol>
+	    </li>
+	    <li>If the authenticator is a bound authenticator
+	      <ol>
+		<li>Store <a><code>CallerID</code></a>, <code>AppID</code>, <code>TAG_KEYHANDLE</code>, 
+		  <code>TAG_KEYID</code> and <code>CurrentTimestamp</code> in the ASM's database.
+		  <p class="note">
+                    What data an ASM will store at this stage depends on underlying authenticator's architecture.
+                    For example some authenticators might store AppID, KeyHandle, KeyID inside their own secure storage.
+                    In this case ASM doesn't have to store these data in its database.
+		  </p>
+		</li>
+		</ol>
+	      </li>
+	    <li>Create a <code>RegisterOut</code> object
+	      <ol>
+		<li>Set <code>RegisterOut.assertionScheme</code> according 
+		  to <code>AuthenticatorInfo.assertionScheme</code></li>
+		<li>Encode the content of <code>TAG_AUTHENTICATOR_ASSERTION</code> 
+		  (e.g. <code>TAG_UAFV1_REG_ASSERTION</code>) in base64url format and set as
+		  <code>RegisterOut.assertion</code>.
+		</li>
+		<li>Return <code>RegisterOut</code> object</li>
+	      </ol>
+	    </li>	    
+	  </ol>
+	</section>
+      </section>
+
+      <section>
+	<h3>Authenticate Request</h3>
+	
+	<p>Verify the user and return authenticator-generated UAF
+	  authentication assertion.
+	</p>
+    <p>For an Authenticate request, the following <a>ASMRequest</a> member(s) MUST
+        have the following value(s). The remaining  <a>ASMRequest</a> members
+        SHOULD be omitted:</p>
+
+	<ul>
+	  <li><code>ASMRequest.requestType</code> MUST be set to <code>Authenticate</code>.</li>
+	  <li><code>ASMRequest.<a>asmVersion</a></code> MUST be set to the desired version.</li>
+	  <li><code>ASMRequest.authenticatorIndex</code> MUST be set to the target authenticator index.</li>
+	  <li><code>ASMRequest.args</code> MUST be set to an object of type <code>AuthenticateIn</code></li>
+	</ul>
+
+
+    <p>For an Authenticate response, the following <a>ASMResponse</a> member(s) MUST
+        have the following value(s). The remaining  <a>ASMResponse</a> members
+        SHOULD be omitted:</p>
+	<ul>
+	  <li><code>ASMResponse.statusCode</code> MUST have one of the following values:
+	    <ul>
+	      <li><code>UAF_ASM_STATUS_OK</code></li>
+	      <li><code>UAF_ASM_STATUS_ERROR</code></li>
+	      <li><code>UAF_ASM_STATUS_ACCESS_DENIED</code></li>
+              <li><code>UAF_ASM_STATUS_USER_CANCELLED</code></li>
+              <li><code>UAF_ASM_STATUS_CANNOT_RENDER_TRANSACTION_CONTENT</code></li>
+              <li><code>UAF_ASM_STATUS_KEY_DISAPPEARED_PERMANENTLY</code></li>
+              <li><code>UAF_ASM_STATUS_AUTHENTICATOR_DISCONNECTED</code></li>
+              <li><code>UAF_ASM_STATUS_USER_NOT_RESPONSIVE</code></li>
+	    </ul>
+	  </li>
+	  <li><code>ASMResponse.responseData</code> MUST be an object of type
+          <code>AuthenticateOut</code>.
+	    In the case of an error the values of the fields might be empty (e.g. empty strings).
+	  </li>
+	</ul>
+
+	<section>
+	  <h3>AuthenticateIn Object</h3>
+	  
+	  <dl title='dictionary AuthenticateIn' class='idl'>
+	    
+	    <dt>required DOMString appID</dt>
+	    <dd>appID string</dd>
+	    <dt>DOMString[] keyIDs</dt>
+	    <dd>base64url [[!RFC4648]] encoded keyIDs</dd>
+	    <dt>required DOMString finalChallenge</dt>
+	    <dd>base64url [[!RFC4648]] encoded final challenge</dd>
+	    <dt>Transaction[] transaction</dt>
+	    <dd>An array of transaction data to be confirmed by user. If multiple transactions are provided, then
+              the ASM MUST select the one that best matches the current display characteristics.
+              <p class="note">This may, for example, depend on whether user's device is positioned horizontally or 
+		vertically at the moment of transaction.</p>
+	      </dd>
+	  </dl>
+	</section>
+
+	<section>
+	  <h3>Transaction Object</h3>
+
+	  <dl title='dictionary Transaction' class='idl'>
+	    <dt>required DOMString contentType</dt>
+	    <dd>Contains the MIME Content-Type supported by the authenticator according to
+	      its metadata statement (see [[!FIDOMetadataStatement]])</dd>
+	    
+            <dt>required DOMString content</dt>
+	    <dd>Contains the base64url-encoded [[!RFC4648]] transaction content according to
+	      the <code>contentType</code> to be shown to the user.</dd>
+	    
+	    <dt>DisplayPNGCharacteristicsDescriptor tcDisplayPNGCharacteristics</dt>
+            <dd>Transaction content PNG characteristics. For the definition of the 
+	      <code>DisplayPNGCharacteristicsDescriptor</code> structure See [[!FIDOMetadataStatement]].</dd>
+	  </dl>
+	</section>
+
+	<section>
+	  <h3>AuthenticateOut Object</h3>
+	  <dl title='dictionary AuthenticateOut' class='idl'>
+	    <dt>required DOMString assertion</dt>
+	    <dd>Authenticator UAF authentication assertion.</dd>
+          <dt>required DOMString assertionScheme</dt>
+          <dd>Assertion scheme</dd>
+
+	  </dl>
+	</section>
+
+	<section>
+	  <h3>Detailed Description for Processing the Authenticate Request</h3>
+
+	  <p class="fido-normal">Refer to the [[!UAFAuthnrCommands]] document for more 
+	    information about the
+	    TAGs and structure mentioned in this paragraph.
+	  </p>
+	  
+	  <ol>
+	    <li>Locate the authenticator using <code>authenticatorIndex</code>.
+	      If the authenticator cannot be located, then fail with <code>UAF_ASM_STATUS_AUTHENTICATOR_DISCONNECTED</code>.
+	    </li>
+	    <li>If no user is enrolled with this authenticator (such as
+	      biometric enrollment, PIN setup, etc.), return
+	      <code>UAF_ASM_STATUS_ACCESS_DENIED</code>
+	    </li>
+	    <li>The ASM MUST request the authenticator to verify the user.
+	      <ul>
+		<li>If verification fails, return <code>UAF_ASM_STATUS_ACCESS_DENIED</code></li>
+		<p class="note">
+		  If the authenticator supports <code>UserVerificationToken</code> 
+		  (see [[!UAFAuthnrCommands]]), the  ASM
+                  must obtain this token in order to later pass to <code>Sign</code> command.
+		</p>
+	      </ul>
+	    </li>
+            <li>Construct <code>KHAccessToken</code> (see section <a href='#khaccesstoken'>KHAccessToken</a> for more
+              details)
+            </li>
+            <li>Hash the provided <code>AuthenticateIn.finalChallenge</code> using an authenticator-specific 
+	      hash function (<code>FinalChallengeHash</code>).
+	      <p>The authenticator's preferred hash function information MUST meet the 
+		algorithm defined in the <code>AuthenticatorInfo.authenticationAlgorithm</code> field.</p>
+	    </li>
+	    <li>If this is a Second Factor authenticator and
+	      <code>AuthenticateIn.keyIDs</code> is empty, then return <code>UAF_ASM_STATUS_ACCESS_DENIED</code>
+	    </li>
+	    <li>If AuthenticateIn.keyIDs is not empty,
+	      <ol>
+		<li>If this is a bound authenticator, then look up ASM's database with
+		  <code>AuthenticateIn.appID</code> and <code>AuthenticateIn.keyIDs</code> and obtain
+		  the KeyHandles associated with it.
+		  <ul>
+		    <li>Return <code>UAF_ASM_STATUS_KEY_DISAPPEARED_PERMANENTLY</code> if the related key
+		      disappeared permanently from the authenticator.</li>
+		    <li>Return <code>UAF_ASM_STATUS_ACCESS_DENIED</code> if no entry has been found.</li>
+		  </ul>
+		</li>
+		<li>If this is a roaming authenticator, then treat
+		  <code>AuthenticateIn.keyIDs</code> as KeyHandles
+		</li>
+	      </ol>
+	    </li>
+	    <li>Create <code>TAG_UAFV1_SIGN_CMD</code> structure and pass it to the authenticator.
+	      <ol>
+		<li>Copy <code>AuthenticateIn.AppID</code>, <code>AuthenticateIn.Transaction.content</code> 
+		  (if not empty), <code>FinalChallengeHash</code>, <code>KHAccessToken</code>, 
+		  <code>UserVerificationToken</code>, <code>KeyHandles</code>
+		  <ul>
+                    <li>Depending on AuthenticatorType some arguments may 
+		      be optional. Refer to [[!UAFAuthnrCommands]]
+                      for more information on authenticator types and their required arguments.</li>
+                    <li>If multiple transactions are provided, select the one that best matches 
+		      the current display characteristics.
+                      <p class="note">This may, for example, depend on whether user's device 
+			is positioned horizontally or vertically at the
+			moment of transaction.</p>
+                    </li>
+                    <li>Decode the base64url encoded <code>AuthenticateIn.Transaction.content</code> 
+		      before passing it to the authenticator</li>
+		  </ul>
+		</li>
+	      </ol>
+	    </li>
+	    <li>Invoke the command and receive the response.  If the authenticator returns an error, 
+	      handle that error appropriately.  If the connection to the authenticator gets lost and cannot be restored, 
+	      return <code>UAF_ASM_STATUS_AUTHENTICATOR_DISCONNECTED</code>. If the operation 
+	      finally fails, map the authenticator error code to the appropriate ASM error code (see 
+	      section <a href='#mapping-authenticator-status-codes-to-asm-status-codes'></a> for details).
+	    </li>
+	    <li>Parse <code>TAG_UAFV1_SIGN_CMD_RESP</code>
+	      <ul>
+		<li>If it's a first-factor authenticator and the response includes
+		  <code>TAG_USERNAME_AND_KEYHANDLE</code>, then
+		  <ol>
+		    <li>Extract usernames from <code>TAG_USERNAME_AND_KEYHANDLE</code> fields</li>
+		    <li>If two or more equal usernames are found, then choose the one which has registered most recently
+		      <div class="note">
+			<p>After this step, a first-factor bound authenticator which 
+			  stores KeyHandles inside the ASM's database may delete 
+			  the redundant KeyHandles from the ASM's database. This 
+			  avoids having unusable (old) private key in the authenticator 
+			  which (surprisingly) might become active after deregistering 
+			  the newly generated one.
+			</p>
+		      </div>
+		    </li>
+		    <li>Show remaining distinct usernames and ask the user to choose a single username</li>
+		    <li>Set <code>TAG_UAFV1_SIGN_CMD.KeyHandles</code> to the single KeyHandle associated with the selected
+		      username.
+		    </li>
+		    <li>Go to step #8 and send a new <code>TAG_UAFV1_SIGN_CMD command</code></li>
+		  </ol>
+		</li>
+	      </ul>
+	    </li>	    
+	    <li>Create the <code>AuthenticateOut</code> object
+	      <ol>
+		<li>Set <code>AuthenticateOut.assertionScheme</code> as <code>AuthenticatorInfo.assertionScheme</code>
+		</li>
+		<li>Encode the content of <code>TAG_AUTHENTICATOR_ASSERTION</code> 
+		  (e.g. <code>TAG_UAFV1_AUTH_ASSERTION</code>) in base64url format and
+		  set as <code>AuthenticateOut.assertion</code>
+		</li>
+		<li>Return the <code>AuthenticateOut</code> object
+		</li>
+	      </ol>
+	    </li>
+	  </ol>
+          <div class="note">
+	    <p>Some authenticators might support "Transaction Confirmation Display" functionality
+	      not inside the authenticator but within the boundaries of the
+	      ASM. Typically these are software based Transaction Confirmation Displays. When
+	      processing the <code>Sign</code> command with a given transaction such ASM
+	      should show transaction content in its own UI and after user
+	      confirms it -- pass the content to authenticator so that
+	      the authenticator includes it in the final assertion.</p>
+	    <p>See [[FIDORegistry]] for flags describing Transaction Confirmation Display type.</p>
+          </div>
+	  <p>The authenticator metadata statement MUST truly indicate the
+	    type of transaction confirmation display implementation. 
+	    Typically the "Transaction Confirmation Display" flag
+	    will be set to <code>TRANSACTION_CONFIRMATION_DISPLAY_ANY</code> (bitwise) or 
+	    <code>TRANSACTION_CONFIRMATION_DISPLAY_PRIVILEGED_SOFTWARE</code>.
+	  </p>
+	</section>
+      </section>
+
+      <section>	  
+	<h3>Deregister Request</h3>
+	<p>Delete registered UAF record from the authenticator.</p>
+
+	<p>For a Deregister request, the following <a>ASMRequest</a> member(s) MUST
+          have the following value(s). The remaining  <a>ASMRequest</a> members
+          SHOULD be omitted:</p>
+	<ul>
+	  <li><code>ASMRequest.requestType</code> MUST be set to <code>Deregister</code></li>
+	  <li><code>ASMRequest.<a>asmVersion</a></code> MUST be set to the desired version</li>
+	  <li><code>ASMRequest.authenticatorIndex</code> MUST be set to the target authenticator index</li>
+	  <li><code>ASMRequest.args</code> MUST be set to an object of type <code>DeregisterIn</code></li>
+	</ul>
+
+
+	<p>For a Deregister response, the following <a>ASMResponse</a> member(s) MUST
+          have the following value(s). The remaining  <a>ASMResponse</a> members
+          SHOULD be omitted:</p>
+	<ul>
+	  <li><code>ASMResponse.statusCode</code> MUST have one of the following values:
+	    <ul>
+	      <li><code>UAF_ASM_STATUS_OK</code></li>
+	      <li><code>UAF_ASM_STATUS_ERROR</code></li>
+	      <li><code>UAF_ASM_STATUS_ACCESS_DENIED</code></li>
+	      <li><code>UAF_ASM_STATUS_AUTHENTICATOR_DISCONNECTED</code></li>
+	    </ul>
+	  </li>
+	</ul>
+	
+	<section>
+	  <h3>DeregisterIn Object</h3>
+	  
+	  <dl title='dictionary DeregisterIn' class='idl'>	    
+	    <dt>required DOMString appID</dt>
+	    <dd>FIDO Server Application Identity</dd>
+	    <dt>required DOMString keyID</dt>
+	    <dd>Base64url-encoded [[!RFC4648]] key identifier of
+	      the authenticator to be de-registered.  The <code>keyID</code> can be an empty string.  
+	      In this case all <code>keyID</code>s related to this <code>appID</code> MUST be deregistered.
+	    </dd>
+	  </dl>
+	</section>
+	
+	<section>
+	  <h3>Detailed Description for Processing the Deregister Request</h3>
+	  
+	  <p>Refer to [[UAFAuthnrCommands]] for more 
+	    information about the TAGs and structures mentioned in this paragraph.
+	  </p>
+	  
+	  <ol>
+	    <li>Locate the authenticator using <code>authenticatorIndex</code></li>
+            <li>Construct <code>KHAccessToken</code> (see section <a href='#khaccesstoken'>KHAccessToken</a> for more
+	      details).
+            </li>
+	    <li>If this is a bound authenticator, then
+	      <ul>
+		<li>If the value of <code>DeregisterIn.keyID</code> 
+		  is an empty string, then lookup all pairs of this <code>appID</code> and any <code>keyID</code> 
+		  mapped to this <code>authenticatorIndex</code> and delete them. Go to step 4.
+		</li>
+		<li>Otherwise, lookup the authenticator related data in the ASM database and delete the record associated 
+		  with <code>DeregisterIn.appID</code> and <code>DeregisterIn.keyID</code>.  Go to step 4.
+		</li>
+	      </ul>
+	    </li>
+	    <li>Create the <code>TAG_UAFV1_DEREGISTER_CMD</code> structure, copy <code>KHAccessToken</code> and 
+	      <code>DeregisterIn.keyID</code> and pass it to the authenticator.
+	      <p class="note">In the case of roaming authenticators, the <code>keyID</code> passed to the authenticator 
+		might be an empty string. The authenticator is supposed to deregister all keys 
+		related to this <code>appID</code>
+		in this case.
+	      </p>
+	    </li>
+	    <li>Invoke the command and receive the response.  If the authenticator returns an error, 
+	      handle that error appropriately.  If the connection to the authenticator gets lost and cannot be restored, 
+	      return <code>UAF_ASM_STATUS_AUTHENTICATOR_DISCONNECTED</code>. If the operation 
+	      finally fails, map the authenticator error code to the appropriate ASM error code (see 
+	      section <a href='#mapping-authenticator-status-codes-to-asm-status-codes'></a> for details). Return proper ASMResponse.
+	    </li>
+	  </ol>
+	</section>
+      </section>
+      <section>
+	<h3>GetRegistrations Request</h3>
+	
+	<p>Return all registrations made for the calling FIDO UAF Client.</p>
+	<p>For a GetRegistrations request, the following <a>ASMRequest</a> member(s) MUST
+          have the following value(s). The remaining  <a>ASMRequest</a> members
+          SHOULD be omitted:</p>
+	<ul>
+	  <li><code>ASMRequest.requestType</code> MUST be set to <code>GetRegistrations</code></li>
+	  <li><code>ASMRequest.<a>asmVersion</a></code> MUST be set to the desired version </li>
+	  <li><code>ASMRequest.authenticatorIndex</code> MUST be set to corresponding ID </li>
+	</ul>
+
+
+	<p>For a GetRegistrations response, the following <a>ASMResponse</a> member(s) MUST
+          have the following value(s). The remaining  <a>ASMResponse</a> members
+          SHOULD be omitted:</p>
+	<ul>
+	  <li><code>ASMResponse.statusCode</code> MUST have one of the following values:
+	    <ul>
+	      <li><code>UAF_ASM_STATUS_OK</code></li>
+	      <li><code>UAF_ASM_STATUS_ERROR</code></li>
+	      <li><code>UAF_ASM_STATUS_AUTHENTICATOR_DISCONNECTED</code></li>
+	    </ul>
+	  </li>
+	  <li>The <code>ASMResponse.responseData</code> MUST be an object of type
+            <code>GetRegistrationsOut</code>.
+	    In the case of an error the values of the fields might be empty (e.g. empty strings).
+	  </li>
+	</ul>
+	
+	<section>
+	  <h3>GetRegistrationsOut Object</h3>
+	  
+	  <dl title='dictionary GetRegistrationsOut' class='idl'>
+	    <dt>required AppRegistration[] appRegs</dt>
+	    <dd>List of registrations associated with an <code>appID</code> (see <code>AppRegistration</code> below).
+            MAY be an empty list.
+	    </dd>
+	  </dl>
+	  
+	</section>
+	
+	<section>	  
+	  <h3>AppRegistration Object</h3>
+	  
+	  <dl title='dictionary AppRegistration' class='idl'>
+	    <dt>required DOMString appID</dt>
+	    <dd>FIDO Server Application Identity.</dd>
+	    <dt>required DOMString[] keyIDs</dt>
+	    <dd>List of key identifiers associated with the <code>appID</code></dd>
+	  </dl>
+	</section>
+
+	<section>	  
+	  <h3>Detailed Description for Processing the GetRegistrations Request</h3>
+	  
+	  <ol>
+	    <li>Locate the authenticator using <code>authenticatorIndex</code></li>
+	    <li>If this is bound authenticator, then
+	      <ul>
+		<li>Lookup the registrations associated with <a>CallerID</a> and AppID 
+		  in the ASM database and construct a list of <code>AppRegistration</code> objects</li>
+		<p class="note">
+                  Some ASMs might not store this information inside their own database. Instead it might have
+                  been stored inside the authenticator's secure storage area. In this case the ASM must send a
+                  proprietary command to obtain the necessary data.
+		</p>
+	      </ul>
+	    </li>
+	    <li>Create <code>GetRegistrationsOut</code> object and return</li>
+	  </ol>
+	</section>
+      </section>
+      
+      
+      <section>
+	<h3>OpenSettings Request</h3>
+	
+	<p>Display the authenticator-specific settings interface. If the authenticator has its own built-in user interface,
+          then the ASM MUST invoke <code>TAG_UAFV1_OPEN_SETTINGS_CMD</code> to display it.
+	</p>
+
+	<p>For an OpenSettings request, the following <a>ASMRequest</a> member(s) MUST
+          have the following value(s). The remaining  <a>ASMRequest</a> members
+          SHOULD be omitted:</p>
+	<ul>
+	  <li><code>ASMRequest.requestType</code> MUST be set to <code>OpenSettings</code></li>
+        <li><code>ASMRequest.<a>asmVersion</a></code> MUST be set to the desired version</li>
+        <li><code>ASMRequest.authenticatorIndex</code> MUST be set to the target authenticator index</li>
+	</ul>
+
+
+	<p>For an OpenSettings response, the following <a>ASMResponse</a> member(s) MUST
+          have the following value(s). The remaining  <a>ASMResponse</a> members
+          SHOULD be omitted:</p>
+	<ul>
+	  <li><code>ASMResponse.statusCode</code> MUST have one of the following values:
+	    <ul>
+	      <li><code>UAF_ASM_STATUS_OK</code></li>
+	    </ul>
+	  </li>
+	</ul>
+      </section>
+    </section>
+      
+    <section class="informative">
+      <h2>Using ASM API</h2>
+      <p>In a typical implementation, the FIDO UAF Client will call
+	<code>GetInfo</code> during initialization and obtain information about
+	the authenticators. Once the information is obtained it will
+	typically be used during FIDO UAF message processing to find a match
+	for given FIDO UAF policy. Once a match is found the FIDO UAF Client will
+	send the appropriate request (Register/Authenticate/Deregister...)
+	to this ASM.
+      </p>
+      <p>The FIDO UAF Client may use the information obtained from
+	a <code>GetInfo</code> response to display relevant information about an
+	authenticator to the user.
+      </p>
+    </section>
+    
+    <section class="normativeDisclaimer">
+      <h2>Using the ASM API on various platforms</h2>
+      
+      <section>
+	<h3>Android ASM Intent API</h3>
+	<p>On Android systems FIDO UAF ASMs MAY be implemented as a separate 
+	  APK-packaged application.</p>
+	<p>The FIDO UAF Client invokes ASM operations via Android Intents. All interactions between
+          the FIDO UAF Client and an ASM on Android takes place through the following intent identifier:</p>
+        <pre>org.fidoalliance.intent.FIDO_OPERATION</pre>
+	
+	<p>To carry messages described in this document, an intent MUST also have 
+	  its <code>type</code> attribute set
+          to <code>application/fido.uaf_asm+json</code>.</p>
+	
+	<p>ASMs MUST register that intent in their manifest file and implement a handler for it.</p>
+	
+	<p>FIDO UAF Clients MUST append an extra, <code>message</code>, containing a <code>String</code>
+          representation of a <a title='ASMRequest'>ASMRequest</a>, before invoking the intent.</p>
+	
+	<p>FIDO UAF Clients MUST invoke ASMs by calling <code>startActivityForResult()</code></p>
+	
+	<p>FIDO UAF Clients SHOULD assume that ASMs will display an interface to the user in order to handle 
+	  this intent, e.g. prompting the user to complete the verification ceremony. 
+	  However, the ASM SHOULD NOT display any user interface when processing a <code>GetInfo</code> request.</p>
+	<p>After processing is complete the ASM will return the response intent 
+	  as an argument to <code>onActivityResult()</code>.
+          The response intent will have an extra, <code>message</code>, containing a <code>String</code>
+          representation of a <a title='ASMResponse'>ASMResponse</a>.
+	</p>
+
+	<section>
+          <h4>Discovering ASMs</h4>
+          <p>FIDO UAF Clients can discover the ASMs available on the system by using
+            <code><a href='http://developer.android.com/reference/android/content/pm/PackageManager.html#queryIntentActivities(android.content.Intent,%20int)'>PackageManager.queryIntentActivities(Intent 
+		intent, int flags)</a></code>
+            with the FIDO Intent described above to see if any activities are available.</p>
+          <p>A typical FIDO UAF Client will enumerate all
+            ASM applications using this function and will invoke the <code>GetInfo</code> operation for each one discovered.</p>	  
+	</section>	
+
+	<section>
+          <h4>Alternate Android AIDL Service ASM Implementation</h4>
+          <p>The Android Intent API can also be implemented using Android AIDL services as an alternative 
+	    transport mechanism to Android Intents. Please see Android Intent API section [[UAFAppAPIAndTransport]] 
+	    for differences between the Android AIDL service and Android Intent implementation.</p>
+	</section>	
+      </section>
+
+      <section>
+	<h2>Windows ASM API</h2>
+	<p class="fido-normal">On Windows, an ASM is implemented in the form of a Dynamic Link
+	  Library (DLL). The following is an example <code>asmplugin.h</code> header
+	  file defining a Windows ASM API:
+	</p>
+	<pre class="example">
+/*! @file asm.h
+*/
+
+#ifndef __ASM<u>H</u>_
+#define __ASM<u>H</u>_
+#ifdef _WIN32
+#define ASM_API __declspec(dllexport)
+#endif
+
+#ifdef _WIN32
+#pragma warning ( disable : 4251 )
+#endif
+
+#define ASM_FUNC extern "C" ASM_API
+#define ASM_NULL 0
+
+/*! \brief Error codes returned by ASM Plugin API.
+*  Authenticator specific error codes are returned in JSON form.
+*  See JSON schemas for more details.
+*/
+
+enum asmResult_t
+{
+  Success = 0, /**&lt; Success */
+  Failure /**&lt; Generic failure */
+};
+
+/*! \brief Generic structure containing JSON string in UTF-8
+*  format.
+*  This structure is used throughout functions to pass and receives
+*  JSON data.
+*/
+
+struct asmJSONData_t
+{
+  int length; /**&lt; JSON data length */
+  char <em>pData; /</em>*&lt; JSON data */
+};
+
+/*! \brief Enumeration event types for authenticators.
+These events will be fired when an authenticator becomes
+  available (plugged) or unavailable (unplugged).
+*/
+
+enum asmEnumerationType_t
+{
+  Plugged = 0, /**&lt; Indicates that authenticator Plugged to system */
+  Unplugged /**&lt; Indicates that authenticator Unplugged from system */
+};
+
+namespace ASM
+{
+  /*! \brief Callback listener.
+  FIDO UAF Client must pass an object implementating this interface to
+  Authenticator::Process function. This interface is used to provide
+  ASM JSON based response data.*/
+  class ICallback
+  {
+    public
+      virtual ~ICallback() {}
+      /**
+      This function is called when ASM's response is ready.
+      *
+      @param response JSON based event data
+      @param exchangeData must be provided by ASM if it needs some
+      data back right after calling the callback function.
+      The lifecycle of this parameter must be managed by ASM. ASM must
+      allocate enough memory for getting the data back.
+      */
+
+      virtual void Callback(const asmJSONData_t &amp;response,
+      asmJSONData_t &amp;exchangeData) = 0;
+  };
+
+  /*! \brief Authenticator Enumerator.
+  FIDO UAF Client must provide an object implementing this
+  interface. It will be invoked when a new authenticator is plugged or
+  when an authenticator has been unplugged. */
+
+  class IEnumerator
+  {
+    public
+      virtual ~IEnumerator() {}
+      /**
+        This function is called when an authenticator is plugged or
+	    unplugged.
+      * @param eventType event type (plugged/unplugged)
+        @param AuthenticatorInfo JSON based GetInfoResponse object
+      */
+
+      virtual void Notify(const asmEnumerationType_t eventType, const
+      asmJSONData_t &amp;AuthenticatorInfo) = 0;
+  };
+}
+
+/**
+Initializes ASM plugin. This is the first function to be
+	    called.
+*
+@param pEnumerationListener caller provided Enumerator
+*/
+
+ASM_FUNC asmResult_t asmInit(ASM::IEnumerator
+	  *pEnumerationListener);
+/**
+Process given JSON request and returns JSON response.
+*
+If the caller wants to execute a function defined in ASM JSON
+	    schema then this is the function that must be called.
+*
+@param pInData input JSON data
+@param pListener event listener for receiving events from ASM
+*/
+ASM_FUNC asmResult_t asmProcess(const asmJSONData_t *pInData,
+	  ASM::ICallback *pListener);
+/**
+Unitializes ASM plugin.
+*
+*/
+ASM_FUNC asmResult_t asmUninit();
+#endif // __ASMPLUGIN<u>H</u>_
+</pre>
+	<p>A Windows-based FIDO UAF Client MUST look for ASM DLLs in the following
+	  registry paths:
+	</p>
+	<p><code>HKCU\Software\FIDO\UAF\ASM</code></p>
+	<p><code>HKLM\Software\FIDO\UAF\ASM</code></p>
+	<p>The FIDO UAF Client iterates over all keys under this path and looks
+	  for "path" field:</p>
+	<p><code>[HK**\Software\FIDO\UAF\ASM\&lt;exampleASMName&gt;]</code></p>
+	<p><code>"path"="&lt;ABSOLUTE_PATH_TO_ASM&gt;.dll"</code></p>
+	<p><code>path</code> MUST point to the absolute location of the ASM DLL.</p>
+      </section>
+    </section>
+
+    <section class="normativeDisclaimer">
+      <h2>Security and Privacy Guidelines</h2>
+      
+      <p>ASM developers must carefully protect the FIDO UAF data they are working
+	with. ASMs must follow these security guidelines:</p>
+
+      <ul>
+	<li>
+	  <p class="certifiction">ASMs MUST implement a mechanism for isolating UAF credentials
+	    registered by two different FIDO UAF Clients from one another. One
+	    FIDO UAF Client MUST NOT have access to FIDO UAF credentials that have
+	    been registered via a different FIDO UAF Client. This prevents 
+	    malware from exercising credentials associated with a legitimate FIDO
+	    Client.
+	  </p>	  
+	  <p class="note">ASMs must properly protect their sensitive data against
+	    malware using platform-provided isolation capabilities in order to 
+	    follow the assumptions made in [[FIDOSecRef]]. 
+	    Malware with root access to the system or direct physical attack on the
+	    device are out of scope for this requirement.</p>
+
+	  <div class="note">
+	    <p>The following are examples for achieving this:</p>
+	    <ul>
+	      <li>
+		If an ASM is bundled with a FIDO UAF Client, this isolation
+		mechanism is already built-in.
+              </li>
+	      <li>
+		If the ASM and FIDO UAF Client are implemented by the same vendor,
+		the vendor may implement proprietary mechanisms to bind its ASM
+		exclusively to its own FIDO UAF Client.</li>
+	      <li>
+		On some platforms ASMs and the FIDO UAF Clients may be assigned
+		with a special privilege or permissions which regular
+		applications don't have. ASMs built for such platforms may
+		avoid supporting isolation of UAF credentials per FIDO UAF Clients
+		since all FIDO UAF Clients will be considered equally trusted.
+	      </li>
+	    </ul>
+	  </div>
+	</li>
+	<li>
+	  <p class="certification">An ASM designed specifically for bound authenticators MUST
+	    ensure that FIDO UAF credentials registered with one ASM cannot be
+	    accessed by another ASM. This is to prevent an application
+	    pretending to be an ASM from exercising legitimate UAF
+	    credentials.
+	  </p>
+          <ul>
+	    <li>Using a <a href='#khaccesstoken'>KHAccessToken</a> offers such a mechanism.</li>
+	  </ul>
+	</li>
+	<li>
+	  <p class="certification">An ASMs must implement platform-provided security best practices for
+	    protecting UAF related stored data.
+	  </p>
+	</li>
+	<li>
+	  <div class="certification">
+	    <p>ASMs MUST NOT store any sensitive FIDO UAF data in its local storage, except the
+	      following:</p>
+            <ul>
+	      <li>
+		<a><code>CallerID</code></a>, <code>ASMToken</code>, <code>PersonaID</code>, 
+		<code>KeyID</code>, <code>KeyHandle</code>, <code>AppID</code>
+              </li>
+	    </ul>
+	  </div>
+	  <p class="note">An ASM, for example, must never store a username provided by a FIDO Server
+	    in its local storage in a form other than being decryptable exclusively by the authenticator.
+	  </p>
+	</li>
+	<li>
+	  <div class="certification">
+	    <p>ASMs SHOULD ensure that applications cannot use silent
+	      authenticators for tracking purposes. ASMs implementing support
+	      for a silent authenticator MUST show, during every registration,
+	      a user interface which explains what a silent authenticator is,
+	      asking for the users consent for the registration. Also, it is RECOMMENDED that ASMs
+	      designed to support roaming silent authenticators either
+	    </p>
+            <ul>
+	      <li>
+		Run with a special permission/privilege on the system, or
+              </li>
+              <li>
+		Have a built-in binding with the authenticator which ensures
+		that other applications cannot directly communicate with the
+		authenticator by bypassing this ASM.
+              </li>
+            </ul>
+	  </div>
+	</li>
+      </ul>
+
+      <section>
+	<h3>KHAccessToken</h3>
+	
+	<p><code>KHAccessToken</code> is an access control mechanism for protecting an
+	  authenticator's FIDO UAF credentials from unauthorized use. It is
+	  created by the ASM by mixing various sources of information
+	  together. Typically, a <code>KHAccessToken</code> contains the following four
+	  data items in it: <code>AppID</code>, <code>PersonaID</code>, 
+	  <code>ASMToken</code> and <a><code>CallerID</code></a>.
+	</p>
+	<p><b><code>AppID</code></b> is provided by the FIDO Server and is contained in every
+	  FIDO UAF message.
+	</p>
+	<p><b><code>PersonaID</code></b> is obtained by the ASM from the operational environment.
+	  Typically a different <code>PersonaID</code> is assigned to every operating system user
+	  account.
+	</p>
+	<p><b><code>ASMToken</code></b> is a randomly generated secret which is maintained
+	  and protected by the ASM.</p>
+	<p class="note">In a typical implementation an ASM will
+	  randomly generate an ASMToken when it is launched the first time
+	  and will maintain this secret until the ASM is uninstalled.
+	</p>
+	<p><b><code><dfn>CallerID</dfn></code></b> is the ID the platform has assigned to the calling FIDO UAF Client
+	  (e.g. "bundle ID" for iOS). On different platforms the <var>CallerID</var>
+	  can be obtained differently. </p>
+	<p class="note">For example on Android platform
+	  ASM can use the hash of the caller's <code>apk-signing-cert</code>.
+	</p>
+	<p>The ASM uses the <code>KHAccessToken</code> to establish a link between the ASM and
+	  the key handle that is created by authenticator on behalf of
+	  this ASM.
+	</p>
+	<p>The ASM provides the <code>KHAccessToken</code> to the authenticator with every
+	  command which works with key handles.
+	</p>
+	<div class="note">
+	  <p>The following example describes how the ASM constructs and uses
+	    <code>KHAccessToken</code>.
+	  </p>
+	  
+	  <ul>
+            <li>
+	      During a <code>Register</code> request
+              <ul>
+		<li>Set <code>KHAccessToken</code> to a secret value only known to the ASM.  
+		  This value will always be the same for this ASM.
+		</li>
+		<li>
+		  Append <code>AppID</code>
+		  <ul>
+		    <li><code>KHAccessToken = AppID</code></li>
+		  </ul>
+		</li>
+		<li>
+		  If a bound authenticator, append <code>ASMToken</code>, 
+		  <code>PersonaID</code> and <a><code>CallerID</code></a>
+		  <ul>
+		    <li><code>KHAccessToken |= ASMToken | PersonaID | CallerID</code></li>
+		  </ul>
+		</li>
+		<li>
+		  Hash <code>KHAccessToken</code>
+		  <ul>
+		    <li>Hash <code>KHAccessToken</code> using the authenticator's hashing algorithm.
+		      The reason of using authenticator specific hash function is to
+		      make sure of interoperability between ASMs. If interoperability
+		      is not required, an ASM can use any other secure hash function it
+		      wants.
+                    </li>
+                    <li><code>KHAccessToken=hash(KHAccessToken)</code></li>
+		  </ul>
+		</li>
+		<li>Provide <code>KHAccessToken</code> to the authenticator</li>
+		<li>The authenticator puts the <code>KHAccessToken</code> into 
+		  <code>RawKeyHandle</code> (see
+		  [[UAFAuthnrCommands]] for more details)
+		</li>
+              </ul>
+            </li>
+	    <li>
+	      During other commands which require <code>KHAccessToken</code> as input
+	      argument
+              <ul>
+		<li>
+		  The ASM computes <code>KHAccessToken</code> the same way as 
+		  during the <code>Register</code>
+		  request and provides it to the authenticator along with other
+		  arguments.
+		</li>
+		<li>
+		  The authenticator unwraps the provided key handle(s) and proceeds with
+		  the command only if <code>RawKeyHandle.KHAccessToken</code> is equal to
+		  the provided <code>KHAccessToken</code>.
+		</li>
+	      </ul>
+	    </li>
+	  </ul>
+	</div>
+	
+	<p class="certification">Bound authenticators MUST support a mechanism for binding
+          generated key handles to ASMs. The binding mechanism MUST have at
+          least the same security characteristics as mechanism for protcting <code>KHAccessToken</code>
+          described above. As a consequence it is RECOMMENDED to securely derive
+	  <code>KHAccessToken</code> from <code>AppID</code>, <code>ASMToken</code>, 
+	  <code>PersonaID</code> and the <a><code>CallerID</code></a>.
+	</p>
+	<div class="note">
+	  <p>It is recommended for roaming authenticators that the
+            <code>KHAccessToken</code> contains only the <code>AppID</code> since otherwise users won't
+            be able to use them on different machines (<code>PersonaID</code>, <code>ASMToken</code>
+            and <a><code>CallerID</code></a> are platform specific). If the authenticator
+            vendor decides to do that in order to address a specific use case, however, it is allowed.
+	  </p>
+	  <p>Including <code>PersonaID</code> in the <code>KHAccessToken</code> is optional for all types
+            of authenticators. However an authenticator designed for
+            multi-user systems will likely have to support it.
+	  </p>
+	</div>
+	<div>If an ASM for roaming authenticators doesn't use a <code>KHAccessToken</code> which 
+	  is different for each <code>AppID</code>, the ASM MUST include the <code>AppID</code>
+	  in the command for a <code>deregister</code> request containing an empty <code>KeyID</code>.
+	</div>
+      </section>
+      <section>
+	<h3>Access Control for ASM APIs</h3>
+
+	<p>The following table summarizes the access control requirements
+	  for each API call.
+	</p>
+
+	<p>ASMs MUST implement the access control requirements defined below. ASM vendors MAY
+          implement additional security mechanisms.
+        </p>
+
+	<p>Terms used in the table:
+	</p>
+
+	<ul>
+	  <li><code>NoAuth</code> -- no access control</li>
+	  <li><a><code>CallerID</code></a> -- FIDO UAF Client's platform-assigned ID is verified</li>
+	  <li><code>UserVerify</code> -- user must be explicitly verified</li>
+	  <li><code>KeyIDList</code> -- must be known to the caller</li>
+	</ul>
+
+	<table title="Table 1: Access Control for ASM API" border="1" cellpadding="5">
+	  <tr>
+	    <th>Commands</th>
+	    <th>First-factor bound authenticator</th>
+	    <th>Second-factor bound authenticator</th>
+	    <th>First-factor roaming authenticator</th>
+	    <th>Second-factor roaming authenticator</th>
+	  </tr>
+	  <tr>
+	    <td>GetInfo</td>
+	    <td>NoAuth</td>
+	    <td>NoAuth</td>
+	    <td>NoAuth</td>
+	    <td>NoAuth</td>
+	  </tr>
+	  <tr>
+	    <td>OpenSettings</td>
+	    <td>NoAuth</td>
+	    <td>NoAuth</td>
+	    <td>NoAuth</td>
+	    <td>NoAuth</td>
+	  </tr>
+	  <tr>
+	    <td>Register</td>
+	    <td>UserVerify</td>
+	    <td>UserVerify</td>
+	    <td>UserVerify</td>
+	    <td>UserVerify</td>
+	  </tr>
+	  <tr>
+	    <td>Authenticate</td>
+	    <td>UserVerify
+	      <br/>AppID
+	      <br/>CallerID
+	      <br/>PersonaID
+	    </td>
+	    <td>UserVerify
+	      <br/>AppID
+	      <br/>KeyIDList
+	      <br/>CallerID
+	      <br/>PersonaID
+	    </td>
+	    <td>UserVerify
+	      <br/>AppID
+	    </td>
+	    <td>UserVerify
+	      <br/>AppiD
+	      <br/>KeyIDList
+	    </td>
+	  </tr>
+	  <tr>
+	    <td>GetRegistrations*</td>
+	    <td>CallerID
+	      <br/>PersonaID
+	    </td>
+	    <td>CallerID
+	      <br/>PersonaID
+	    </td>
+	    <td>X</td>
+	    <td>X</td>
+	  </tr>
+	  <tr>
+	    <td>Deregister</td>
+	    <td>AppID
+	      <br/>KeyID
+	      <br/>PersonaID
+	      <br/>CallerID
+	    </td>
+	    <td>AppID
+	      <br/>KeyID
+	      <br/>PersonaID
+	      <br/>CallerID
+	    </td>
+	    <td>AppID
+	      <br/>KeyID
+	    </td>
+	    <td>AppID
+	      <br/>KeyID
+	    </td>
+	  </tr>
+	</table>
+	
+      </section>
+    </section>
+  </body>
+</html>

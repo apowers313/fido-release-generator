@@ -1,0 +1,231 @@
+This file records changes in conformance requirements made since the 26-Aug-2014 interop snapshot.
+---------------------------------------------------------------------------------------------------------
+Summary: Updated type of version subfields
+Date: 28-Aug-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/c067b7d80ff5f47dee2f06085a9c7740e5fb7115
+Description: Change the WebIDL type of version.major and version.minor from "int" to "short"
+Compatibility Impact: 
+
+Minimal to None.  No currently defined APIs have strongly-typed integer bit widths.  JavaScript APIs
+use generic numeric types, and UAF protocol messages and Android Intents use JSON string serializations
+of numbers, so there should be full wire and API compatibility after the change.
+---------------------------------------------------------------------------------------------------------
+Summary: Added supportedExtensionIDs to authenticator structure exposed by discovery API
+Date: 28-Aug-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/31828d86ad3486db5bf88477cb7a15e9e62c6fca
+Description: expose extension support in discovery so it can be checked prior to registration
+Compatibility Impact: 
+
+Minimal to None on relying party code - adding a new member to an interface is not a breaking change.
+Minor for FIDO client implementation. This field is already present in the ASM API structures, just
+needs to be added to the Authenticator structure that is finally exposed on the final client API surface.
+---------------------------------------------------------------------------------------------------------
+Summary: Extension ambiguity in asm api and fido protocol spec resolved, see #173
+Date: 28-Aug-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/b9c86fcba249ff3f127039e50e361ead36eb101f
+Description: field "fail_if_unknown" added to extension dictionary.
+Compatibility Impact: FIDO Client needs to be aware of modified ASM API (additional field). ASMs need to support new field.
+---------------------------------------------------------------------------------------------------------
+Summary:  fix in TLSData: all fields are described to be absent in some cases. So they need to be nullable.
+Date: 28-Aug-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/1a9b30eb5100c6cb909ceafb6953f550571986bc
+Description: fix in TLSData: all fields are described to be absent in some cases. So they need to be nullable.
+Compatibility Impact: FIDO Servers need to be aware that more fields are nullable
+---------------------------------------------------------------------------------------------------------
+Summary:  fixed KRD vs. Registration Assertion and SignedData vs. AuthenticationAssertion confusion.
+Date: 28-Aug-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/d5529d26799088d370a2e3e012e5169646a35543
+Description:  fixed KRD vs. Registration Assertion and SignedData vs. AuthenticationAssertion confusion.
+Compatibility Impact: None (other than some questions/confusion)
+---------------------------------------------------------------------------------------------------------
+Summary: Version is an interface not a dictionary - correction section header 
+Date: 28-Aug-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/397abeefedfba1f7031f22b0677bd8b030e20fd6
+Description: Version is an interface not a dictionary - correction section header 
+Compatibility Impact: None.
+---------------------------------------------------------------------------------------------------------
+Summary: added declaration of version (copy from uaf-protocol-spec, see #173
+Date: 28-Aug-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/1c445dbf080bb54aa4f1fdef016b8be6825a562b
+Description: added declaration of version (copy from uaf-protocol-spec, see #173
+Compatibility Impact: None. Only avoided dependency on another document
+---------------------------------------------------------------------------------------------------------
+Summary: processing of the TOC file signing certificate refined. 
+Date: 28-Aug-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/1a3d4eff6ca63eadeff6ad267cf41284719d8c54
+Description: renamed MatchCriteria.authenticationFactor to .userVerification, closing #213
+Compatibility Impact: FIDO Server implementations are affect. No relevance for FIDO Client to FIDO Server interop as it affects
+	Metadata verification only.
+---------------------------------------------------------------------------------------------------------
+Summary: renamed MatchCriteria.authenticationFactor to .userVerification, closing #213
+Date: 29-Aug-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/f6ba8cc63081fc68ca2f1e4f6ddf7cd9449a8dfb
+Compatibility Description: renamed MatchCriteria.authenticationFactor to .userVerification and corrected type to be 
+	     long (not long long), closing #213 
+Compatibility Impact: FIDO Client and FIDO Server implementations are affect (generating+parsing policy)
+---------------------------------------------------------------------------------------------------------
+Summary: Fixed misplaced FRRs (should be FAR)
+Date: 29-Aug-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/e5246dcd2e312e360716b834cace7c659c20bed7
+Description:  fixed some occurences of FRR which need to be FAR. Only affects explanations and examples
+Compatibility Impact: None for FIDO implementations.
+---------------------------------------------------------------------------------------------------------
+Summary: data field of extensions is now allowed to be empty.  policy.disallowed is now nullable.
+Date: 02-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/b6343230b9f3669fadd46f1812340236c6416478
+Description:  data field of extensions is now allowed to be empty.  policy.disallowed is now nullable.
+Compatibility Impact: FIDO Servers and FIDO Clients must be able to deal with empty data fields in extensions.
+                      FIDO Clients must be aware of absent policy.disallowed fields.
+---------------------------------------------------------------------------------------------------------
+Summary: "compact AAID" shouldn't be used in Authenticator Commands
+Date: 02-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/66b280932f8b84732058ef14d9fec9e9e43f5662
+Description:  AAID shouldn't be compact in Authenticator Commands
+Compatibility Impact: FIDO Authenticator should use normal AAID field instead of trying to compact it
+---------------------------------------------------------------------------------------------------------
+
+Summary: KeyID should not be part of RegisterOut object
+Date: 02-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/898b5dd93a1af74337b77154fb1a9d94205c7ecf
+Description:  KeyID should not be part of RegisterOut object as it's not included in UAF RegistrationResponse message
+Compatibility Impact: FIDO ASM should not include KeyID in RegisterOut object
+---------------------------------------------------------------------------------------------------------
+Summary: Added tcDisplayPNGCharacteristics to Transaction dictionary
+Date: 02-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/26a5e81d8e590a4012a27af1829b3467bc48cbd2
+Description:  Added tcDisplayPNGCharacteristics to Transaction dictionary. This is necessary since otherwise UAF Client
+              will need to parse the transactionContent, extract PNG characteristics and then compare to ASM reported characteristics.
+Compatibility Impact: FIDO Server should include this in the Transaction object
+                      FIDO Clients should extract this new field and compare to ASM reported PNG characteristics.
+---------------------------------------------------------------------------------------------------------
+Summary: Added TAG_EXTENSION, TAG_EXTENSION_ID, TAG_EXTENSION_DATA tags
+Date: 02-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/d28e97a3adb0b7e94dd300c9bb7ed727b491472c
+Description:  Added TAG_EXTENSION, TAG_EXTENSION_ID, TAG_EXTENSION_DATA tags
+Compatibility Impact: The name and value of TAG_VENDOR_SPECIFIC_EXTENSION has been changed. Both Authenticator and ASM
+                      must use the new values.
+---------------------------------------------------------------------------------------------------------
+Summary:  fixed HTML syntax errors. Converted several unoredered lists into ordered lists.
+Date: 04-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/98aac76b4a6346f810b135ad64e995185f34e1d8
+Description:  fixed HTML syntax errors. Converted several unoredered lists into ordered lists to make it easier referencing certain list items
+Compatibility Impact: None - purely editorial change.
+---------------------------------------------------------------------------------------------------------
+Summary:  Fixed ambiguous definition of attestationCertificateChain.
+Date: 04-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/bc8dbe265024abb806b991b503a9e08d3c94d85b
+Description:  Fixed ambiguous definition of attestationCertificateChain. Type changed from DOMString? to DOMString[]?
+Compatibility Impact: FIDO Client and FIDO Server MUST understand new field type (DOMString[]? instead of DOMString?)
+---------------------------------------------------------------------------------------------------------
+Summary:  Removed redundant KeyID from authentication response.
+Date: 04-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/3cdac972086e8562d487bb427c177293396fd572
+Description:  Removed redundant KeyID from authentication response.
+Compatibility Impact: FIDO ASM and FIDO Client should not send KeyID during authentication. FIDO Server should
+                      first parse TLV, locate KeyID and then use it to locate public key.
+---------------------------------------------------------------------------------------------------------
+Summary: Number of changes.
+Date: 05-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/7b1c3bccb48cc474eb7c87ad7cdfeaf9de153d58
+        https://github.com/fido-alliance/uaf-specs/commit/05425af46e34da5a3930f54290c8cfdc685fc43f
+        https://github.com/fido-alliance/uaf-specs/commit/a8c09efcc75d394db4157e17c140a260bf794b25
+        https://github.com/fido-alliance/uaf-specs/commit/775913272902a458d4919c1901f370efda02be8c
+Description:  Replaced "long attestationType" with "unsigned short attestationType in ASM".
+              Removed attestationCertificateChain field from UAF message and from ASM message 
+	      (supersedes "Fixed ambiguous definition of attestationCertificateChain.")
+              Made TAG_ATTESTATION_CERT to carry also possible certificate chain.
+              ASM receives an array of Transactions now.
+              Changed the type of AuthenticatorVersion from UINT8 to UINT16.
+              Added AuthenticatorVersion to Metadata and Policy.
+              Added server processing rules for AuthenticatorVersion.
+Compatibility Impact: All changes described above mentioned above have compatibility impact.
+---------------------------------------------------------------------------------------------------------
+Summary: non-empty clarifications
+Date: 08-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/22e3e3d71b1a6ab2c7253d65f05fe13b74e25c24
+Description:   (1) Non-empty is first word in description (if present). (2) If nullable fields
+	       are non-empty: added statement to avoid confusion about nullable/non-empty
+	       (3) HTML source formatting/syntax correction.
+Compatibility Impact: Editorial - no compatibility impact.
+---------------------------------------------------------------------------------------------------------
+Summary: Clarifications on KHAccessToken
+Date: 08-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/3e1ac09a8fe4402e1a0b3ea5a7adca83cfb7fb28
+Description:  clarifications on KHAccessToken.
+Compatibility Impact: Editorial - no compatibility impact.
+---------------------------------------------------------------------------------------------------------
+Summary: Clarifications on FacetID and AppID (#221)
+Date: 09-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/073dd36b4f91ac4f02384977ae3d59814abca9f7
+Description:   AppID definition is now according to the one in AppID and Facets. AppID is now nullable! Closed #221.
+Compatibility Impact: AppID can now be empty or missing. FIDO Client has to set it to FacetID in this case!
+---------------------------------------------------------------------------------------------------------
+Summary:  clarified Reg+Auth Response proessing rules for FIDO Server.
+Date: 11-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/4ad911f19e606898cf2c90ee7412bc4220a8b462 and
+	https://github.com/fido-alliance/uaf-specs/commit/4498cc4edb3ce8c890da01d182ff79ed1a663cb7
+	https://github.com/fido-alliance/uaf-specs/commit/dcd5e00dc35e85132470872e0835bc5aeaaba492
+Description:  clarified Reg+Auth Response proessing rules for FIDO Server: used official 
+	      object names to make clear what is meant. Moved location of verification whether 
+	      AAID matches policy from bottom to top.
+Compatibility Impact: No compatibility impact.
+---------------------------------------------------------------------------------------------------------
+Summary: added normative statement Authenticator has exclusive control over the data being signed.
+Date: 11-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/25a7cd7ec37be2833a2f13c6a302c703dbcca509
+Description:    added normative statement that UAFV1_REG_ASSERTION and UAFV1_AUTH_ASSERTION 
+		require the Authenticator to have exclusive control over the data being signed 
+		by the Attestation key and the Uauth keys. This was already mentioned in non-normative places.
+Compatibility Impact: None.
+---------------------------------------------------------------------------------------------------------
+Summary: added description of how MatchCriteria fields relate to fields in the MetadataStatement
+Date: 12-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/a432d662308cf4b94c6f658cce0cf452132ed821
+	https://github.com/fido-alliance/uaf-specs/commit/9bd959609a91f9c06c6f4dbd8492d8475ad9138d
+Description: added description of how MatchCriteria fields relate to fields in the MetadataStatement
+Compatibility Impact: None.
+---------------------------------------------------------------------------------------------------------
+Summary: Field name consistency improved, see issue #225
+Date: 13-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/ecc04fcf0500aa4f66c0ce46b9d2cf12a53289ef
+	https://github.com/fido-alliance/uaf-specs/commit/77185f40662ea52ccac56611e7e7babbca68c953
+	https://github.com/fido-alliance/uaf-specs/commit/04355f9bf42c81ce8d701cd4ac9d5ad842cd9923
+	https://github.com/fido-alliance/uaf-specs/commit/0a7d4714a9775bda37f02d9631dc4378244147ef
+	https://github.com/fido-alliance/uaf-specs/commit/d0fa6217252a73a8c495ad0322032f9424e7b277
+	https://github.com/fido-alliance/uaf-specs/commit/56c0824e26ef6eea435de782c27ec5a342bb8dc1
+	https://github.com/fido-alliance/uaf-specs/commit/1caa42e9a1ef867b28d0b672763a5d0957401b5a
+	https://github.com/fido-alliance/uaf-specs/commit/2eb97c6292995a6c06c97437c7f9a8b3a741987c	
+	https://github.com/fido-alliance/uaf-specs/commit/6e559228b3296b6a46216a52800620efa570e073
+	https://github.com/fido-alliance/uaf-specs/commit/5df050bad1d9edd95e1e60ea44776ec921a2283e
+Description: Field name consistency improved, see issue #225
+Compatibility Impact: affects interop. Changes MUST be done in all affected FIDO entities!
+---------------------------------------------------------------------------------------------------------
+Summary: More clarifications
+Date: 15-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/99761fe25c5044dcdbed74493bb35ec656b5d49b
+	https://github.com/fido-alliance/uaf-specs/commit/141d000bcadc221a632a4efc5673c09cfd2d5088
+	https://github.com/fido-alliance/uaf-specs/commit/5266d471490b1422d71dd785fc89c34a5f3e51be
+	https://github.com/fido-alliance/uaf-specs/commit/a9f9e1bfa6d0e882b8ced8cefb85737d2de7c5dd
+
+Description: TLV fields are mandatory except when mentioned otherwise; TCHash length can be 0, 
+	     each value with TAG_ATTESTATION_CERTIFICATE contains a single certificate - not a chain.
+Compatibility Impact: None.
+---------------------------------------------------------------------------------------------------------
+Summary: More clarifications
+Date: 17-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/160870de76bad2eb40006afbcc7b33593c8a69fa
+	https://github.com/fido-alliance/uaf-specs/commit/2538840e351744a9717ffea7dee6f510af0b9a36
+Description: clarification on mandatory/empty fields in Metadata Statements
+	     document titles start with FIDO
+Compatibility Impact: None.
+---------------------------------------------------------------------------------------------------------
+Summary: Removed AAID from AuthenticatorSignAssertion and AuthenticatorRegistrationAssertion.
+	 Added AAID to SIGNED_DATA TLV object.
+Date: 23-Sep-2014
+Commit: https://github.com/fido-alliance/uaf-specs/commit/353d41e98381c4b93bb3da943ceee9a47ca61376
+	https://github.com/fido-alliance/uaf-specs/commit/1f41a30cc5bced87da7682500798c43020dfb64d
+Description: Removed AAID from AuthenticatorSignAssertion and AuthenticatorRegistrationAssertion.
+	     Added AAID to SIGNED_DATA TLV object.
+	     More editorial changes/corrections.
+Compatibility Impact: Yes, FIDO Client, FIDO Authenticator and FIDO Server must be aware of these changes.
+---------------------------------------------------------------------------------------------------------

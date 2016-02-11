@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>FIDO Metadata Statements</title>
+    <meta http-equiv="content-type" content=
+    "text/html; charset=utf-8">
+    <script src='resources/respec-fido-common.js' class='remove' async=""></script>
+    <script type="text/javascript" class="remove">
+     var respecConfig = {
+       // specification status (e.g. WD, RD, ID, etc.). If in doubt use WD.
+       specStatus: "WD",
+       specVersion: "v1.3",
+        specFamily: "uaf",    // specFamily is here for common-specs due to release-tool publishing
+                                      // and their being placed in to a release dir with whichever specFamily
+                                      // at release build time -- so the value of this var in the .html files in 
+                                      // common-specs repo will depend upon whichever spec family last 
+                                      // built a release snapshot
+
+      // shortName is what is termed specInRepoStemFN in..
+      // https://confluence.fidoalliance.org/display/ALL/FIDO+Alliance+filenaming+and+version+labeling+conventions
+       shortName:  "fido-metadata-statement",
+
+       // if your specification has a subtitle that goes below the main
+       // formal title, define it here
+       // subtitle : "an excellent document",
+
+      // if you wish the publication date to be other than today, set this
+      // NOTE: UNCOMMENT THIS PRIOR TO RUNNING release-tool/release.pl for a release, 
+      //       whether internal or external (TODO: release-tool should take care of this)...
+      //publishDate: "2015-09-02", 
+      
+      // if the specification's copyright date is a range of years, specify
+      // the start date here:
+      copyrightStart: "2013",
+      
+      // if there is a previously published draft, uncomment this and set its YYYY-MM-DD date
+      // and its maturity status, OR, comment the latter two items out, and add an 
+      // explicit prevVersion URI pointing to the previously publicly published version...
+      //previousPublishDate: "",
+      //previousMaturity: "",
+	prevVersion: "https://fidoalliance.org/specs/fido-uaf-v1.0-ps-20141208/fido-uaf-authnr-metadata-v1.0-ps-20141208.html",
+
+       // if there a publicly available Editor's Draft, this is the link
+       edDraftURI: "",
+
+       // if this is a LCWD, uncomment and set the end of its review period
+       // lcEnd: "2009-08-05",
+
+       // editors, add as many as you like
+       // only "name" is required
+
+     editors:  [
+     { name: "Rolf Lindemann", url: "mailto:rolf@noknok.com",
+        company: "Nok Nok Labs, Inc.", companyURL: "https://www.noknok.com/" },
+     { name: "John Kemp", url: "", company: "FIDO Alliance", companyURL: "https://fidoalliance.org/" }
+     ],
+
+        // authors, add as many as you like. 
+        // This is optional, uncomment if you have authors as well as editors.
+        // only "name" is required. Same format as editors.
+
+        authors:  [
+       { name: "Brad Hill", url: "mailto:bhill@paypal.com",
+            company: "PayPal, Inc.", companyURL: "https://www.paypal.com/" },
+       { name: "Davit Baghdasaryan", url: "", company: "Nok Nok Labs, Inc.", companyURL: "https://www.noknok.com/" },
+        ],
+
+       // name of the WG
+       wg: "FIDO Alliance",
+
+       // URI of the public WG page
+       wgURI: "https://fidoalliance.org/",
+
+       // name (with the @w3c.org) of the public mailing to which comments are due
+       //wgPublicList: "public-webappsec",
+
+
+       // local bibliography
+
+
+     };
+    </script>
+    <script src='resources/fido-refs.js' class='remove'></script>
+    <script type="text/javascript"
+	    src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+  </head>
+
+<body>
+
+<!-- only put content here if you want a custom status of document not
+  the specification-maturity-appropriate boilerplate -->
+<section id='sotd'></section>
+
+<section id='abstract'>
+
+  FIDO authenticators may have many different form factors,
+  characteristics and capabilities. This document defines a
+  standard means to describe the relevant pieces of information
+  about an authenticator in order to interoperate with it, or to
+  make risk-based policy decisions about transactions involving a
+  particular authenticator.
+
+</section>
+
+<section>
+  <h2>Notation</h2>
+  
+  <p>Type names, attribute names and element names are written as <code>code</code>.
+    
+  <p>String literals are enclosed in “”, e.g. “UAF-TLV”.
+    
+  <p>In formulas we use “|” to denote byte wise concatenation
+    operations.
+    
+  <p>DOM APIs are described using the ECMAScript [[ECMA-262]] bindings
+    for WebIDL [[!WebIDL-ED]].
+
+  <p>Following [[!WebIDL-ED]], dictionary members are optional unless they are 
+    explicitly marked as required.</p>
+
+  <p>WebIDL dictionary members MUST NOT have a value of null.</p>
+  
+  <p>Unless otherwise specified, if a WebIDL dictionary member is DOMString,
+    it MUST NOT be empty.</p>
+  
+  <p>Unless otherwise specified, if a WebIDL dictionary member is a List, 
+    it MUST NOT be an empty list.</p>
+  
+  <p>All diagrams, examples, notes in this specification are non-normative.</p>
+
+  <p class="note">
+    Note: Certain dictionary members need to be present in order to
+    comply with FIDO requirements. Such members are marked in the
+    WebIDL definitions found in this document, as
+    <code>required</code>. The keyword <code>required</code> has been
+    introduced by [[WebIDL-ED]], which is a work-in-progress. If you
+    are using a WebIDL parser which implements [[WebIDL]], then you
+    may remove the keyword <code>required</code> from your WebIDL and
+    use other means to ensure those fields are present.  
+  </p>
+
+  <section id="conformance">  <!-- inserts normative/non-normative & RFC2119 boilerplate -->
+  <!-- add any extra language your spec requires here -->
+  </section>
+</section>
+    
+<section class="informative">
+  <h2>Overview</h2>
+
+  <p>The FIDO family of protocols enable simpler and more secure
+    online authentication utilizing a wide variety of different
+    devices in a competitive marketplace. Much of the complexity
+    behind this variety is hidden from Relying Party applications,
+    but in order to accomplish the goals of FIDO, Relying Parties
+    must have some means of discovering and verifying various
+    characteristics of authenticators. Relying Parties can learn a
+    subset of verifiable information for authenticators certified
+    by the FIDO Alliance with an Authenticator Metadata statement. The 
+    URL to access that Metadata statement is provided by the Metadata TOC 
+    file accessible through the Metadata Service [[FIDOMetadataService]].
+    
+  <p>For definitions of terms, please refer to the FIDO Glossary
+    [[FIDOGlossary]].
+
+    <section>
+      <h3>Scope</h3>
+      
+      <p>This document describes the format of and information contained
+	in <em>Authenticator Metadata</em> statements. For a definitive list
+	of possible values for the various types of information, refer
+	to the FIDO Registry of Predefined Values [[FIDORegistry]].
+	
+      <p>The description of the processes and methods by which
+	authenticator metadata statements are distributed and the
+	methods how these statements can be verified are described in
+	the Metadata Service Specification [[FIDOMetadataService]]. 
+    </section>
+
+    <section>
+      <h3>Audience</h3>
+      
+      <p>The intended audience for this document includes:
+	<ul>
+	  <li>FIDO authenticator vendors who wish to produce metadata
+	    statements for their products.</li>	 
+	  <li>FIDO server implementers who need to consume metadata statements
+	    to verify characteristics of authenticators and attestation
+	    statements, make proper algorithm choices for protocol
+	    messages, create policy statements or tailor various other
+	    modes of operation to authenticator-specific characteristics.</li>	  
+	  <li>FIDO relying parties who wish to
+	    <ul>
+	      <li>create custom policy statements about which authenticators they
+		will accept</li>	      
+	      <li>risk score authenticators based on their characteristics</li>
+	      
+	      <li>verify attested authenticator IDs for cross-referencing with</li>
+	      third party metadata
+	    </ul>
+	</ul>
+    </section>
+
+    <section>
+      <h3>Architecture</h3>
+      
+      <?xml version="1.0" encoding="UTF-8"?>
+      
+      <figure>
+	<img src="./img/fido-architecture.png"
+	     onerror="./img/fido-architecture.png"
+	     alt="FIDO Architecture"/>
+	<figcaption>The FIDO Architecture</figcaption>
+      </figure>
+      
+      <p><em>Authenticator metadata statements</em> are used directly by the FIDO
+	server at a relying party, but the information contained in the
+	authoritative statement is used in several other places. How a
+	server obtains these metadata statements is described in [[FIDOMetadataService]].</p>
+	
+      <p>The workflow around an authenticator metadata statement is as
+	follows:</p>
+	<ol>
+	  <li>The authenticator vendor produces a metadata statement
+	    describing the characteristics of an authenticator.</li>
+	  
+	  <li>The metadata statement is submitted to the FIDO Alliance as part of the 
+	    FIDO certification process.  The FIDO Alliance distributes the metadata 
+	    as described in [[FIDOMetadataService]].</li>
+	  
+	  <li>A FIDO relying party configures its registration policy to allow
+	    authenticators matching certain characteristics to be
+	    registered.</li>
+	  
+	  <li>The FIDO server sends a registration challenge message.  This message can contain such
+	    policy statement.</li>
+	  
+	  <li>Depending on the FIDO protocol being used, either the relying party application 
+	    or the FIDO UAF Client receives the policy statement as part of the
+	    challenge message and processes it. It queries available authenticators for
+	    their self-reported characteristics and (with the user's input)
+	    selects an authenticator that matches the policy, to be registered.</li>
+	  
+	  <li>The client processes and sends a registration response
+	    message to the server. This message contains a reference to the 
+	    authenticator model and, optionally, a signature made with
+	    the private key corresponding to the public key in the
+	    authenticator's attestation certificate.</li>
+	  
+	  <li>The FIDO Server looks up the metadata statement for the
+	    particular authenticator model. If the
+	    metadata statement lists an attestation certificate(s), it
+	    verifies that an attestation signature is present, and
+	    made with the private key corresponding to 
+	    either (a) one of the certificates listed in this metadata statement or (b)
+	    corrsponding to the public key in a certificate that <em>chains</em> to one
+	    of the issuer certificates listed in the authenticator's metadata statement.</li>
+	  
+	  <li>The FIDO Server next verifies that the authenticator meets the
+	    originally supplied registration policy based on its
+	    authoritative metadata statement. This prevents the registration 
+	    of unexpected authenticator models.</li>
+	  
+	  <li><em>Optionally</em>, a FIDO Server may, with input from
+	    the Relying Party, assign a risk or trust score to the
+	    authenticator, based on its metadata, including elements
+	    not selected for by the stated policy.</li>
+	  
+	  <li><em>Optionally</em>, a FIDO Server may cross-reference the attested 
+	    authenticator model with other metadata databases published by
+	    third parties. Such third-party metadata might, for example,
+	    inform the FIDO Server if an authenticator has achieved
+	    certifications relevant to certain markets or industry verticals,
+	    or whether it meets application-specific regulatory
+	    requirements.</li>
+	</ol>
+    </section>
+</section>
+
+<section class="normativeDisclaimer">
+  <h2>Types</h2>
+  <section> 
+    <h3>CodeAccuracyDescriptor dictionary</h3>
+    <p>The <code>CodeAccuracyDescriptor</code> describes the relevant accuracy/complexity aspects 
+      of passcode user verification methods.</p>
+    <div class="note">
+      <p>One example of such a method is the use of 4 digit PIN codes for mobile phone SIM card unlock.</p>
+      <p>We are using the numeral system <code>base</code> (radix) and 
+	<code>minLen</code>, instead of the number of potential combinations 
+	since there is sufficient evidence [[iPhonePasscodes]] [[MoreTopWorstPasswords]] 
+	that users don't select their code evenly distributed at random.  So software 
+	might take into account the various probability distributions for different bases.
+	This essentially means that in practice, passcodes are not as secure as they could be if randomly chosen.</p>
+    </div>
+    <dl class='idl' title='dictionary CodeAccuracyDescriptor'>
+      <dt>required unsigned short base</dt>
+      <dd>The numeric system base (radix) of the code, e.g. 10 in the case of decimal digits.  </dd>
+      <dt>required unsigned short minLength</dt>
+      <dd>The minimum number of digits of the given base required for that code, 
+	e.g. 4 in the case of 4 digits.</dd>
+      <dt>unsigned short maxRetries</dt>
+      <dd>Maximum number of false attempts before the authenticator will block 
+	this method (at least for some time). 0 means it will never block.</dd>
+      <dt>unsigned short blockSlowdown</dt>
+      <dd>Enforced minimum number of seconds wait time after blocking (e.g. due to 
+	forced reboot or similar). 0 means this user verification 
+	method will be blocked, either permanently or until an alternative user verification method method succeeded.
+	All alternative user verification methods MUST be specified 
+	appropriately in the Metadata in <code>userVerificationDetails</code>.
+      </dd>
+    </dl>
+  </section> 
+
+  <section> 
+    <h3>BiometricAccuracyDescriptor dictionary</h3>
+    <p>The <code>BiometricAccuracyDescriptor</code> describes relevant accuracy/complexity aspects 
+      in the case of a biometric user verification method.</p>
+    <div class="note certification">
+      <p>The <em>False Acceptance Rate</em> (FAR) and <em>False Rejection Rate</em> 
+	(FRR) values typically are interdependent via the <em>Receiver 
+	Operator Characteristic</em> (ROC) curve. </p>
+      <p>The <em>False Artefact Acceptance Rate</em> (FAAR) value reflects 
+	the capability of detecting presentation attacks, such as the detection
+	of rubber finger presentation.</p>	
+      <p> The FAR, FRR, and FAAR values given here MUST 
+	reflect the actual configuration of the authenticators (as opposed to 
+	being theoretical best case values).</p>
+    </div>
+    <p>At least one of the values MUST be set.  If the vendor doesn't want to specify such values, then
+      <code>VerificationMethodDescriptor.baDesc</code> MUST be omitted.</p>
+
+    <p class="note">
+      Typical fingerprint sensor characteristics can be found in Google <a href='https://static.googleusercontent.com/media/source.android.com/en//compatibility/android-cdd.pdf'>Android 6.0 Compatibility Definition</a> 
+      and Apple <a href='http://www.apple.com/business/docs/iOS_Security_Guide.pdf'>iOS Security</a> Guide.
+    </p>
+
+    <dl class='idl' title='dictionary BiometricAccuracyDescriptor'>
+      <dt>double FAR</dt>
+      <dd>The false acceptance rate [[!ISO19795-1]] for a single reference data set, 
+	i.e. the percentage of non-matching data sets
+	that are accepted as valid ones.   For example a FAR of <code>0.002%</code> 
+	would be encoded as <code>0.00002</code>.
+	<div class="note">
+	  <p>The resulting FAR when all reference data 
+	    sets are used is <code>maxReferenceDataSets * FAR</code>.</p>
+	  <p>The false acceptance rate is relevant for the security. 
+	    Lower false acceptance rates mean better security.</p>
+	  <p>Only the live captured subjects are covered by this value - 
+	    not the presentation of artefacts.</p>
+	</div>
+      </dd>
+      <dt>double FRR</dt>
+      <dd>The false rejection rate for a single reference data set, 
+	i.e. the percentage of presented valid data sets 
+	that lead to a (false) non-acceptance.  For example a FRR of <code>10%</code> 
+	would be encoded as <code>0.1</code>.
+	<p class="note">The false rejection rate is relevant for the convenience.  
+	  Lower false acceptance rates mean better convenience.</p>
+      </dd>
+      <dt>double EER</dt>
+      <dd>The equal error rate for a single reference data set.</dd>
+      <dt>double FAAR</dt>
+      <dd>The false artefact acceptance rate [[!ISO30107-1]], i.e. the percentage of 
+	artefacts that are incorrectly accepted by the system. For example a FAAR of <code>0.1%</code> 
+	would be encoded as <code>0.001</code>.
+	<div class="note">
+	  <p>The false artefact acceptance rate is relevant for the security of the system. 
+	    Lower false artefact acceptance rates imply better security.</p>
+	</div>
+      </dd>
+      <dt>unsigned short maxReferenceDataSets</dt>
+      <dd>Maximum number of alternative reference data sets, e.g. 3 if the user 
+	is allowed to enroll 3 different fingers to a fingerprint based authenticator.</dd>
+      <dt>unsigned short maxRetries</dt>
+      <dd>Maximum number of false attempts before the authenticator will block 
+	this method (at least for some time). 0 means it will never block.
+      </dd>
+      <dt>unsigned short blockSlowdown</dt>
+      <dd>Enforced minimum number of seconds wait time after blocking (e.g. due to 
+	forced reboot or similar). 0 means that this user verification 
+	method will be blocked either permanently or until an alternative user verification method succeeded.
+	All alternative user verification methods MUST be specified 
+	appropriately in the metadata in <code>userVerificationDetails</code>.
+      </dd>
+    </dl>
+  </section> 
+
+  <section> 
+    <h3>PatternAccuracyDescriptor dictionary</h3>
+    <p>The <code>PatternAccuracyDescriptor</code> describes relevant accuracy/complexity aspects 
+      in the case that a pattern is used as the user verification method.</p>
+    <p class="note">One example of such a pattern is the 3x3 dot matrix as used in 
+      Android [[AndroidUnlockPattern]] screen unlock.  The <code>minComplexity</code> 
+      would be 1624 in that case, based on the user choosing a 4-digit PIN, the minimum allowed for this mechanism.</p>
+    
+    <dl class='idl' title='dictionary PatternAccuracyDescriptor'>
+      <dt>required unsigned long minComplexity</dt>
+      <dd>Number of possible patterns (having the minimum length) out of which exactly 
+	one would be the right one, i.e. 1/probability in the case of equal distribution.</dd>
+      <dt>unsigned short maxRetries</dt>
+      <dd>Maximum number of false attempts before the authenticator will block authentication using this 
+	method (at least temporarily). 0 means it will never block.</dd>
+      <dt>unsigned short blockSlowdown</dt>
+      <dd>Enforced minimum number of seconds wait time after blocking (due to 
+	forced reboot or similar mechanism). 0 means this user verification 
+	method will be blocked, either permanently or until an alternative user verification method method succeeded.
+	All alternative user verification methods MUST be specified 
+	appropriately in the metadata under <code>userVerificationDetails</code>.
+      </dd>
+    </dl>
+  </section> 
+  
+  
+  <section> 
+    <h3>VerificationMethodDescriptor dictionary</h3>
+    <p>A descriptor for a specific <em>base user verification method</em> as 
+      implemented by the authenticator.</p>
+    <p>A base user verification method must be chosen from the list of those described in [[FIDORegistry]]</p>
+    <p class="note">In reality, several of the methods described above
+      might be combined. For example, a fingerprint based user
+      verification can be combined with an alternative password.</p>
+    <p>The specification of the related AccuracyDescriptor is optional, but recommended.</p>
+    <dl class='idl' title='dictionary VerificationMethodDescriptor'>
+      <dt>required unsigned long userVerification</dt>
+      <dd>a <em>single</em> <code>USER_VERIFY</code> constant 
+	(see [[FIDORegistry]]), <strong>not a bit flag combination</strong>.
+	This value MUST be non-zero.
+      </dd>
+      <dt>CodeAccuracyDescriptor caDesc</dt>
+      <dd>May optionally be used in the case of method <code>USER_VERIFY_PASSCODE</code>.</dd>
+      <dt>BiometricAccuracyDescriptor baDesc</dt>
+      <dd>May optionally be used in the case of method 
+	<code>USER_VERIFY_FINGERPRINT</code>, <code>USER_VERIFY_VOICEPRINT</code>, 
+	<code>USER_VERIFY_FACEPRINT</code>, <code>USER_VERIFY_EYEPRINT</code>, or <code>USER_VERIFY_HANDPRINT</code>.</dd>
+      <dt>PatternAccuracyDescriptor paDesc</dt>
+      <dd>May optionally be used in case of method <code>USER_VERIFY_PATTERN</code>.</dd>
+    </dl>
+  </section> 
+  
+  <section> 
+    <h3>verificationMethodANDCombinations typedef</h3>
+    <div class='idl' title='typedef VerificationMethodDescriptor[] VerificationMethodANDCombinations'> 
+      <p><code>VerificationMethodANDCombinations</code> MUST be non-empty. It is a list containing 
+	the base user verification methods which must be passed as part 
+	of a successful user verification.</p>
+      <p>This list will contain only a single entry if using a single 
+	user verification method is sufficient.</p>
+      <p>If this list contains multiple entries, then all of the
+	listed user verification methods MUST be passed as part of the
+	user verification process.</p>
+    </div>
+  </section> 
+
+  <section> 
+    <h3>rgbPaletteEntry dictionary</h3>
+    <p>The <code>rgbPaletteEntry</code> is an RGB three-sample tuple palette entry</p>
+    <dl class='idl' title='dictionary rgbPaletteEntry'>
+      <dt>required unsigned short r</dt>
+      <dd>Red channel sample value</dd>
+      <dt>required unsigned short g</dt>
+      <dd>Green channel sample value</dd>
+      <dt>required unsigned short b</dt>
+      <dd>Blue channel sample value</dd>
+    </dl>
+  </section> 
+
+  <section> 
+    <h3>DisplayPNGCharacteristicsDescriptor dictionary</h3>
+    <p>The DisplayPNGCharacteristicsDescriptor describes a PNG image characteristics
+      as defined in the PNG [[PNG]] spec for IHDR (image header) and PLTE (palette table)</p>
+    <dl class='idl' title='dictionary DisplayPNGCharacteristicsDescriptor'>
+      <dt>required unsigned long width</dt>
+      <dd>image width</dd>
+      <dt>required unsigned long height</dt>
+      <dd>image height</dd>
+      <dt>required octet bitDepth</dt>
+      <dd>Bit depth - bits per sample or per palette index.</dd>
+      <dt>required octet colorType</dt>
+      <dd>Color type defines the PNG image type.</dd>
+      <dt>required octet compression</dt>
+      <dd>Compression method used to compress the image data.</dd>
+      <dt>required octet filter</dt>
+      <dd>Filter method is the preprocessing method applied to the image data before compression.</dd>
+      <dt>required octet interlace</dt>
+      <dd>Interlace method is the transmission order of the image data.</dd>
+      <dt>rgbPaletteEntry[] plte</dt>
+      <dd>1 to 256 palette entries</dd>
+    </dl>
+  </section> 
+
+  <section>
+    <h3>EcdaaTrustAnchor dictionary</h3>
+    <p>In the case of ECDAA attestation, the ECDAA-Issuer's trust anchor MUST be specified in this field.</p>
+
+    <dl class='idl' title='dictionary EcdaaTrustAnchor'>
+      <dt>required DOMString X</dt>
+      <dd>base64url encoding of the result of ECPoint2ToB of the ECPoint2 \(X = P_2^x\).  See 
+	[[FIDOEcdaaAlgorithm]] for the definition of ECPoint2ToB.</dd>
+      <dt>required DOMString Y</dt>
+      <dd>base64url encoding of the result of ECPoint2ToB of the ECPoint2 \(Y = P_2^y\).  See 
+	[[FIDOEcdaaAlgorithm]] for the definition of ECPoint2ToB.</dd>
+      <dt>required DOMString c</dt>
+      <dd>base64url encoding of the result of BigNumberToB(\(c\)).  See section "Issuer Specific ECDAA Parameters" 
+	in [[FIDOEcdaaAlgorithm]] for an explanation of \(c\).  See 
+	[[FIDOEcdaaAlgorithm]] for the definition of BigNumberToB.</dd>
+      <dt>required DOMString sx</dt>
+      <dd>base64url encoding of the result of BigNumberToB(\(sx\)).  See section "Issuer Specific ECDAA Parameters" 
+	in [[FIDOEcdaaAlgorithm]] for an explanation of \(sx\).  See 
+	[[FIDOEcdaaAlgorithm]] for the definition of BigNumberToB.</dd>
+      <dt>required DOMString sy</dt>
+      <dd>base64url encoding of the result of BigNumberToB(\(sy\)).  See section "Issuer Specific ECDAA Parameters" 
+	in [[FIDOEcdaaAlgorithm]] for an explanation of \(sy\).  See 
+	[[FIDOEcdaaAlgorithm]] for the definition of BigNumberToB.</dd>
+      <dt>required DOMString G1Curve</dt>
+      <dd>Name of the Barreto-Naehrig elliptic curve for G1. "BN_P256", "BN_P638", "BN_ISOP256", 
+	and "BN_ISOP512" are supported.  See section "Supported Curves for ECDAA" 
+	in [[FIDOEcdaaAlgorithm]] for details. </dd>
+    </dl>
+
+    <p class="note">
+      Whenever a party uses this trust anchor for the first time, it must first verify that 
+      it was correctly generated by verifying \(s, sx, sy\).  See [[FIDOEcdaaAlgorithm]] for details.
+    </p>
+
+  </section>
+  
+</section>
+
+<section class="normativeDisclaimer">
+  <h2>Metadata Keys</h2>
+  
+  <dl class='idl' title='dictionary MetadataStatement'>
+    <dt>AAID aaid</dt>
+    <dd>The Authenticator Attestation ID. See [[UAFProtocol]]
+      for the definition of the AAID structure.  This field MUST be set if the authenticator 
+      implements FIDO UAF.
+      <p class="note">FIDO UAF Authenticators support AAID, but they don't support AAGUID.</p>
+    </dd>
+    
+    <dt>AAGUID aaguid</dt>
+    <dd>The Authenticator Attestation GUID. See [[FIDOKeyAttestation]]
+      for the definition of the AAGUID structure.  This field MUST be set if the authenticator 
+      implements FIDO 2.  
+      <p class="note">FIDO 2 Authenticators support AAGUID, but they don't support AAID.</p>
+    </dd>
+    
+    <dt>DOMString[] attestationCertificateKeyIdentifiers</dt>
+    <dd>A list of the attestation certificate public key identifiers encoded as hex string.  
+      This value MUST be calculated according to method 1 for computing the keyIdentifier as 
+      defined in [[RFC5280]] section 4.2.1.2.  The hex string MUST NOT contain any non-hex characters (e.g. spaces).
+      All hex letters MUST be lower case.
+      This field MUST be set if neither <code>aaid</code> nor <code>aaguid</code> are set.  Setting this field implies that
+      the attestation certificate(s) are dedicated to a single authenticator model. 
+      <p>All attestationCertificateKeyIdentifier values should be unique within the scope of
+	the Metadata Service.
+      </p>
+      <p class="note">FIDO U2F Authenticators typically do not support AAID nor AAGUID, but they use 
+	attestation certificates dedicated to a single authenticator model.
+      </p>
+    </dd>
+   
+    <dt>required DOMString description</dt>
+    <dd>A human-readable short description of the authenticator.
+      <div class="note">
+	<p>This description should help an administrator configuring authenticator policies. 
+	  This description might deviate from the description returned by the ASM for that authenticator.</p>
+	<p>This description should contain the public authenticator trade name and the publicly known vendor name.</p>
+      </div>
+    </dd>
+    
+
+    <dt>required unsigned short authenticatorVersion</dt>
+    <dd>
+      Earliest (i.e. lowest) trustworthy <code>authenticatorVersion</code> meeting the requirements 
+      specified in this metadata statement. 
+      <p>Adding new <code>StatusReport</code> entries with status <code>UPDATE_AVAILABLE</code> to 
+	the metadata <code>TOC</code> object [[FIDOMetadataService]] MUST also change this
+	<code>authenticatorVersion</code> if the update fixes severe security issues, e.g. the ones
+	reported by preceding <code>StatusReport</code> entries with status code 
+	<code>USER_VERIFICATION_BYPASS</code>,
+	<code>ATTESTATION_KEY_COMPROMISE</code>, <code>USER_KEY_REMOTE_COMPROMISE</code>,
+	<code>USER_KEY_PHYSICAL_COMPROMISE</code>, <code>REVOKED</code>.</p>
+      <p>It is RECOMMENDED to assume increased risk if this version is higher 
+	(newer) than the firmware version
+	present in an authenticator.  For example, if a <code>StatusReport</code> entry with status 
+	<code>USER_VERIFICATION_BYPASS</code> or <code>USER_KEY_REMOTE_COMPROMISE</code> precedes the 
+	<code>UPDATE_AVAILABLE</code> entry, than any firmware version lower (older) than the one 
+	specified in the metadata statement is assumed to be vulnerable.</p>
+    </dd>
+
+    <dt>DOMString protocolFamily</dt>
+    <dd>The FIDO protocol family.  The values "uaf", "u2f", and "fido2" are supported.
+      If this field is missing, the assumed protocol family is "uaf".
+    </dd>
+
+    <dt>required Version[] upv</dt>
+    <dd>
+      The FIDO unified protocol version(s) (related to the specific protocol family) supported by this authenticator. 
+      See [[UAFProtocol]] for the definition of the <code>Version</code> structure.
+    </dd>
+    <dt>required DOMString assertionScheme</dt>
+    <dd>
+      The assertion scheme supported by the authenticator. Must be set
+      to one of the enumerated strings defined in the FIDO UAF
+      Registry of Predefined Values [[UAFRegistry]].
+    </dd>
+
+    <dt>required unsigned short authenticationAlgorithm</dt>
+    <dd>
+      The authentication algorithm supported by the authenticator.
+      Must be set to one of the <code>ALG_</code> constants defined in the
+      FIDO Registry of Predefined Values [[FIDORegistry]]. 
+      This value MUST be non-zero.
+    </dd>
+    
+    <dt>required unsigned short publicKeyAlgAndEncoding</dt>
+    <dd>
+      The public key format used by the authenticator during registration operations.
+      Must be set to one of the <code>ALG_KEY</code> constants defined in the
+      FIDO Registry of Predefined Values [[FIDORegistry]].  Because this information
+      is not present in APIs related to authenticator discovery or policy, a
+      FIDO server MUST be prepared to accept and process any and all key representations
+      defined for any public key algorithm it supports.
+      This value MUST be non-zero.
+    </dd>
+    
+    <dt>required unsigned short[] attestationTypes</dt>
+    <dd>
+      The supported attestation type(s). (e.g. <code>TAG_ATTESTATION_BASIC_FULL</code>) See 
+      Registry for more information [[UAFRegistry]].
+    </dd>
+
+    <dt>required VerificationMethodANDCombinations[] userVerificationDetails</dt>
+    <dd>
+      A list of <i>alternative</i> VerificationMethodANDCombinations.
+      Each of these entries is one alternative user verification method. 
+      Each of these alternative user verification methods might
+      itself be an "AND" combination of multiple modalities.
+      <p>All effectively available alternative user verification methods MUST be properly specified here.
+	A user verification method is considered effectively available if this method can be used 
+	to either:
+	<ul>
+	  <li>enroll new verification reference data to one of the user verification methods</li>
+	  <p>or</p> 
+	  <li>unlock the UAuth key directly after successful user verification</li>
+	</ul>
+      </p>
+    </dd>
+    
+    <dt>required unsigned short keyProtection</dt>
+    <dd>
+      A 16-bit number representing the bit fields defined by the
+      <code>KEY_PROTECTION</code> constants in the FIDO Registry of Predefined
+      Values [[FIDORegistry]].
+      <p>This value MUST be non-zero.</p>
+      <p class="note certification">
+	The keyProtection specified here denotes the effective security of the 
+	attestation key and Uauth private key and 
+	the effective trustworthiness of the attested attributes in the “sign assertion”.  
+	Effective security means that key extraction or injecting malicious attested attributes 
+	is only possible if the specified 
+	protection method is compromised.  For example, if keyProtection=TEE is stated, 
+	it shall be impossible to extract the attestation key or the Uauth private key 
+	or to inject any malicious attested attributes <em>without breaking the TEE</em>.
+      </p>
+    </dd>
+    
+    <dt>required unsigned short matcherProtection</dt>
+    <dd>
+      A 16-bit number representing the bit fields defined by the
+      <code>MATCHER_PROTECTION</code> constants in the FIDO Registry of Predefined
+      Values [[FIDORegistry]].  
+      <p>This value MUST be non-zero.</p>
+      <div class="note certification">
+	<p>
+	  If multiple matchers are implemented, 
+	  then this value must reflect the <em>weakest</em> implementation of all matchers.</p>
+	<p>
+          The matcherProtection specified here denotes the effective security of the 
+	  FIDO authenticator’s user verification.
+	  This means that a false positive user verification implies breach of the stated method.
+	  For example, if matcherProtection=TEE is stated, 
+	  it shall be impossible to trigger use of the Uauth private key 
+	  when bypassing the user verification <em>without breaking the TEE</em>.
+	</p>
+      </div>
+    </dd>
+    
+    <dt>required unsigned long attachmentHint</dt>
+    <dd>
+      A 32-bit number representing the bit fields defined by the
+      <code>ATTACHMENT_HINT</code> constants in the FIDO Registry of Predefined
+      Values [[FIDORegistry]]. 
+      <p class="note">The connection state and topology of an
+	authenticator may be transient and cannot be relied on as
+	authoritative by a relying party, but the metadata field should
+	have all the bit flags set for the topologies possible for the
+	authenticator. For example, an authenticator instantiated as a
+	single-purpose hardware token that can communicate over
+	bluetooth should set <code>ATTACHMENT_HINT_EXTERNAL</code> but not
+	<code>ATTACHMENT_HINT_INTERNAL</code>.</p>
+    </dd>
+    
+    <dt>required boolean isSecondFactorOnly</dt>
+    <dd>
+      Indicates if the authenticator is designed to be used only as a
+      second factor, i.e. requiring some other authentication method as 
+      a first factor (e.g. username+password).
+    </dd>
+    
+    <dt>required unsigned short tcDisplay</dt>
+    <dd>
+      A 16-bit number representing a combination of the bit flags defined by the
+      <code>TRANSACTION_CONFIRMATION_DISPLAY</code> constants in the FIDO Registry of Predefined
+      Values [[FIDORegistry]].
+      <p>This value MUST be 0, if transaction confirmation is not supported by the authenticator.</p>
+      <p class="note certification">The tcDisplay specified here denotes the effective 
+	security of the authenticator’s transaction confirmation display.  
+	This means that only a breach of the stated method allows an attacker to inject 
+	transaction text to be included in the signature assertion 
+	which hasn't been displayed and confirmed by the user.
+      </p>
+    </dd>
+    
+    <dt>DOMString tcDisplayContentType</dt>
+    <dd>
+      Supported MIME content type [[!RFC2049]] for the transaction confirmation
+      display, such as <code>text/plain</code> or <code>image/png</code>.
+      <p>This value MUST be present if transaction confirmation is supported, 
+	i.e. <code>tcDisplay</code> is non-zero.</p>
+    </dd>
+    
+    <dt>DisplayPNGCharacteristicsDescriptor[] tcDisplayPNGCharacteristics</dt>
+    <dd>
+      A list of <i>alternative</i> DisplayPNGCharacteristicsDescriptor.
+      Each of these entries is one alternative of supported image characteristics 
+      for displaying a PNG image.
+      <p>This list MUST be present if PNG-image based transaction confirmation is supported, 
+	i.e. <code>tcDisplay</code> is non-zero and <code>tcDisplayContentType</code> is <code>image/png</code>.</p>
+    </dd>
+
+    <dt>required DOMString[] attestationRootCertificates</dt>
+    <dd>Each element of this array represents a PKIX [[RFC5280]] trust
+      root X.509 certificate that is valid for this authenticator model. Multiple
+      certificates might be used for different batches of the same model. 
+      The array does not represent a certificate
+      chain, but only the trust anchor of that chain.
+      
+      <p>Each array element is a Base64-encoded (section 4 of
+	[[RFC4648]]), DER-encoded [[ITU-X690-2008]] PKIX certificate
+	value. Each element MUST be dedicated for authenticator
+	attestation.</p>
+      <div class="note">
+	<p>A certificate listed here is a trust root. It might be the
+	  actual certificate presented by the authenticator, or it might
+	  be an issuing authority certificate from the vendor that the
+	  actual certificate in the authenticator chains to.</p>	
+	<p >In the case of "uaf" protocol family, the attestation certificate itself 
+	  and the ordered certificate chain are included in the registration
+	  assertion (see [[UAFAuthnrCommands]]).</p>
+      </div>
+      <p>Either</p>
+      <ol>
+	<li>the manufacturer attestation root certificate</li> 
+	<p>or</p> 
+	<li>the root certificate dedicated to a specific authenticator model</li>
+      </ol>
+      <p>MUST be specified.</p>
+      <p>
+	In the case (1), the root certificate might cover multiple
+	authenticator models. In this case, it must be possible 
+	to uniquely derive the authenticator model from the Attestation Certificate. 
+	When using AAID or AAGUID, this can be achieved by either specifying the AAID or AAGUID 
+	in the attestation certificate using the extension id-fido-gen-ce-aaid { 1 3 6 1 4 1 45724 1 1 1 } or 
+	id-fido-gen-ce-aaguid { 1 3 6 1 4 1 45724 1 1 4 } or
+	- when neither AAID nor AAGUID are defined - by using the <code>attestationCertificateKeyIdentifier</code> method.
+      </p>
+      <p>In the case (2) this is not required as the 
+	root certificate only covers a single authenticator model.
+      </p>
+      <p>When supporting surrogate basic attestation only (see [[UAFProtocol]], 
+	section "Surrogate Basic Attestation"), no attestation
+	root certificate is required/used.
+	So this array MUST be empty in that case.
+      </p>
+    </dd>    
+    <dt>EcdaaTrustAnchor[] ecdaaTrustAnchors</dt>
+    <dd>A list of trust anchors used for ECDAA attestation.
+      This entry MUST be present if and only if attestationType includes TAG_ATTESTATION_ECDAA.  The entries in 
+      <code>attestationRootCertificates</code> have no relevance for ECDAA attestation.
+      Each ecdaaTrustAnchor MUST be dedicated to a single authenticator model (e.g as identified by its AAID/AAGUID).
+    </dd>
+    <dt>DOMString icon</dt>
+    <dd>
+      A <code>data:</code> url [[!RFC2397]] encoded PNG [[PNG]] icon for the Authenticator.
+    </dd>
+  </dl>
+</section>
+
+<section class="informative">
+  <h2>Metadata Statement Format</h2>
+  
+  <p class="normative">A FIDO Authenticator Metadata Statement is a document containing
+    a JSON encoded <a href="#idl-def-MetadataStatement">dictionary MetadataStatement</a>.</p>
+
+  <section>
+    <h3>UAF Example</h3>
+    
+    <p>Example of the metadata statement for an UAF authenticator with:</p>
+    <ul>
+      <li>authenticatorVersion 2.</li>
+      <li>Fingerprint based user verification allowing up to 5 registered fingers, with 
+	false acceptance rate of 0.002% and rate 
+	limiting attempts for 30 seconds after 5 false trials.</li>
+      <li>Authenticator is embedded with the FIDO User device.</li>
+      <li>The authentication keys are protected by TEE.</li>
+      <li>The (fingerprint) matcher is implemented in TEE.</li>
+      <li>The Transaction Confirmation Display is implemented in a TEE.</li>
+      <li>The Transaction Confirmation Display supports display of "image/png" objects only.</li>
+      <li>Display has a width of 320 and a height of 480 pixel. A bit depth of 16 bits per pixel 
+	offering True Color (=Color Type 2). The zlib compression method (0). It doesn't support
+	filtering (i.e. filter type of=0) and no interlacing support (interlace method=0).</li>
+      <li>The Authentiator can act as first factor or as second factor, i.e. isSecondFactorOnly = false.</li>
+      <li>It supports the "UAFV1TLV" assertion scheme.</li>
+      <li>It uses the <code>UAF_ALG_SIGN_ECDSA_SHA256_RAW</code> authentication algorithm.</li>
+      <li>It uses the <code>UAF_ALG_KEY_ECC_X962_RAW</code> public key format (0x100=256 decimal).</li>
+      <li>It only implements the <code>TAG_ATTESTATION_BASIC_FULL</code> method (0x3E07=15879 decimal).</li>
+      <li>It implements UAF protocol version (upv) 1.0 and 1.2.</li>
+    </ul>
+    <pre class="example" title="MetadataStatement for UAF Authenticator">
+{ "aaid": "1234#5678",
+  "description": "FIDO Alliance Sample UAF Authenticator",
+  "authenticatorVersion": 2,
+  "upv": [{ "major": 1, "minor": 0 }, { "major": 1, "minor": 2 }],
+  "assertionScheme": "UAFV1TLV",
+  "authenticationAlgorithm": 1,
+  "publicKeyAlgAndEncoding": 256,
+  "attestationTypes": [15879],
+  "userVerificationDetails": [ [ { "userVerification": 2, "baDesc": 
+            { "FAR": 0.00002, "maxRetries": 5, "blockSlowdown": 30, "maxReferenceDataSets": 5 } } ] ],
+  "keyProtection": 6,
+  "matcherProtection": 2,
+  "attachmentHint": 1,
+  "isSecondFactorOnly": "false",
+  "tcDisplay": 5,
+  "tcDisplayContentType": "image/png",
+  "tcDisplayPNGCharacteristics": [{"width": 320, "height": 480, "bitDepth": 16,
+        "colorType": 2, "compression": 0, "filter": 0, "interlace": 0}],
+  "attestationRootCertificates": [
+"MIICPTCCAeOgAwIBAgIJAOuexvU3Oy2wMAoGCCqGSM49BAMCMHsxIDAeBgNVBAMM
+F1NhbXBsZSBBdHRlc3RhdGlvbiBSb290MRYwFAYDVQQKDA1GSURPIEFsbGlhbmNl
+MREwDwYDVQQLDAhVQUYgVFdHLDESMBAGA1UEBwwJUGFsbyBBbHRvMQswCQYDVQQI
+DAJDQTELMAkGA1UEBhMCVVMwHhcNMTQwNjE4MTMzMzMyWhcNNDExMTAzMTMzMzMy
+WjB7MSAwHgYDVQQDDBdTYW1wbGUgQXR0ZXN0YXRpb24gUm9vdDEWMBQGA1UECgwN
+RklETyBBbGxpYW5jZTERMA8GA1UECwwIVUFGIFRXRywxEjAQBgNVBAcMCVBhbG8g
+QWx0bzELMAkGA1UECAwCQ0ExCzAJBgNVBAYTAlVTMFkwEwYHKoZIzj0CAQYIKoZI
+zj0DAQcDQgAEH8hv2D0HXa59/BmpQ7RZehL/FMGzFd1QBg9vAUpOZ3ajnuQ94PR7
+aMzH33nUSBr8fHYDrqOBb58pxGqHJRyX/6NQME4wHQYDVR0OBBYEFPoHA3CLhxFb
+C0It7zE4w8hk5EJ/MB8GA1UdIwQYMBaAFPoHA3CLhxFbC0It7zE4w8hk5EJ/MAwG
+A1UdEwQFMAMBAf8wCgYIKoZIzj0EAwIDSAAwRQIhAJ06QSXt9ihIbEKYKIjsPkri
+VdLIgtfsbDSu7ErJfzr4AiBqoYCZf0+zI55aQeAHjIzA9Xm63rruAxBZ9ps9z2XN
+lQ=="],
+  "icon": "data:image/png;base64,
+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"
+}
+    </pre>
+
+    <p>Example of an <em>User Verification Methods</em> entry for an authenticator with:</p>
+  <ul>
+    <li>Fingerprint based user verification method, with:</li>
+    <ul>
+      <li>the ability for the user to enroll up to 5 fingers (reference data sets) with</li>
+      <ul>
+	<li>a false acceptance rate of 1 in 50000 (0.002%) per finger. This results in a FAR of 0.01% (0.0001).</li>
+	<li>The fingerprint verification will be blocked after 5 unsuccessful attempts.</li>
+      </ul>
+    </ul>
+    <li>A PIN code with a minimum length of 4 decimal digits has to be set-up as 
+      alternative verification method.  Entering the PIN will be required to
+      re-activate fingerprint based user verification after it has been blocked.</li>
+  </ul>
+  
+  <pre class="example" title="User Verification Methods Entry">
+[
+  [ { "userVerification": 2, "baDesc": { "FAR": 0.00002, "maxReferenceDataSets": 5, 
+                           "maxRetries": 5, "blockSlowdown": 0} }],
+  [ { "userVerification": 4, "caDesc": { "base": 10, "minLength": 4 } } ]
+]
+    </pre>    
+
+  </section>
+
+  <section>
+    <h3>U2F Example</h3>
+
+    <p>Example of the metadata statement for an U2F authenticator with:</p>
+    <ul>
+      <li>authenticatorVersion 2.</li>
+      <li>Touch based user presence check.</li>
+      <li>Authenticator is a USB pluggable hardware token.</li>
+      <li>The authentication keys are protected by a secure element.</li>
+      <li>The user presence check is implemented in the chip.</li>
+      <li>The Authentiator is a pure second factor authenticator.</li>
+      <li>It supports the "U2FV1BIN" assertion scheme.</li>
+      <li>It uses the <code>UAF_ALG_SIGN_ECDSA_SHA256_RAW</code> authentication algorithm.</li>
+      <li>It uses the <code>UAF_ALG_KEY_ECC_X962_RAW</code> public key format (0x100=256 decimal).</li>
+      <li>It only implements the <code>TAG_ATTESTATION_BASIC_FULL</code> method (0x3E07=15879 decimal).</li>
+      <li>It implements U2F protocol version 1.0 only.</li>
+    </ul>
+    
+    <pre class="example" title="MetadataStatement for U2F Authenticator">
+{ "description": "FIDO Alliance Sample U2F Authenticator",
+  "attestationCertificateKeyIdentifiers": ["7c0903708b87115b0b422def3138c3c864e44573"],
+  "protocolFamily": "u2f",
+  "authenticatorVersion": 2,
+  "upv": [{ "major": 1, "minor": 0 }],
+  "assertionScheme": "U2FV1BIN",
+  "authenticationAlgorithm": 1,
+  "publicKeyAlgAndEncoding": 256,
+  "attestationTypes": [15879],
+  "userVerificationDetails": [ [ { "userVerification": 1} ] ],
+  "keyProtection": 10,
+  "matcherProtection": 4,
+  "attachmentHint": 2,
+  "isSecondFactorOnly": "true",
+  "tcDisplay": 0,
+  "attestationRootCertificates": [
+"MIICPTCCAeOgAwIBAgIJAOuexvU3Oy2wMAoGCCqGSM49BAMCMHsxIDAeBgNVBAMM
+F1NhbXBsZSBBdHRlc3RhdGlvbiBSb290MRYwFAYDVQQKDA1GSURPIEFsbGlhbmNl
+MREwDwYDVQQLDAhVQUYgVFdHLDESMBAGA1UEBwwJUGFsbyBBbHRvMQswCQYDVQQI
+DAJDQTELMAkGA1UEBhMCVVMwHhcNMTQwNjE4MTMzMzMyWhcNNDExMTAzMTMzMzMy
+WjB7MSAwHgYDVQQDDBdTYW1wbGUgQXR0ZXN0YXRpb24gUm9vdDEWMBQGA1UECgwN
+RklETyBBbGxpYW5jZTERMA8GA1UECwwIVUFGIFRXRywxEjAQBgNVBAcMCVBhbG8g
+QWx0bzELMAkGA1UECAwCQ0ExCzAJBgNVBAYTAlVTMFkwEwYHKoZIzj0CAQYIKoZI
+zj0DAQcDQgAEH8hv2D0HXa59/BmpQ7RZehL/FMGzFd1QBg9vAUpOZ3ajnuQ94PR7
+aMzH33nUSBr8fHYDrqOBb58pxGqHJRyX/6NQME4wHQYDVR0OBBYEFPoHA3CLhxFb
+C0It7zE4w8hk5EJ/MB8GA1UdIwQYMBaAFPoHA3CLhxFbC0It7zE4w8hk5EJ/MAwG
+A1UdEwQFMAMBAf8wCgYIKoZIzj0EAwIDSAAwRQIhAJ06QSXt9ihIbEKYKIjsPkri
+VdLIgtfsbDSu7ErJfzr4AiBqoYCZf0+zI55aQeAHjIzA9Xm63rruAxBZ9ps9z2XN
+lQ=="],
+    </pre>
+
+  </section>
+</section>
+
+<section class="informative">
+  <h2>Additional Considerations</h2>
+
+  <section>
+    <h3>Field updates and metadata</h3>
+    <p>Metadata statements are intended to be stable once they have been published.  When authenticators 
+      are updated in the field, such updates are expected to improve the authenticator security 
+      (for example, improve FRR or FAR).
+      The <code>authenticatorVersion</code> must be updated if firmware updates fixing severe security 
+      issues (e.g. as reported previously) are available.
+    </p>
+    <p class="note">The metadata statement is assumed to relate to all authenticators having the same AAID.</p>
+    <p class="note">The FIDO Server is recommended to assume increased risk if the <code>authenticatorVersion</code> 
+      specified in the metadata statement is newer (higher) than the one present in the authenticator.</p>
+    
+    <p class="normative">Significant changes in authenticator
+      functionality are not anticipated in firmware updates.  For
+      example, if an authenticator vendor wants to modify a PIN-based
+      authenticator to use "Speaker Recognition" as a user
+      verification method, the vendor MUST assign a new AAID to
+      this authenticator.
+    </p>
+
+    <p class="normative">A single authenticator implementation could report itself as two "virtual" 
+      authenticators using different AAIDs.  Such implementations MUST properly (i.e. according to 
+      the security characteristics claimed in the metadata) protect <code>UAuth</code> keys
+      and other sensitive data from the other "virtual" authenticator
+      - just as a normal authenticator would do.
+    </p>
+
+    <p class="note">Authentication keys (<code>UAuth.pub</code>) registered for one AAID cannot 
+      be used by authenticators reporting a different AAID - even when running on the same hardware 
+      (see section "Authentication Response Processing Rules for FIDO Server" in [[UAFProtocol]]).  
+    </p>
+  </section>
+  
+</section>
+
+</body>
+</html>
