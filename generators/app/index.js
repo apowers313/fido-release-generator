@@ -27,9 +27,7 @@ module.exports = yeoman.generators.Base.extend({
   writing: require ("./writing"),
 
   install: function() {},
-  end: function() {
-    // TODO: delete template directory
-  }
+  end: require ("./end")
 });
 
 function welcome() {
