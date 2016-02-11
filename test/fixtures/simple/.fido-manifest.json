@@ -1,6 +1,7 @@
 {
 	"files": [
-		"simple.html"
+		"simple.html",
+		"README.txt"
 	],
 	"templates": [],
 	"config": {}

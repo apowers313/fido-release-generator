@@ -2,7 +2,14 @@
 	"files": [
 		"logo.png",
 		"respec-fido-common.js",
-		"spec-logo.png"
+		"spec-logo.png",
+		"fido-refs.js",
+		"blueprint-dark.png",
+		"FIDO-ID.css",
+		"FIDO-PS.css",
+		"FIDO-RD.css",
+		"FIDO-WD.css",
+		"draftBkgd.png"
 	],
 	"templates": [],
 	"config": {}
