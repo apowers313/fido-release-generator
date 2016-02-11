@@ -3,6 +3,7 @@ module.exports = {
 	maifest: load_manifests,
 	refs: update_refs,
 	html: modify_html_files,
+	// txt: modify_text_files,
 	copy: copy_files,
 	copy_common: copy_common_files,
 	pdf: create_pdfs,
@@ -10,59 +11,22 @@ module.exports = {
 	commit: github_commit
 };
 
-var coreManifest = {
-	files: [
-		"fido-uaf-README.txt",
-		"fido-uaf-overview.html",
-		"fido-uaf-protocol.html",
-		"fido-uaf-client-api-transport.html",
-		"fido-uaf-asm-api.html",
-		"fido-uaf-authnr-cmds.html",
-		"fido-metadata-statement.html", // common
-		"fido-metadata-service.html", // common
-		"fido-uaf-reg.html",
-		"fido-registry.html", // common
-		"fido-appid-and-facets.html", // common
-		"fido-security-ref.html", // common
-		"fido-glossary.html", // common
-		"fido-uaf-apdu.html", // added
-		"img",
-	],
-	templates: [],
-	config: {}
-};
-
-// resources/FIDO-$specStatusUC.css
-// resources/blueprint-dark.png
-//copy ./resources/logo.png <tag>
-//copy ./resources/respec-fido-common.js
-//copy ./resources/spec-logo.png
-//if !ps copy ./resources/draftBkgd.png
-var resourcesManifest = {
-	files: [
-		"logo.png",
-		"respec-fido-common.js",
-		"spec-logo.png"
-	],
-	templates: [],
-	config: {}
-};
-
-var commonManifest = {
-	files: [
-	],
-	templates: [],
-	config: {}
-};
-
-var fse = require ("fs-extra");
+var fse = require("fs-extra");
 var path = require("path");
-// require ("nodegit");
+var gulpFilter = require("gulp-filter");
+var gulpReplace = require("gulp-replace");
+var gulpClone = require("gulp-clone");
+var gulpHtmlToPdf = require("gulp-html-pdf");
+var gulpRename = require("gulp-rename");
+
+var coreManifest;
+var resourcesManifest;
+var commonManifest;
 
 // release.pl: 213-248
 function clean_directory() {
 	this.log.debug("Cleaning directory...");
-	
+
 	// don't remove files if just testing
 	if (this.test) {
 		this.log.warn("TEST: not removing files from current directory");
@@ -71,35 +35,67 @@ function clean_directory() {
 
 	// TODO: check if release dir exists
 	this.log.debug("Destination directory: " + this.destinationPath() + " ...");
-	fse.removeSync (this.destinationPath());
+	fse.removeSync(this.destinationPath());
 }
 
 function load_manifests() {
-	coreManifest = require (this.templatePath(".fido-manifest.json"));
-	console.log ("coreManifest");
-	console.log (coreManifest);
+	coreManifest = require(this.templatePath(".fido-manifest.json"));
+	// console.log ("coreManifest");
+	// console.log (coreManifest);
 
-	commonManifest = require (this.templatePath("common/.fido-manifest.json"));
-	console.log ("commonManifest");
-	console.log (commonManifest);
+	commonManifest = require(this.templatePath("common/.fido-manifest.json"));
+	// console.log ("commonManifest");
+	// console.log (commonManifest);
 
-	resourcesManifest = require (this.templatePath("resources/.fido-manifest.json"));
-	console.log ("resourcesManifest");
-	console.log (resourcesManifest);
-	fuckyou()
+	resourcesManifest = require(this.templatePath("resources/.fido-manifest.json"));
+	// console.log ("resourcesManifest");
+	// console.log (resourcesManifest);
 }
 
 // edit HTML, release.pl:622-671
 function modify_html_files() {
+	// only work on HTML files
+	var filter = gulpFilter("**/*.html", {
+		restore: true
+	});
+	this.registerTransformStream(filter);
+
+	// update URLs in HTML files
+	if (!this.answers.public) {
+		this.registerTransformStream(gulpReplace(/href='https:\/\/fidoalliance.org\/specs\/[\w\d\-.]+\//g, "href='./"));
+	} else {
+		// TODO: public links
+	}
+
+	// TODO: update ReSpec params
 	// $data =~ s/specStatus:\s+"[\w]+",/specStatus: "$specStatusUC",/g;
 	// $data =~ s/specVersion:\s+"[v.\d]+"\s+,/specVersion: "$targetVersion",/g;
 	// $data =~ s/specFamily:\s+"[\w\d]+"\s+,/specFamily: "$specSet",/g;
 	// $data =~ s/publishDate:\s+"[\d-]*",/publishDate: "$publishYear-$publishMonth-$publishDay",/g;
-	// convert to static HTML
+
+	// TODO: convert to static HTML
 	// phantomjs --ignore-ssl-errors=true --ssl-protocol=any ./release-tool/respec2html.js ./$specSet-specs/$filename ./$rd/$fileNoExt-$versionLabel.html
+
+	// Rename file
+	this.registerTransformStream(gulpRename({
+		suffix: this.versionLabel
+	}));
+
+	// go back to working on all files
+	this.registerTransformStream(filter.restore);
 }
 
-function copy_manifest_files (manifest, path) {
+function modify_text_files() {
+	// only work on text files
+	var filter = gulpFilter("**/*.txt", {
+		restore: true
+	});
+
+	// go back to working on all files
+	this.registerTransformStream(filter.restore);
+}
+
+function copy_manifest_files(manifest, path) {
 	if (manifest === undefined) return;
 
 	// copy based on manifest
@@ -124,10 +120,10 @@ function copy_manifest_files (manifest, path) {
 
 // release.pl: 285-329
 function copy_files() {
-	this.log.debug ("Copying files from spec manifest...");
-	copy_manifest_files.call (this, coreManifest, ".");
-	this.log.debug ("Copying files from resources manifest...");
-	copy_manifest_files.call (this, resourcesManifest, "resources");
+	this.log.debug("Copying files from spec manifest...");
+	copy_manifest_files.call(this, coreManifest, ".");
+	this.log.debug("Copying files from resources manifest...");
+	copy_manifest_files.call(this, resourcesManifest, "resources");
 }
 
 function copy_common_files() {
@@ -149,8 +145,8 @@ function copy_common_files() {
 	//https://github.com/robrich/gulp-if
 	//https://github.com/sindresorhus/gulp-filter
 
-	this.log.debug ("Copying files from common manifest...");
-	copy_manifest_files.call (this, commonManifest, "common");
+	this.log.debug("Copying files from common manifest...");
+	copy_manifest_files.call(this, commonManifest, "common");
 }
 
 // UAF, release.pl:687-745
@@ -167,7 +163,24 @@ function update_refs() {
 
 // release.pl:673-685
 function create_pdfs() {
+	// only work on HTML files
+	var filter = gulpFilter("**/*.html", {
+		restore: true
+	});
+	this.registerTransformStream(filter);
 
+	// duplicate HTML files to convert them to PDF files
+	var cloneSink = gulpClone.sink();
+	this.registerTransformStream(cloneSink);
+
+	// do the conversion from HTML to PDF
+	this.registerTransformStream(gulpHtmlToPdf());
+
+	// put our old HTML files back into the stream
+	this.registerTransformStream(cloneSink.tap());
+
+	// go back to working on all files
+	this.registerTransformStream(filter.restore);
 }
 
 // release.pl:
