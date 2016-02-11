@@ -19,14 +19,16 @@ var path = require("path");
 var fse = require("fs-extra");
 
 function create_derived_vars() {
-  this.tag =
-    "fido" + "-" +
-    this.answers.specset + "-" +
+  this.versionLabel = "-" +
     "v" + this.answers.specversion + "-" +
     this.answers.specstatus + "-" +
     ((this.answers.tagaddon.length > 0) ? (this.answers.tagaddon + "-") : ("")) +
     this.answers.tagdate +
     "";
+  this.releaseDirectory = this.tag =
+    "fido" + "-" +
+    this.answers.specset + 
+    this.versionLabel;
   this.log.debug("Config Tag:", this.tag);
   // $targetVersion = "v" . $targetVersion;
 
