@@ -82,7 +82,7 @@ function clone_from_github() {
     var depth = 2;
     var done = this.async();
     this.log.debug("Cloning GitHub repo:", repo, "to", dest, "...");
-    console.log("Cloning GitHub repo:", repo, "to", dest, "...");
+    // console.log("Cloning GitHub repo:", repo, "to", dest, "...");
     thread_count++;
 
     git.clone(repo, dest, 0, function(err) {
@@ -94,18 +94,18 @@ function clone_from_github() {
 
       --thread_count;
       this.log.debug("Done cloning", repo, "::", thread_count, "remaining ...");
-      console.log("Done cloning", repo, "::", thread_count, "remaining ...");
+      // console.log("Done cloning", repo, "::", thread_count, "remaining ...");
       if (thread_count === 0) {
         // git.clone doesn't like to clone into the same directory, so we have to manually shuffle the files from the "common-specs" repo around
-        fse.copySync(this.templatePath("common"), this.templatePath());
-        fse.removeSync(this.templatePath("common"));
+        // TODO: take care of this during copying of files so that we don't have to worry about file conflicts
+        // fse.copySync(this.templatePath("common"), this.templatePath());
+        // fse.removeSync(this.templatePath("common"));
         done();
       }
     }.bind(this));
   }.bind(this);
 
   this.log.debug("Setting template source to:" + this.defaultSourcePath + " ...");
-
   clone_github_sync(repos[this.answers.specset], this.templatePath());
   clone_github_sync(repos["resources"], this.templatePath("resources"));
   clone_github_sync(repos["common"], this.templatePath("common"));
