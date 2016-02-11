@@ -1,8 +1,22 @@
 module.exports = {
   vars: create_derived_vars,
-  template: create_template_dir,
-  github: clone_from_github
+  paths: set_paths,
+  template: remove_template_dir,
+  clone: clone_from_github
 };
+
+// translation table from 'this.answers.specset' to GitHub URL
+var repos = {
+  uaf: "https://github.com/fido-alliance/uaf-specs",
+  u2f: "https://github.com/fido-alliance/u2f-specs.git",
+  "fido-2": "https://github.com/fido-alliance/fido-2-specs",
+  common: "https://github.com/fido-alliance/common-specs",
+  resources: "https://github.com/fido-alliance/resources"
+};
+
+var git = require("gift");
+var path = require("path");
+var fse = require("fs-extra");
 
 function create_derived_vars() {
   this.tag =
@@ -27,38 +41,72 @@ function create_derived_vars() {
   // my $tagMessage =
   //   $specSet . "-" . $versionLabel . " spec set snapshot creation.";
 
-  
   switch (this.answers.specstatus) {
     case "wd":
-      this.answers.specphrase = "Working Draft (Work in progress)"; break;
+      this.answers.specphrase = "Working Draft (Work in progress)";
+      break;
     case "rd":
-      this.answers.specphrase = "Review Draft (Work in progress)"; break;
+      this.answers.specphrase = "Review Draft (Work in progress)";
+      break;
     case "id":
-      this.answers.specphrase = "Implemenation Draft (Work in progress)"; break;
+      this.answers.specphrase = "Implemenation Draft (Work in progress)";
+      break;
     case "ps":
       this.answers.specphrase = "Proposed Standard";
   }
 
   //my $versionLabel = $targetVersion . "-" . $specStatus . "-" . $publishDate;
-
   this.test = this.answers.test;
 }
 
-function create_template_dir() {
-
+function remove_template_dir() {
+  this.log("Removing", this.templatePath());
+  fse.removeSync(this.templatePath());
 }
 
+function set_paths() {
+  this.sourceRoot(this.defaultSourcePath);
+
+  var path = this.destinationPath(this.tag);
+  this.destinationRoot(path); // will be created automatically
+
+  this.log.debug("Template dir:", this.templatePath());
+  this.log.debug("Destination dir:", this.destinationPath());
+}
+
+// release.pl: 250-273
 function clone_from_github() {
-  // TODO: clone into template directory
-  // this.sourceRoot('new/template/path')
+  var thread_count = 0;
 
-  // don't clone if just testing
-  if (this.test) {
-    this.log.warn("TEST: not cloning from github");
-    return;
-  }
+  var clone_github_sync = function(repo, dest) {
+    var depth = 2;
+    var done = this.async();
+    this.log.debug("Cloning GitHub repo:", repo, "to", dest, "...");
+    console.log("Cloning GitHub repo:", repo, "to", dest, "...");
+    thread_count++;
 
-  //git clone --recursive https://github.com/$githubAcnt/$specSet-specs
-  //git clone --recursive https://github.com/$githubAcnt/common-specs
-  //git clone --recursive https://github.com/$githubAcnt/resources
+    git.clone(repo, dest, 0, function(err) {
+      if (err) {
+        this.log.error("FATAL ERROR: git clone: ", err);
+        throw (err);
+        // process.exit(-1); // TODO: is there a way to skip to the clean-up / end?
+      }
+
+      --thread_count;
+      this.log.debug("Done cloning", repo, "::", thread_count, "remaining ...");
+      console.log("Done cloning", repo, "::", thread_count, "remaining ...");
+      if (thread_count === 0) {
+        // git.clone doesn't like to clone into the same directory, so we have to manually shuffle the files from the "common-specs" repo around
+        fse.copySync(this.templatePath("common"), this.templatePath());
+        fse.removeSync(this.templatePath("common"));
+        done();
+      }
+    }.bind(this));
+  }.bind(this);
+
+  this.log.debug("Setting template source to:" + this.defaultSourcePath + " ...");
+
+  clone_github_sync(repos[this.answers.specset], this.templatePath());
+  clone_github_sync(repos["resources"], this.templatePath("resources"));
+  clone_github_sync(repos["common"], this.templatePath("common"));
 }
