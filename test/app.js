@@ -133,13 +133,19 @@ describe.only("simple transforms", function() {
     });
 
     it("didn't modify URLs in README.txt", function() {
+      var expectedReadmeFile = fs.readFileSync(path.join(fixturesPath, "simple-results/respec.html"), {
+        encoding: "utf8"
+      });
+      fsassert.fileContent(path.join(expectedFolderPath, "respec.html"), expectedReadmeFile);
+    });
+
+    it("updated ReSpec variables", function() {
       var expectedReadmeFile = fs.readFileSync(path.join(fixturesPath, "simple-results/README.txt"), {
         encoding: "utf8"
       });
       fsassert.fileContent(path.join(expectedFolderPath, "README.txt"), expectedReadmeFile);
-    });
 
-    it("updated ReSpec variables");
+    });
 
     it("inlined JavaScript");
 

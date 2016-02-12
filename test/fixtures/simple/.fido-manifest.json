@@ -1,7 +1,8 @@
 {
 	"files": [
 		"simple.html",
-		"README.txt"
+		"README.txt",
+		"respec.html"
 	],
 	"templates": [],
 	"config": {}

@@ -18,6 +18,7 @@ var gulpReplace = require("gulp-replace");
 var gulpClone = require("gulp-clone");
 var gulpHtmlToPdf = require("gulp-html-pdf");
 var gulpRename = require("gulp-rename");
+var gulpRespec = require("./gulp-respec2html");
 
 var coreManifest;
 var resourcesManifest;
@@ -73,8 +74,9 @@ function modify_html_files() {
 	// $data =~ s/specFamily:\s+"[\w\d]+"\s+,/specFamily: "$specSet",/g;
 	// $data =~ s/publishDate:\s+"[\d-]*",/publishDate: "$publishYear-$publishMonth-$publishDay",/g;
 
-	// TODO: convert to static HTML
+	// convert to static HTML, inline respec; runs: 
 	// phantomjs --ignore-ssl-errors=true --ssl-protocol=any ./release-tool/respec2html.js ./$specSet-specs/$filename ./$rd/$fileNoExt-$versionLabel.html
+	this.registerTransformStream (gulpRespec());
 
 	// Rename file
 	this.registerTransformStream(gulpRename({

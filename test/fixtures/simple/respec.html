@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>FIDO UAF Architectural Overview</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <script src='resources/respec-fido-common.js' class='remove' async></script>
+    <script type="text/javascript" class="remove">
+     var respecConfig = {
+       // specification status (e.g. WD, LCWD, NOTE, etc.). If in doubt use ED.
+       // Member-SUBM
+       specStatus: "WD",
+       specVersion: "v1.3",
+       specFamily: "uaf",
+
+      // shortName is what is termed specInRepoStemFN in..
+      // https://confluence.fidoalliance.org/display/ALL/FIDO+Alliance+filenaming+and+version+labeling+conventions
+       shortName:  "fido-uaf-overview",
+
+       // if your specification has a subtitle that goes below the main
+       // formal title, define it here
+       // subtitle   :  "an excellent document",
+
+      // if you wish the publication date to be other than today, set this
+      // NOTE: UNCOMMENT THIS PRIOR TO RUNNING release-tool/release.pl for a release, 
+      //       whether internal or external (TODO: release-tool should take care of this)...
+      //publishDate: "2015-09-02", 
+      
+      // if the specification's copyright date is a range of years, specify
+      // the start date here:
+      copyrightStart: "2013",
+      
+      // if there is a previously published draft, uncomment this and set its YYYY-MM-DD date
+      // and its maturity status, OR, comment the latter two items out, and add an 
+      // explicit prevVersion URI pointing to the previously publicly published version...
+      //previousPublishDate: "",
+      //previousMaturity: "",
+       prevVersion: "https://fidoalliance.org/specs/fido-uaf-v1.0-ps-20141208/fido-uaf-overview-v1.0-ps-20141208.html",
+
+       // if there a publicly available Editor's Draft, this is the link
+       edDraftURI: "",
+       
+       // if this is a LCWD, uncomment and set the end of its review period
+       // lcEnd: "2009-08-05",
+       
+       // editors, add as many as you like
+       // only "name" is required
+       editors:  [
+	 { name: "Salah Machani", url: "mailto:salah.machani@rsa.com",
+           company: "RSA, the Security Division of EMC", companyURL: "https://www.emc.com/domains/rsa/index.htm" },
+	 { name: "Rob Philpott", url: "",
+           company: "RSA, the Security Division of EMC", companyURL: "https://www.emc.com/domains/rsa/index.htm" },
+	 { name: "Sampath Srinivas", url: "",
+	   company: "Google, Inc.", companyURL: "https://www.google.com"},
+	 { name: "John Kemp", url: "mailto:john@jkemp.net",
+           company: "FIDO Alliance", companyURL: "https://fidoalliance.org/" },
+  { name: "Jeff Hodges", url: "mailto:Jeff.Hodges@KingsMountain.com",
+           company: "PayPal, Inc.", companyURL: "https://www.PayPal.com/" }
+       ],
+
+       // name of the WG
+       wg:           "FIDO Alliance",
+       
+       // URI of the public WG page
+       wgURI:        "https://fidoalliance.org/",
+       
+       // name (with the @w3c.org) of the public mailing to which comments are due
+       //wgPublicList: "public-webappsec",
+       
+       
+       // local bibliography
+       
+     };
+    </script>
+    <script src='resources/fido-refs.js' class='remove'></script>
+  </head>
+  <body>
+    <section id='sotd'></section>
+
+    <section id='abstract'>
+      <p>The FIDO UAF strong authentication framework enables online
+	services and websites, whether on the open Internet or within
+	enterprises, to transparently leverage native security features
+	of end-user computing devices for strong user authentication and
+	to reduce the problems associated with creating and remembering
+	many online credentials. The FIDO UAF Reference Architecture
+	describes the components, protocols, and interfaces that make
+	up the FIDO UAF strong authentication ecosystem.
+      </p>
+    </section>
+
+    <section class="informative">
+      <h2>Introduction</h2>
+      <p>This document describes the FIDO Universal Authentication
+	Framework (UAF) Reference Architecture. The target audience for
+	this document is decision makers and technical architects who
+	need a high-level understanding of the FIDO UAF strong
+	authentication solution and its relationship to other relevant
+	industry standards.
+      </p>
+      <p>The FIDO UAF specifications are as follows:
+      </p>
+      <ul>
+          <li>FIDO UAF Protocol</li>
+          <li>FIDO UAF Application API and Transport Binding</li>
+          <li>FIDO UAF Authenticator Commands</li>
+          <li>FIDO UAF Authenticator-Specific Module API</li>
+          <li>FIDO UAF Registry of Predefined Values</li>
+          <li>FIDO UAF APDU</li>
+      </ul>
+      <p>The following additional FIDO documents provide important information relevant to the UAF specifications:
+      </p>
+      <ul>
+          <li>FIDO AppID and Facets Specification </li>
+          <li>FIDO Metadata Statements</li>
+          <li>FIDO Metadata Service</li>
+          <li>FIDO Registry of Predefined Values</li>
+          <li>FIDO ECDAA Algorithm</li>
+          <li>FIDO Security Reference</li>
+          <li>FIDO Glossary</li>
+      </ul>
+      <p>These documents may all be found on the FIDO Alliance website at
+	<a href="http://fidoalliance.org/specifications/download/">http://fidoalliance.org/specifications/download/</a>
+      </p>
+
+      <section class="informative">
+	<h2>Background</h2>
+	<p>The FIDO Alliance mission is to change the nature of online
+	  strong authentication by:
+	</p>
+	<ul>
+	<li>Developing technical specifications defining open, scalable,
+	  interoperable mechanisms that supplant reliance on passwords to
+	  securely authenticate users of online services.
+	</li>
+	<li>Operating industry programs to help ensure successful worldwide
+	  adoption of the specifications.
+	</li>
+	<li>Submitting mature technical specifications to recognized
+	  standards development organization(s) for formal
+	  standardization.
+	</li>
+	</ul>
+	<p>The core ideas driving the FIDO Alliance's efforts are 1) ease
+	  of use, 2) privacy and security, and 3) standardization. The
+	  primary objective is to enable online services and websites,
+	  whether on the open Internet or within enterprises, to leverage
+	  native security features of end-user computing devices for
+	  strong user authentication and to reduce the problems
+	  associated with creating and remembering many online
+	  credentials.
+	</p>
+	<p>There are two key protocols included in the FIDO architecture
+	  that cater to two basic options for user experience when
+	  dealing with Internet services. The two protocols share many of
+	  underpinnings but are tuned to the specific intended use cases.
+	</p>
+	<p><strong>Universal Authentication Framework (UAF) Protocol
+	</strong></p>
+	<p>The UAF protocol allows online services to offer password-less
+	  and multi-factor security. The user registers their device to
+	  the online service by selecting a local authentication
+	  mechanism such as swiping a finger, looking at the camera,
+	  speaking into the mic, entering a PIN, etc. The UAF protocol
+	  allows the service to select which mechanisms are presented to
+	  the user.
+	</p>
+	<p>Once registered, the user simply repeats the local
+	  authentication action whenever they need to authenticate to the
+	  service. The user no longer needs to enter their password when
+	  authenticating from that device. UAF also allows experiences
+	  that combine multiple authentication mechanisms such as
+	  fingerprint + PIN.
+	</p>
+	<p>This document that you are reading describes the UAF reference
+	  architecture.
+	</p>
+	<p><strong>Universal 2nd Factor (U2F) Protocol
+    </strong></p>
+	  <p>The U2F protocol allows online services to augment the security
+	  of their existing password infrastructure by adding a strong
+	  second factor to user login. The user logs in with a username
+	  and password as before. The service can also prompt the user to
+	  present a second factor device at any time it chooses. The
+	  strong second factor allows the service to simplify its
+	  passwords (e.g. 4-digit PIN) without compromising security.
+	</p>
+	<p>During registration and authentication, the user presents the
+	  second factor by simply pressing a button on a USB device or
+	  tapping over NFC. The user can use their FIDO U2F device across
+	  all online services that support the protocol leveraging
+	  built-in support in web browsers.
+	</p>
+	<p>Please refer to the FIDO website for an overview and
+	  documentation set focused on the U2F protocol.
+	</p>
+      </section>
+      <section class="informative">
+	<h2>FIDO UAF Documentation</h2>
+	<p>To understand the FIDO UAF protocol, it is recommended that new
+	  audiences start by reading this architecture overview document and become familiar with the
+	  technical terminology used in the specifications (the
+	  glossary). Then they should proceed to the individual UAF
+	  documents in the recommended order listed below.
+	</p>
+        <ul>
+            <li><strong>FIDO UAF Overview</strong>: This document. Provides an introduction to the
+                FIDO UAF architecture, protocols, and specifications.</li>
+            <li><strong>FIDO Technical Glossary</strong>: Defines the technical terms and phrases
+                used in FIDO Alliance specifications and documents.</li>
+            <li><strong>Universal Authentication Framework (UAF)</strong></li>
+            <ul>
+                <li><strong>UAF Protocol Specification </strong>: Message formats and processing rules for all UAF
+                    protocol messages.</li>
+                <li><strong>UAF Application API and Transport Binding Specification</strong>: APIs
+                    and interoperability profile for client applications to utilize FIDO UAF.</li>
+                <li><strong>UAF Authenticator Commands</strong>: Low-level functionality that UAF
+                    Authenticators should implement to support the UAF protocol.</li>
+                <li><strong>UAF Authenticator-specific Module API</strong>: Authenticator-specific
+                    Module API provided by an ASM to the FIDO client.</li>
+                <li><strong>UAF Registry of Predefined Values</strong>: defines all the strings and
+                    constants reserved by UAF protocols.</li>
+                <li><strong>UAF APDU</strong>: defines a mapping of FIDO UAF Authenticator commands 
+		  to Application Protocol Data Units (APDUs).</li>
+            </ul>
+            <li><strong>FIDO AppID and Facet Specification </strong>: Scope of user credentials and how
+                a trusted computing base which supports application isolation may make access control decisions
+                about which keys can be used by which applications and web origins.</li>
+            
+            <li><strong>FIDO Metadata Statements</strong>: Information describing form factors,
+              characteristics, and capabilities of FIDO Authenticators
+              used to inform interactions with and make policy decisions about the authenticators.</li>
+
+            <li><strong>FIDO Metadata Service </strong>: Baseline method for
+              relying parties to access the latest Metadata statements.</li>
+
+            <li><strong>FIDO ECDAA Algorithm </strong>: Defines the direct anonymous attestation
+	      algorithm for FIDO Authenticators.</li>
+
+	    <li><strong>FIDO Registry of Predefined Values</strong>: defines all the strings and
+              constants reserved by FIDO protocols with relevance to multiple FIDO protocol families.</li>
+
+            <li><strong>FIDO Security Reference</strong>: Provides an analysis of FIDO security
+                based on detailed analysis of security threats pertinent to the
+                FIDO protocols based on its goals, assumptions, and inherent security measures.
+            </li>
+        </ul>
+	<p>The remainder of this Overview section of the reference
+	  architecture document introduces the key drivers, goals, and
+	  principles which inform the design of FIDO UAF.
+	</p>
+	<p>Following the Overview, this document describes:
+	</p>
+    <ul>
+	<li>A high-level look at the components, protocols, and APIs
+	  defined by the architecture
+	</li>
+	<li>The main FIDO UAF use cases and the protocol message flows
+	  required to implement them.
+	</li>
+	<li>The relationship of the FIDO protocols to other relevant
+	  industry standards.
+	</li>
+      </section>
+      <section class="informative">
+	<h2>FIDO UAF Goals</h2>
+	<p>In order to address today's strong authentication issues and
+	  develop a smoothly-functioning low-friction ecosystem, a
+	  comprehensive, open, multi-vendor solution architecture is
+	  needed that encompasses:
+	</p>
+    <ul>
+	<li>User devices, whether personally acquired, enterprise-issued, or
+	  enterprise BYOD, and the device's potential operating
+	  environment, e.g. home, office, in the field, etc.
+	</li>
+	<li>Authenticators<sup><a href="#fn1" id="ref1">1</a></sup>
+	</li>
+	<li>Relying party applications and their deployment environments
+	</li>
+	<li>Meeting the needs of both end users and Relying Parties
+	</li>
+	<li>Strong focus on both browser- and native-app-based end-user
+	  experience
+	</li>
+    </ul>
+	<p>This solution architecture must feature:
+	</p>
+    <ul>
+	<li>FIDO UAF Authenticator discovery, attestation, and provisioning
+	</li>
+	<li>Cross-platform strong authentication protocols leveraging FIDO
+	  UAF Authenticators
+	</li>
+	<li>A uniform cross-platform authenticator API
+	</li>
+	<li>Simple mechanisms for Relying Party integration
+	</li>
+    </ul>
+	<p>The FIDO Alliance envisions an open, multi-vendor,
+	  cross-platform reference architecture with these goals:
+	</p>
+    <ul>
+	<li><strong>Support strong, multi-factor authentication</strong>: Protect Relying
+	  Parties against unauthorized access by supporting end user
+	  authentication using two or more strong authentication factors
+	  ("something you know", "something you have", "something you
+	  are").
+	</li>
+	<li><strong>Build on, but not require, existing device capabilities</strong>:
+	  Facilitate user authentication using built-in platform
+	  authenticators or capabilities (fingerprint sensors, cameras,
+	  microphones, embedded TPM hardware), but do not preclude the
+	  use of discrete additional authenticators.
+	</li>
+	<li><strong>Enable selection of the authentication mechanism</strong>: Facilitate
+	  Relying Party and user choice amongst supported authentication
+	  mechanisms in order to mitigate risks for their particular use
+	  cases.
+	</li>
+	<li><strong>Simplify integration of new authentication capabilities</strong>: Enable
+	  organizations to expand their use of strong authentication to
+	  address new use cases, leverage new device's capabilities, and
+	  address new risks with a single authentication approach.
+	</li>
+	<li><strong>Incorporate extensibility for future refinements and
+	  innovations</strong>: Design extensible protocols and APIs in order to
+	  support the future emergence of additional types of
+	  authenticators, authentication methods, and authentication
+	  protocols, while maintaining reasonable backwards
+	  compatibility.
+	</li>
+	<li><strong>Leverage existing open standards where possible, openly innovate
+	  and extend where not</strong>: An open, standardized, royalty-free
+	  specification suite will enable the establishment of a
+	  virtuous-circle ecosystem, and decrease the risk, complexity,
+	  and costs associated with deploying strong authentication.
+	  Existing gaps -- notably uniform authenticator provisioning and
+	  attestation, a uniform cross-platform authenticator API, as
+	  well as a flexible strong authentication challenge-response
+	  protocol leveraging the user's authenticators will be
+	  addressed.
+	</li>
+	<li><strong>Complement existing single sign-on, federation initiatives</strong>:
+	  While industry initiatives (such as OpenID, OAuth, SAML, and
+	  others) have created mechanisms to reduce the reliance on
+	  passwords through single sign-on or federation technologies,
+	  they do not directly address the need for an initial strong
+	  authentication interaction between end users and Relying
+	  Parties.
+	</li>
+	<li><strong>Preserve the privacy of the end user</strong>: Provide the user control
+	  over the sharing of device capability information with Relying
+	  Parties, and mitigate the potential for collusion amongst
+	  Relying Parties.
+	</li>
+	<li><strong>Unify end-User Experience</strong>: Create easy, fun, and unified
+	  end-user experiences across all platforms and across similar
+	  Authenticators.
+	</li>
+    </ul>
+      </section>
+    </section>
+    <section class="informative">
+      <h2>FIDO UAF High-Level Architecture</h2>
+      <p>The FIDO UAF Architecture is designed to meet the FIDO
+	goals and yield the desired ecosystem benefits. It accomplishes
+	this by filling in the status-quo's gaps using standardized
+	protocols and APIs.
+      </p>
+      <p>The following diagram summarizes the reference architecture and
+	how its components relate to typical user devices and Relying
+	Parties.
+      </p>
+      <p>The FIDO-specific components of the reference architecture are
+	described below.
+      </p>
+      <figure>
+	<img src="./img/fido-uaf-architecture.png"
+	     onerror="./img/fido-uaf-architecture.png"
+	     alt="FIDO UAF High-Level Architecture"/>	
+	<figcaption>FIDO UAF High-Level Architecture
+	</figcaption>
+      </figure>
+      <section>
+	<h3>FIDO UAF Client
+	</h3>
+	<p>A FIDO UAF Client implements the client side of the FIDO UAF
+	  protocols, and is responsible for:
+	</p>
+    <ul>
+	<li>Interacting with specific FIDO UAF Authenticators using the FIDO
+	  UAF Authenticator Abstraction layer via the FIDO UAF
+	  Authenticator API.
+	</li>
+	<li>Interacting with a user agent on the device (e.g. a mobile app,
+	  browser) using user agent-specific interfaces to communicate
+	  with the FIDO UAF Server. For example, a FIDO-specific browser
+	  plugin would use existing browser plugin interfaces or a mobile
+	  app may use a FIDO-specific SDK. The user agent is then
+	  responsible for communicating FIDO UAF messages to a FIDO UAF
+	  Server at a Relying Party.
+	</li>
+    </ul>
+	<p>The FIDO UAF architecture ensures that FIDO client software can
+	  be implemented across a range of system types, operating
+	  systems, and Web browsers. While FIDO client software is
+	  typically platform-specific, the interactions between the
+	  components should ensure a consistent user experience from
+	  platform to platform.
+	</p>
+      </section>
+      <section>
+	<h3>FIDO UAF Server
+	</h3>
+	<p>A FIDO UAF server implements the server side of the FIDO UAF
+	  protocols and is responsible for:
+	</p>
+    <ul>
+	<li>Interacting with the Relying Party web server to communicate
+	  FIDO UAF protocol messages to a FIDO UAF Client via a device
+	  user agent.
+	</li>
+	<li>Validating FIDO UAF authenticator attestations against the
+	  configured authenticator metadata to ensure only trusted
+	  authenticators are registered for use.
+	</li>
+	<li>Manage the association of registered FIDO UAF Authenticators to
+	  user accounts at the Relying Party.
+	</li>
+	<li>Evaluating user authentication and transaction confirmation
+	  responses to determine their validity.
+	</li>
+    </ul>
+	<p>The FIDO UAF server is conceived as being deployable as an
+	  on-premise server by Relying Parties or as being outsourced to
+	  a FIDO-enabled third-party service provider.
+	</p>
+      </section>
+      <section>
+	<h3>FIDO UAF Protocols
+	</h3>
+	<p>The FIDO UAF protocols carry FIDO UAF messages between user
+	  devices and Relying Parties. There are protocol messages
+	  addressing:
+	</p>
+    <ul>
+	<li>Authenticator Registration: The FIDO UAF registration protocol
+	  enables Relying Parties to:
+	</li>
+    <ul>
+	<li>Discover the FIDO UAF Authenticators available on a user's
+	  system or device. Discovery will convey FIDO UAF Authenticator
+	  attributes to the Relying Party thus enabling policy decisions
+	  and enforcement to take place.
+	</li>
+	<li>Verify attestation assertions made by the FIDO UAF
+	  Authenticators to ensure the authenticator is authentic and
+	  trusted. Verification occurs using the attestation public key
+	  certificates distributed via authenticator metadata.
+	</li>
+	<li>Register the authenticator and associate it with the user's
+	  account at the Relying Party. Once an authenticator attestation
+	  has been validated, the Relying Party can provide a unique
+	  secure identifier that is specific to the Relying Party and the
+	  FIDO UAF Authenticator. This identifier can be used in future
+	  interactions between the pair {RP, Authenticator} and is not
+	  known to any other devices.
+	</li>
+    </ul>
+	<li>User Authentication: Authentication is typically based on
+	  cryptographic challenge-response authentication protocols and
+	  will facilitate user choice regarding which FIDO UAF
+	  Authenticators are employed in an authentication event.
+	</li>
+	<li>Secure Transaction Confirmation: If the user authenticator
+	  includes the capability to do so, a Relying Party can present
+	  the user with a secure message for confirmation. The message
+	  content is determined by the Relying Party and could be used in
+	  a variety of contexts such as confirming a financial
+	  transaction, a user agreement ,or releasing patient records.
+	</li>
+	<li>Authenticator Deregistration: Deregistration is typically required when the 
+	  user account is removed  at the Relying Party. The Relying Party can trigger the 
+	  deregistration by requesting the Authenticator to delete the associated UAF 
+	  credential with the user account.</li>
+    </ul>
+    </ul>
+      </section>
+      <section>
+	<h3>FIDO UAF Authenticator Abstraction Layer</h3>
+	<p>The FIDO UAF Authenticator Abstraction Layer provides a uniform
+	  API to FIDO Clients enabling the use of authenticator-based
+	  cryptographic services for FIDO-supported operations. It
+	  provides a uniform lower-layer "authenticator plugin" API
+	  facilitating the deployment of multi-vendor FIDO UAF
+	  Authenticators and their requisite drivers.
+	</p>
+      </section>
+      <section>
+	<h3>FIDO UAF Authenticator</h3>
+	<p>A FIDO UAF Authenticator is a secure entity, connected to or
+	  housed within FIDO user devices, that can create key material
+	  associated to a Relying Party. The key can then be used to
+	  participate in FIDO UAF strong authentication protocols. For
+	  example, the FIDO UAF Authenticator can provide a response to a
+	  cryptographic challenge using the key material thus
+	  authenticating itself to the Relying Party.
+	</p>
+	<p>In order to meet the goal of simplifying integration of trusted
+	  authentication capabilities, a FIDO UAF Authenticator will be
+	  able to attest to its particular type (e.g., biometric) and
+	  capabilities (e.g., supported crypto algorithms), as well as to
+	  its provenance. This provides a Relying Party with a high degree
+	  of confidence that the user being authenticated is indeed the
+	  user that originally registered with the site.
+	</p>
+      </section>
+      <section>
+	<h3>FIDO UAF Authenticator Metadata Validation
+	</h3>
+	<p>In the FIDO UAF context, attestation is how Authenticators make
+	  claims to a Relying Party during registration that the keys
+	  they generate, and/or certain measurements they report,
+	  originate from genuine devices with certified characteristics.
+	  An attestation signature, carried in a FIDO UAF registration
+	  protocol message is validated by the FIDO UAF Server. FIDO UAF
+	  Authenticators are created with attestation private keys used
+	  to create the signatures and the FIDO UAF Server validates the
+	  signature using that authenticator's attestation public key
+	  certificate located in the authenticator metadata. The metadata
+	  holding attestation certificates is shared with FIDO UAF Servers
+	  out of band.
+	</p>
+      </section>
+    </section>
+    <section class="informative">
+      <h2>FIDO UAF Usage Scenarios and Protocol Message Flows</h2>
+      <p>The FIDO UAF ecosystem supports the use cases briefly described
+	in this section.
+      </p>
+      <section>
+      <h3>FIDO UAF Authenticator Acquisition and User Enrollment</h3>
+      <p>It is expected that users will acquire FIDO UAF Authenticators
+	in various ways: they purchase a new system that comes with
+	embedded FIDO UAF Authenticator capability; they purchase a
+	device with an embedded FIDO UAF Authenticator, or they are
+	given a FIDO Authenticator by their employer or some other
+	institution such as their bank.
+      </p>
+      <p>After receiving a FIDO UAF Authenticator, the user must go
+	through an authenticator-specific enrollment process, which is
+	outside the scope of the FIDO UAF protocols. For example, in
+	the case of a fingerprint sensing authenticator, the user must
+	register their fingerprint(s) with the authenticator. Once
+	enrollment is complete, the FIDO UAF Authenticator is ready for
+	registration with FIDO UAF enabled online services and websites.
+      </p>
+      </section>
+      <section>
+      <h3>Authenticator Registration</h3>
+      <p>Given the FIDO UAF architecture, a Relying Party is able to
+	transparently detect when a user begins interacting with them
+	while possessing an initialized FIDO UAF Authenticator. In this
+	initial introduction phase, the website will prompt the user
+	regarding any detected FIDO UAF Authenticator(s), giving the
+	user options regarding registering it with the website or not.
+      </p>
+      <figure>
+	<img src="./img/fido-uaf-overview-reg-flow.png"
+	     onerror="./img/fido-uaf-overview-reg-flow.png"
+	     alt="Registration Message Flow"/>
+    
+	<figcaption>Registration Message Flow
+	</figcaption>
+      </figure>
+    </section>
+    
+    <section>
+      <h3>Authentication</h3>
+      <p>Following registration, the FIDO UAF Authenticator will be
+	subsequently employed whenever the user authenticates with the
+	website (and the authenticator is present). The website can
+	implement various fallback strategies for those occasions when
+	the FIDO Authenticator is not present. These might range from
+	allowing conventional login with diminished privileges to
+	disallowing login.
+      </p>
+      <figure>
+	<img src="./img/fido-uaf-overview-auth-flow.png"
+	     onerror="./img/fido-uaf-overview-auth-flow.png"
+	     alt="Authentication Message Flow"/>
+	<figcaption>Authentication Message Flow
+	</figcaption>
+      </figure>
+	<p>This overall scenario will vary slightly depending upon the type
+	  of FIDO UAF Authenticator being employed. Some authenticators
+	  may sample biometric data such as a face image, fingerprint, or
+	  voice print. Others will require a PIN or local
+	  authenticator-specific passphrase entry. Still others may
+	  simply be a hardware bearer authenticator. Note that it is
+	  permissible for a FIDO Client to interact with external
+	  services as part of the authentication of the user to the
+	  authenticator as long as the FIDO Privacy Principles are
+	  adhered to.
+	</p>
+      </section>
+      <section>
+	<h3>Step-up Authentication</h3>
+	<p>Step-up authentication is an embellishment to the basic website
+	  login use case. Often, online services and websites allow
+	  unauthenticated, and/or only nominally authenticated use -- for
+	  informational browsing, for example. However, once users
+	  request more valuable interactions, such as entering a
+	  members-only area, the website may request further
+	  higher-assurance authentication. This could proceed in several
+	  steps if the user then wishes to purchase
+	  something, with higher-assurance steps with increasing
+	  transaction value.
+	</p>
+	<p>FIDO UAF will smoothly facilitate this interaction style since
+	  the website will be able to discover which FIDO UAF
+	  Authenticators are available on FIDO-wielding users' systems,
+	  and select incorporation of the appropriate one(s) in any particular authentication interaction. Thus
+	  online services and websites will be able to dynamically tailor
+	  initial, as well as step-up authentication interactions
+	  according to what the user is able to wield and the needed
+	  inputs to website's risk analysis engine given the interaction
+	  the user has requested.
+	</p>
+      </section>
+      <section>
+	<h3>Transaction Confirmation</h3>
+	<p>There are various innovative use cases possible given FIDO
+	  UAF-enabled Relying Parties with end-users wielding FIDO UAF
+	  Authenticators. Website login and step-up authentication are
+	  relatively simple examples. A somewhat more advanced use case
+	  is secure transaction processing.
+	</p>
+	<figure>
+	  <img src="./img/fido-uaf-overview-transact-flow.png"
+	       onerror="./img/fido-uaf-overview-transact-flow.png"
+	       alt="Transaction Confirmation Message Flow"/>
+	  <figcaption>Confirmation Message Flow</figcaption>
+	</figure>
+	<p>Imagine a situation in which a Relying Party wants the end-user
+	  to confirm a transaction (e.g. financial operation, privileged
+	  operation, etc) so that any tampering of a transaction message
+	  during its route to the end device display and back can be
+	  detected. FIDO architecture has a concept of "secure
+	  transaction" which provides this capability. Basically if a
+	  FIDO UAF Authenticator has a transaction confirmation display capability, FIDO
+	  UAF architecture makes sure that the system supports What You
+	  See is What You Sign mode (WYSIWYS). A number of different use
+	  cases can derive from this capability -- mainly related to
+	  authorization of transactions (send money, perform a context
+	  specific privileged action, confirmation of email/address,
+	  etc).
+	</p>
+      </section>
+
+     <section>
+      <h3>Authenticator Deregistration</h3>
+      <p> There are some situations where a Relying Party may need to remove 
+	the UAF credentials associated with a specific user account in 
+	FIDO Authenticator. For example, the user’s account is cancelled or deleted, 
+	the user’s FIDO Authenticator is lost or stolen, etc.  In these situations, 
+	the RP may request the FIDO Authenticator to delete authentication keys 
+	that are bound to user account.
+      </p>
+      <figure>
+	<img src="./img/fido-uaf-overview-dereg-flow.png"
+	     onerror="./img/fido-uaf-overview-dereg-flow.png"
+	     alt="Deregistration Message Flow"/>
+	<figcaption>Deregistration Message Flow
+	</figcaption>
+      </figure>
+     </section>
+     
+     <section>
+	<h3>Adoption of New Types of FIDO UAF Authenticators</h3>
+	<p>Authenticators will evolve and new types are expected to appear
+	  in the future. Their adoption on the part of both users and
+	  Relying Parties is facilitated by the FIDO architecture. In
+	  order to support a new FIDO UAF Authenticator type, Relying
+	  Parties need only to add a new entry to their configuration
+	  describing the new authenticator, along with its FIDO
+	  Attestation Certificate. Afterwards, end users will be able to
+	  use the new FIDO UAF Authenticator type with those Relying
+	  Parties.
+	</p>
+      </section>
+    </section>
+    
+    <section class="informative">
+        <h2>Privacy Considerations</h2>
+        
+      <p> User privacy is fundamental to FIDO and is supported in UAF 
+      by design. Some of the key privacy-aware design elements are summarized here:
+      
+      <ul>
+          <li>A UAF device does not have a global identifier visible across 
+          relying parties and does not have a global identifier within a 
+          particular relying party. If for example, a person looses their 
+          UAF device, someone finding it cannot “point it at a relying party” and 
+          discover if the original user had any accounts with that relying party. 
+          Similarly, if two users share a UAF 
+          device and each has registered their account with the same relying 
+          party with this device, the relying party will not be able 
+          to discern that the two accounts share a device, based on the UAF 
+          protocol alone.</li>
+          
+          <li>The UAF protocol generates unique asymmetric cryptographic key pairs
+          on a per-device, per-user 
+          account, and per-relying party basis. Cryptographic keys used with different 
+          relying parties will not allow any one party to link all the actions 
+          to the same user, hence the unlinkability property of UAF.</li>
+          
+          <li>The UAF protocol operations require minimal personal data collection:
+          at most they incorporate a user's relying party username. This personal data 
+          is only used for FIDO purposes, for 
+          example to perform user registration, user verification, or authorization.
+          This personal data does not leave the 
+          user’s computing environment and is only persisted locally when necessary.</li>
+          
+          <li>In UAF, user verification is performed locally. The UAF protocol 
+          does not convey biometric data to relying 
+          parties, nor does it require the storage of such data 
+          at relying parties.</li>
+          
+          <li>Users explicitly approve the use of a UAF device 
+          with a specific relying party. Unique cryptographic keys are generated 
+          and bound to a relying party during registration only after the user’s 
+          consent.</li>
+          
+          <li>UAF authenticators can only be identified by their attestation 
+          certificates on a production batch-level or on manufacturer- and 
+          device model-level. They cannot be identified individually. The 
+          UAF specifications require implementers to ship UAF authenticators 
+          with the same attestation certificate and private key in batches of 
+          100,000 or more in order to provide unlinkability.</li>
+          
+      </ul>
+      </section>
+    
+    <section class="informative">
+        <h2>Relationship to Other Technologies</h2>
+        <h3>OpenID, SAML, and OAuth</h3>
+	<p>FIDO protocols (both UAF and U2F) complement Federated Identity
+	  Management (FIM) frameworks, such as OpenID and SAML, as well
+	  as web authorization protocols, such as OAuth. FIM Relying
+	  Parties can leverage an initial authentication event at an
+	  identity provider (IdP). However, OpenID and SAML do not define
+	  specific mechanisms for direct user authentication at the IdP.
+	</p>
+	<p>When an IdP is integrated with a FIDO-enabled authentication
+	  service, it can subsequently leverage the attributes of the
+	  strong authentication with its Relying Parties. The following
+	  diagram illustrates this relationship. FIDO-based
+	  authentication (1) would logically occur first, and the FIM
+	  protocols would then leverage that authentication event into
+	  single sign-on events between the identity provider and its
+	  federated Relying Parties (2).<sup><a href="#fn2" id="ref2">2</a></sup>
+	</p>
+	
+	<figure>
+	  <img src="./img/fido-uaf-overview-fim-arch.png"
+	       onerror="./img/fido-uaf-overview-fim-arch.png"
+	       alt="IDO UAF &amp; Federated Identity Frameworks"/>
+	  <figcaption>
+	  FIDO UAF &amp; Federated Identity Frameworks
+	  </figcaption>
+	</figure>
+      </section>
+      <section>
+	<h3>OATH, TCG, PKCS#11, and ISO 24727
+	</h3>
+	<p>These are either initiatives (OATH, Trusted Computing Group
+	  (TCG)), or industry standards (PKCS#11, ISO 24727). They all
+	  share an underlying focus on hardware authenticators.
+	</p>
+	<p>PKCS#11 and ISO 24727 define smart-card-based authenticator
+	  abstractions.
+	</p>
+	<p>TCG produces specifications for the Trusted Platform Module, as
+	  well as networked trusted computing.
+	</p>
+	<p>OATH, the "Initiative for Open AuTHentication", focuses on
+	  defining symmetric key provisioning protocols and
+	  authentication algorithms for hardware One-Time Password (OTP)
+	  authenticators.
+	</p>
+	<p>The FIDO framework shares several core notions with the
+	  foregoing efforts, such as an authentication abstraction
+	  interface, authenticator attestation, key provisioning, and
+	  authentication algorithms. FIDO's work will leverage and extend
+	  some of these specifications.
+	</p>
+	<p>Specifically, FIDO will complement them by addressing:
+	</p>
+    <ul>
+	<li>Authenticator discovery
+	</li>
+	<li>User experience
+	</li>
+	<li>Harmonization of various authenticator types, such as biometric,
+	  OTP, simple presence, smart card, TPM, etc.
+	</li>
+      </section>
+    </section>
+    
+    
+      <section id=tof>
+      </section>
+     <hr></hr>
+    <br><sup id="fn1">1.  Also known as: Authentication Tokens, Security Tokens, etc.<a href="#ref1" title="Jump back to footnote 1 in the text.">↩</a></sup></br>
+    <br><sup id="fn2">2. FIM protocols typically convey IdP &lt;-&gt; RP interactions through
+        the browser via HTTP redirects and POSTs.<a href="#ref2" title="Jump back to footnote 2 in the text.">↩</a></sup></br>
+
+  </body>
+</html>
