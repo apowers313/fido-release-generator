@@ -11,6 +11,7 @@ module.exports = {
 	commit: github_commit
 };
 
+// TODO: there are probably some dead modules in here
 var fse = require("fs-extra");
 var path = require("path");
 var gulpFilter = require("gulp-filter");
@@ -18,11 +19,15 @@ var gulpReplace = require("gulp-replace");
 var gulpClone = require("gulp-clone");
 var gulpHtmlToPdf = require("gulp-html-pdf");
 var gulpRename = require("gulp-rename");
+var gulpIf = require("gulp-if");
+var through = require("through2");
+var gulpContains = require("gulp-contains");
 var gulpRespec = require("./gulp-respec2html");
 
 var coreManifest;
 var resourcesManifest;
 var commonManifest;
+var isRespecFile = false;
 
 // release.pl: 213-248
 function clean_directory() {
@@ -56,10 +61,10 @@ function load_manifests() {
 // edit HTML, release.pl:622-671
 function modify_html_files() {
 	// only work on HTML files
-	var filter = gulpFilter("**/*.html", {
+	var htmlFilter = gulpFilter("**/*.html", {
 		restore: true
 	});
-	this.registerTransformStream(filter);
+	this.registerTransformStream(htmlFilter);
 
 	// update URLs in HTML files
 	if (!this.answers.public) {
@@ -76,7 +81,17 @@ function modify_html_files() {
 
 	// convert to static HTML, inline respec; runs: 
 	// phantomjs --ignore-ssl-errors=true --ssl-protocol=any ./release-tool/respec2html.js ./$specSet-specs/$filename ./$rd/$fileNoExt-$versionLabel.html
-	this.registerTransformStream (gulpRespec());
+	this.registerTransformStream(through.obj(function(chunk, enc, cb) { // set isRespec to 'false'
+		isRespecFile = false;
+		cb(null, chunk);
+	}));
+	this.registerTransformStream(gulpReplace("respecConfig", function(string) { // if the HTML file contains 'respecConfig' it must be a respec files
+		isRespecFile = true;
+		return string;
+	}));
+	this.registerTransformStream(gulpIf(function() { // run all respec files through phantomjs for respec2html
+		return isRespecFile;
+	}, gulpRespec(this.templatePath())));
 
 	// Rename file
 	this.registerTransformStream(gulpRename({
@@ -84,7 +99,7 @@ function modify_html_files() {
 	}));
 
 	// go back to working on all files
-	this.registerTransformStream(filter.restore);
+	this.registerTransformStream(htmlFilter.restore);
 }
 
 function modify_text_files() {
@@ -149,6 +164,9 @@ function copy_common_files() {
 
 	this.log.debug("Copying files from common manifest...");
 	copy_manifest_files.call(this, commonManifest, "common");
+
+	// TODO: move common files up a directory level with noClobber
+	// TODO: merge common manifest with one level up
 }
 
 // UAF, release.pl:687-745

@@ -23,7 +23,7 @@
     "gulp-clone": "^1.0.0",
     "gulp-filter": "^3.0.1",
     "gulp-html-pdf": "^0.2.0",
-    "gulp-phantom": "0.0.6",
+    "gulp-if": "^2.0.0",
     "gulp-rename": "^1.2.2",
     "gulp-replace": "^0.5.4",
     "gulp-util": "^3.0.7",

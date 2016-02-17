@@ -23,9 +23,14 @@ if (args.length < 2 || args.length > 4) {
     phantom.exit(1);
 }
 
+page.onResourceError = function(resourceError) {
+    page.reason = resourceError.errorString;
+    page.reason_url = resourceError.url;
+};
+
 page.open(source, function (status) {
     if (status !== "success") {
-        console.error("Unable to access ReSpec source file.");
+        console.error("Unable to access ReSpec source file:", page.reason_url + "\": " + page.reason);
         phantom.exit(1);
     }
     else {

@@ -61,11 +61,6 @@ function create_derived_vars() {
   this.test = this.answers.test;
 }
 
-function remove_template_dir() {
-  this.log("Removing", this.templatePath());
-  fse.removeSync(this.templatePath());
-}
-
 function set_paths() {
   this.sourceRoot(this.defaultSourcePath);
 
@@ -75,6 +70,12 @@ function set_paths() {
   this.log.debug("Template dir:", this.templatePath());
   this.log.debug("Destination dir:", this.destinationPath());
 }
+
+function remove_template_dir() {
+  this.log("Removing", this.templatePath());
+  fse.removeSync(this.templatePath());
+}
+
 
 // release.pl: 250-273
 function clone_from_github() {

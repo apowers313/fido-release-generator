@@ -132,14 +132,14 @@ describe.only("simple transforms", function() {
       fsassert.fileContent(path.join(expectedFolderPath, "simple-v1.0-wd-20160202.html"), expectedSimpleFile);
     });
 
-    it("didn't modify URLs in README.txt", function() {
-      var expectedReadmeFile = fs.readFileSync(path.join(fixturesPath, "simple-results/respec.html"), {
+    it("updated ReSpec variables", function() {
+      var expectedRespecFile = fs.readFileSync(path.join(fixturesPath, "simple-results/respec.html"), {
         encoding: "utf8"
       });
-      fsassert.fileContent(path.join(expectedFolderPath, "respec.html"), expectedReadmeFile);
+      fsassert.fileContent(path.join(expectedFolderPath, "respec-v1.0-wd-20160202.html"), expectedRespecFile);
     });
 
-    it("updated ReSpec variables", function() {
+    it("didn't modify URLs in README.txt", function() {
       var expectedReadmeFile = fs.readFileSync(path.join(fixturesPath, "simple-results/README.txt"), {
         encoding: "utf8"
       });
