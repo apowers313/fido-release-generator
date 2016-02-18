@@ -21,7 +21,6 @@ var gulpHtmlToPdf = require("gulp-html-pdf");
 var gulpRename = require("gulp-rename");
 var gulpIf = require("gulp-if");
 var through = require("through2");
-var gulpContains = require("gulp-contains");
 var gulpRespec = require("./gulp-respec2html");
 
 var coreManifest;
