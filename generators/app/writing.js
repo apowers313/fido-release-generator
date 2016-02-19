@@ -78,8 +78,7 @@ function modify_html_files() {
 	// $data =~ s/specFamily:\s+"[\w\d]+"\s+,/specFamily: "$specSet",/g;
 	// $data =~ s/publishDate:\s+"[\d-]*",/publishDate: "$publishYear-$publishMonth-$publishDay",/g;
 
-	// convert to static HTML, inline respec; runs: 
-	// phantomjs --ignore-ssl-errors=true --ssl-protocol=any ./release-tool/respec2html.js ./$specSet-specs/$filename ./$rd/$fileNoExt-$versionLabel.html
+	// Check to see if this is a respec HTML file
 	this.registerTransformStream(through.obj(function(chunk, enc, cb) { // set isRespec to 'false'
 		isRespecFile = false;
 		cb(null, chunk);
@@ -88,6 +87,19 @@ function modify_html_files() {
 		isRespecFile = true;
 		return string;
 	}));
+
+	// Update respec variables
+	this.registerTransformStream(gulpReplace(/specStatus:\s+"[\w]+"\s*,/g, "specStatus: \"" + this.answers.specstatus.toUpperCase() + "\","));
+	this.registerTransformStream(gulpReplace(/specVersion:\s+"[v.\d]+"\s*,/g, "specVersion: \"v" + this.answers.specversion  + "\","));
+	this.registerTransformStream(gulpReplace(/specFamily:\s+"[\w\d]+"\s*,/g, "specFamily: \"" + this.answers.specset + "\","));
+	var respecPublishDate = // convert date from 20161225 to 2016-12-25
+		this.answers.publishdate.substring (0,4) + "-" +
+		this.answers.publishdate.substring (4,6) + "-" +
+		this.answers.publishdate.substring (6,8);
+	this.registerTransformStream(gulpReplace(/publishDate:\s+"[\d-]*",/g, "publishDate: \"" + respecPublishDate  + "\","));
+
+	// convert to static HTML, inline respec; runs: 
+	// phantomjs --ignore-ssl-errors=true --ssl-protocol=any ./release-tool/respec2html.js ./$specSet-specs/$filename ./$rd/$fileNoExt-$versionLabel.html
 	this.registerTransformStream(gulpIf(function() { // run all respec files through phantomjs for respec2html
 		return isRespecFile;
 	}, gulpRespec(this.templatePath())));
@@ -127,6 +139,7 @@ function copy_manifest_files(manifest, path) {
 		// dst = this.destinationPath(path + "/" + file);
 		dst = this.destinationPath(path + "/" + file);
 		this.log.debug("Copying", src, "to", dst, "...");
+		// console.log("Copying", src, "to", dst, "...");
 
 		this.fs.copy(src, dst);
 	}

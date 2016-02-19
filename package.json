@@ -29,6 +29,7 @@
     "gulp-util": "^3.0.7",
     "phantomjs-prebuilt": "^2.1.4",
     "through2": "^2.0.1",
+    "uuid": "^2.0.1",
     "yeoman-generator": "^0.21.1",
     "yosay": "^1.0.2",
     "zip-dir": "^1.0.0"

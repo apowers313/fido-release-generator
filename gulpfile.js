@@ -52,7 +52,7 @@ gulp.task('test', ['pre-test'], function(cb) {
 // for testing gulp-respec2html
 gulp.task('test-respec', function(cb) {
   gulp.src(['test/fixtures/simple/respec.html'])
-    .pipe(respec())
+    .pipe(respec("/Users/apowers/Projects/generator-fido-release/.fido-template"))
     .pipe(gulp.dest("."));
 });
 

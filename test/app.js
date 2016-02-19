@@ -13,7 +13,7 @@ var default_prompts = {
   specset: "uaf",
   specversion: "1.0",
   specstatus: "wd",
-  tagdate: "20160202",
+  publishdate: "20160202",
   tagaddon: "",
   public: false
 };
@@ -115,6 +115,12 @@ describe.only("simple transforms", function() {
       ]);
     });
 
+    it("creates folder" + expectedFolder, function() {
+      fsassert.file([
+        expectedFolderPath
+      ]);
+    });
+
     it("copied files", function() {
       fsassert.file([
         path.join(expectedFolderPath, "simple-v1.0-wd-20160202.html"),
@@ -132,7 +138,7 @@ describe.only("simple transforms", function() {
       fsassert.fileContent(path.join(expectedFolderPath, "simple-v1.0-wd-20160202.html"), expectedSimpleFile);
     });
 
-    it("updated ReSpec variables", function() {
+    it("updated ReSpec variables and inlined JavaScript", function() {
       var expectedRespecFile = fs.readFileSync(path.join(fixturesPath, "simple-results/respec.html"), {
         encoding: "utf8"
       });
@@ -143,19 +149,30 @@ describe.only("simple transforms", function() {
       var expectedReadmeFile = fs.readFileSync(path.join(fixturesPath, "simple-results/README.txt"), {
         encoding: "utf8"
       });
-      fsassert.fileContent(path.join(expectedFolderPath, "README.txt"), expectedReadmeFile);
-
+      fsassert.fileContent(path.join(expectedFolderPath, "README-v1.0-wd-20160202.txt"), expectedReadmeFile);
     });
 
-    it("inlined JavaScript");
-
-    it("created pdf", function() {
+    it("created individual PDFs", function() {
       fsassert.file([
         path.join(expectedFolderPath, "simple-v1.0-wd-20160202.pdf")
       ]);
     });
 
-    it("created zip");
+    it("updated fido-refs.js");
+
+    it("PDFs use bugfix.css");
+
+    it("created combined PDF");
+
+    it("created zip", function() {
+      fsassert.file([
+        path.join(expectedFolderPath + ".zip")
+      ]);
+    });
+
+    it ("zip contains right files");
+
+    it("updated GitHub");
   });
 
   context("creating public files and links", function() {

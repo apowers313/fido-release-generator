@@ -7,6 +7,8 @@ var path = require("path");
 var through = require("through2");
 var gutil = require("gulp-util");
 var phantomjs = require("phantomjs-prebuilt");
+var uuid = require("uuid");
+var fs = require("fs");
 
 // var command = path.join(__dirname, "../../node_modules/.bin/phantomjs");
 var command = phantomjs.path;
@@ -30,18 +32,33 @@ module.exports = function(pathIn) {
 			return callback();
 		}
 
+		var origCwd = process.cwd();
+		// need to make sure that we are in the right directory so that phantomjs picks up any JavaScript includes from their relative paths
+		process.chdir (srcPath);
+
+		// sadly, phantomjs doesn't seem to accept opening a page from stdin very well
+		// here we create a temporary file and write out the contents of our file to it so that it can be passed into phantomjs
+		// this destroys some of the efficency of gulp, but the phantomjs processing is an order of magnitude longer than writing the file to disk
+		sourceFile = path.join (srcPath, uuid.v4() + ".html"); 
+		console.log ("Tempfile is:", sourceFile);
+		fs.writeFileSync(sourceFile, file.contents);
+
 		// call `phantomjs --ignore-ssl-errors=true --ssl-protocol=any respec2html.js <inputfile>`
 		// phantomjs stdout to be collected below and piped to next gulp plugin
-		var origCwd = process.cwd();
-		var sourceFile = path.join (srcPath, path.parse(file.path).base);
-		process.chdir (srcPath);
+		
+		// var sourceFile = path.join (srcPath, path.parse(file.path).base);
+
+		
 		var args = [];
 		// console.log ("Calling: `" + command + " --ignore-ssl-errors=true --ssl-protocol=any " + phantom_script + " " + sourceFile + "`");
 		args.push("--ignore-ssl-errors=true");
 		args.push("--ssl-protocol=any");
 		args.push(phantom_script);
 		args.push(sourceFile);
-		var program = spawn(command, args);
+		var program = spawn(command, args, {
+			// TODO: cwd here
+			// cwd: srcPath
+		});
 
 		// TODO: check for file.dirname + resources/respec-fido-common.js exists
 
@@ -62,6 +79,7 @@ module.exports = function(pathIn) {
 			return function() {
 				file.contents = b;
 				process.chdir (origCwd);
+				// todo: remove sourceFile
 				return callback(null, file);
 			};
 		})(this));
