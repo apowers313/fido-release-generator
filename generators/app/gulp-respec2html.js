@@ -40,7 +40,6 @@ module.exports = function(pathIn) {
 		// here we create a temporary file and write out the contents of our file to it so that it can be passed into phantomjs
 		// this destroys some of the efficency of gulp, but the phantomjs processing is an order of magnitude longer than writing the file to disk
 		sourceFile = path.join (srcPath, uuid.v4() + ".html"); 
-		console.log ("Tempfile is:", sourceFile);
 		fs.writeFileSync(sourceFile, file.contents);
 
 		// call `phantomjs --ignore-ssl-errors=true --ssl-protocol=any respec2html.js <inputfile>`
