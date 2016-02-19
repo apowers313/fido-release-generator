@@ -92,7 +92,7 @@ function main_questions() {
 			{
 				message: "What publishing date would you like to use?",
 				type: "input",
-				name: "tagdate",
+				name: "publishdate",
 				default: this.def_date_tag
 					// TODO: validate
 			},

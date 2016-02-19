@@ -23,25 +23,13 @@ function create_derived_vars() {
     "v" + this.answers.specversion + "-" +
     this.answers.specstatus + "-" +
     ((this.answers.tagaddon.length > 0) ? (this.answers.tagaddon + "-") : ("")) +
-    this.answers.tagdate +
+    this.answers.publishdate +
     "";
   this.releaseDirectory = this.tag =
     "fido" + "-" +
     this.answers.specset + 
     this.versionLabel;
   this.log.debug("Config Tag:", this.tag);
-  // $targetVersion = "v" . $targetVersion;
-
-  // my $specStatusUC = uc($specStatus);    # uc == uppercase
-
-  // my $publishYear  = substr $publishDate, 0, 4;
-  // my $publishMonth = substr $publishDate, 4, 2;
-  // my $publishDay   = substr $publishDate, 6, 2;
-
-  // my $versionLabel = $targetVersion . "-" . $specStatus . "-" . $publishDate;
-
-  // my $tagMessage =
-  //   $specSet . "-" . $versionLabel . " spec set snapshot creation.";
 
   switch (this.answers.specstatus) {
     case "wd":
