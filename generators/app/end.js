@@ -23,5 +23,5 @@ function zip_dir() {
 		}
 		this.log.debug ("done zipping");
 		done();
-	}).bind(this);
+	}.bind(this));
 }
