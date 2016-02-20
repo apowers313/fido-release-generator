@@ -7,7 +7,8 @@
 		"fido-uaf-asm-api.html",
 		"fido-uaf-authnr-cmds.html",
 		"fido-uaf-reg.html",
-		"fido-uaf-apdu.html"
+		"fido-uaf-apdu.html",
+		"img"
 	],
 	"templates": [],
 	"config": {}

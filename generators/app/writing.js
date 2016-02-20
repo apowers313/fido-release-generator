@@ -1,11 +1,10 @@
 module.exports = {
 	clean: clean_directory,
-	maifest: load_manifests,
 	refs: update_refs,
 	html: modify_html_files,
 	// txt: modify_text_files,
 	copy: copy_files,
-	copy_common: copy_common_files,
+	// copy_common: copy_common_files,
 	pdf: create_pdfs,
 	zip: create_zip,
 	commit: github_commit
@@ -17,15 +16,12 @@ var path = require("path");
 var gulpFilter = require("gulp-filter");
 var gulpReplace = require("gulp-replace");
 var gulpClone = require("gulp-clone");
-var gulpHtmlToPdf = require("gulp-html-pdf");
+var gulpHtmlToPdf = require("gulp-html2pdf");
 var gulpRename = require("gulp-rename");
 var gulpIf = require("gulp-if");
 var through = require("through2");
 var gulpRespec = require("./gulp-respec2html");
 
-var coreManifest;
-var resourcesManifest;
-var commonManifest;
 var isRespecFile = false;
 
 // release.pl: 213-248
@@ -41,20 +37,6 @@ function clean_directory() {
 	// TODO: check if release dir exists
 	this.log.debug("Destination directory: " + this.destinationPath() + " ...");
 	fse.removeSync(this.destinationPath());
-}
-
-function load_manifests() {
-	coreManifest = require(this.templatePath(".fido-manifest.json"));
-	// console.log ("coreManifest");
-	// console.log (coreManifest);
-
-	commonManifest = require(this.templatePath("common/.fido-manifest.json"));
-	// console.log ("commonManifest");
-	// console.log (commonManifest);
-
-	resourcesManifest = require(this.templatePath("resources/.fido-manifest.json"));
-	// console.log ("resourcesManifest");
-	// console.log (resourcesManifest);
 }
 
 // edit HTML, release.pl:622-671
@@ -150,9 +132,9 @@ function copy_manifest_files(manifest, path) {
 // release.pl: 285-329
 function copy_files() {
 	this.log.debug("Copying files from spec manifest...");
-	copy_manifest_files.call(this, coreManifest, ".");
+	copy_manifest_files.call(this, this.coreManifest, ".");
 	this.log.debug("Copying files from resources manifest...");
-	copy_manifest_files.call(this, resourcesManifest, "resources");
+	copy_manifest_files.call(this, this.resourcesManifest, "resources");
 }
 
 function copy_common_files() {
@@ -175,7 +157,7 @@ function copy_common_files() {
 	//https://github.com/sindresorhus/gulp-filter
 
 	this.log.debug("Copying files from common manifest...");
-	copy_manifest_files.call(this, commonManifest, "common");
+	copy_manifest_files.call(this, this.commonManifest, "common");
 
 	// TODO: move common files up a directory level with noClobber
 	// TODO: merge common manifest with one level up

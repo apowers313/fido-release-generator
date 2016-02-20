@@ -1,8 +1,10 @@
 module.exports = {
   vars: create_derived_vars,
   paths: set_paths,
-  template: remove_template_dir,
-  clone: clone_from_github
+  template: remove_existing_dirs,
+  clone: clone_from_github,
+  maifest: load_manifests,
+  merge: merge_common
 };
 
 // translation table from 'this.answers.specset' to GitHub URL
@@ -17,6 +19,7 @@ var repos = {
 var git = require("gift");
 var path = require("path");
 var fse = require("fs-extra");
+var _ = require("lodash");
 
 function create_derived_vars() {
   this.versionLabel = "-" +
@@ -27,7 +30,7 @@ function create_derived_vars() {
     "";
   this.releaseDirectory = this.tag =
     "fido" + "-" +
-    this.answers.specset + 
+    this.answers.specset +
     this.versionLabel;
   this.log.debug("Config Tag:", this.tag);
 
@@ -45,7 +48,6 @@ function create_derived_vars() {
       this.answers.specphrase = "Proposed Standard";
   }
 
-  //my $versionLabel = $targetVersion . "-" . $specStatus . "-" . $publishDate;
   this.test = this.answers.test;
 }
 
@@ -59,11 +61,12 @@ function set_paths() {
   this.log.debug("Destination dir:", this.destinationPath());
 }
 
-function remove_template_dir() {
+function remove_existing_dirs() {
   this.log("Removing", this.templatePath());
   fse.removeSync(this.templatePath());
+  this.log("Removing", this.destinationPath());
+  fse.removeSync(this.destinationPath());
 }
-
 
 // release.pl: 250-273
 function clone_from_github() {
@@ -87,10 +90,6 @@ function clone_from_github() {
       this.log.debug("Done cloning", repo, "::", thread_count, "remaining ...");
       // console.log("Done cloning", repo, "::", thread_count, "remaining ...");
       if (thread_count === 0) {
-        // git.clone doesn't like to clone into the same directory, so we have to manually shuffle the files from the "common-specs" repo around
-        // TODO: take care of this during copying of files so that we don't have to worry about file conflicts
-        // fse.copySync(this.templatePath("common"), this.templatePath());
-        // fse.removeSync(this.templatePath("common"));
         done();
       }
     }.bind(this));
@@ -100,4 +99,36 @@ function clone_from_github() {
   clone_github_sync(repos[this.answers.specset], this.templatePath());
   clone_github_sync(repos["resources"], this.templatePath("resources"));
   clone_github_sync(repos["common"], this.templatePath("common"));
+}
+
+
+function load_manifests() {
+  this.coreManifest = require(this.templatePath(".fido-manifest.json"));
+  console.log ("coreManifest");
+  console.log (this.coreManifest);
+
+  this.commonManifest = require(this.templatePath("common/.fido-manifest.json"));
+  console.log ("commonManifest");
+  console.log (this.commonManifest);
+
+  this.resourcesManifest = require(this.templatePath("resources/.fido-manifest.json"));
+  // console.log ("resourcesManifest");
+  // console.log (this.resourcesManifest);
+}
+
+// git.clone doesn't like to clone into the same directory, so we have to manually shuffle the files from the "common-specs" repo around
+function merge_common() {
+  fse.copySync(this.templatePath("common"), this.templatePath(), {
+    clobber: true
+  });
+  fse.removeSync(this.templatePath("common"));
+
+  this.coreManifest.files = _.union (this.coreManifest.files, this.commonManifest.files);
+  this.coreManifest.templates = _.union (this.coreManifest.templates, this.commonManifest.templates);
+  this.coreManifest.config = _.extend(this.coreManifest.config, this.commonManifest.config);
+  console.log ("+++ COMMON MANIFEST");
+  console.log(this.commonManifest);
+  console.log ("=== MAIN MAINIFEST");
+  console.log(this.coreManifest);
+
 }

@@ -17,17 +17,17 @@ var default_prompts = {
   tagaddon: "",
   public: false
 };
+
+var default_arguments = {};
+
 var expectedFolder = "fido-uaf-v1.0-wd-20160202";
 var expectedFolderPath;
 var templateFolderPath;
 var fixturesPath = path.join(__dirname, "fixtures");
 
-var default_arguments = {
-
-};
-
 function github_full_mock(repo, destPath, depth, cb) {
   var srcPath;
+  console.log("github_full_mock");
 
   switch (repo) {
     case "https://github.com/fido-alliance/uaf-specs":
@@ -43,7 +43,7 @@ function github_full_mock(repo, destPath, depth, cb) {
       console.log("ERROR: unexpected github repo in test fixture mock");
   }
 
-  // console.log ("Copying", srcPath, "to", destPath);
+  console.log("Copying", srcPath, "to", destPath);
   fse.copy(srcPath, destPath, function(err) {
     return cb(err);
   });
@@ -51,6 +51,7 @@ function github_full_mock(repo, destPath, depth, cb) {
 
 function github_simple_mock(repo, destPath, depth, cb) {
   var srcPath;
+  console.log("github_simple_mock");
 
   switch (repo) {
     case "https://github.com/fido-alliance/uaf-specs":
@@ -66,13 +67,13 @@ function github_simple_mock(repo, destPath, depth, cb) {
       console.log("ERROR: unexpected github repo in test fixture mock");
   }
 
-  // console.log ("Copying", srcPath, "to", destPath);
+  console.log("Copying", srcPath, "to", destPath);
   fse.copy(srcPath, destPath, function(err) {
     return cb(err);
   });
 }
 
-describe.only("simple transforms", function() {
+describe("simple transforms", function() {
   context("creating private files and links", function() {
     before(function(done) {
       mockery.enable({
@@ -97,7 +98,14 @@ describe.only("simple transforms", function() {
     });
 
     after(function() {
+      mockery.deregisterAll();
       mockery.disable();
+      // console.log("Deleting:", templateFolderPath);
+      // fse.removeSync(templateFolderPath);
+      // console.log("Deleting:", expectedFolderPath);
+      // fse.removeSync(expectedFolderPath);
+      // console.log("Deleting:", expectedFolderPath + ".zip");
+      // fse.removeSync(expectedFolderPath + ".zip");
     });
 
     it("has manifests", function() {
@@ -107,6 +115,8 @@ describe.only("simple transforms", function() {
         path.join(templateFolderPath, "resources/.fido-manifest.json")
       ]);
     });
+
+    it("merges manifests correctly");
 
     it("has source files", function() {
       fsassert.file([
@@ -145,7 +155,7 @@ describe.only("simple transforms", function() {
       fsassert.fileContent(path.join(expectedFolderPath, "respec-v1.0-wd-20160202.html"), expectedRespecFile);
     });
 
-    it("didn't modify URLs in README.txt", function() {
+    it.skip("didn't modify URLs in README.txt", function() {
       var expectedReadmeFile = fs.readFileSync(path.join(fixturesPath, "simple-results/README.txt"), {
         encoding: "utf8"
       });
@@ -170,7 +180,7 @@ describe.only("simple transforms", function() {
       ]);
     });
 
-    it ("zip contains right files");
+    it("zip contains right files");
 
     it("updated GitHub");
   });
@@ -180,7 +190,7 @@ describe.only("simple transforms", function() {
   });
 });
 
-describe("generator-fido-release:app", function() {
+describe.only("full UAF file set", function() {
 
   before(function(done) {
     mockery.enable({
@@ -191,18 +201,27 @@ describe("generator-fido-release:app", function() {
       clone: github_full_mock
     });
     // running the generator will do a `git clone` which may be slow, based on your location and connection speed
-    this.timeout(30000);
+    this.timeout(240000);
     helpers.run(path.join(__dirname, "../generators/app"))
       // .withOptions({})
       .withPrompts(default_prompts)
       .on("end", function() {
+        templateFolderPath = path.join(process.cwd(), "../.fido-template");
+        console.log("Template Path:", templateFolderPath);
         expectedFolderPath = path.join(process.cwd(), "../" + expectedFolder);
+        console.log("Destination Path:", expectedFolderPath);
         done();
       });
   });
-
   after(function() {
+    mockery.deregisterAll();
     mockery.disable();
+    // console.log("Deleting:", templateFolderPath);
+    // fse.removeSync(templateFolderPath);
+    // console.log("Deleting:", expectedFolderPath);
+    // fse.removeSync(expectedFolderPath);
+    // console.log("Deleting:", expectedFolderPath + ".zip");
+    // fse.removeSync(expectedFolderPath + ".zip");
   });
 
   this.timeout(2000);
@@ -214,9 +233,9 @@ describe("generator-fido-release:app", function() {
   });
 
   it("creates files", function() {
-    var file = path.join(expectedFolderPath, "fido-glossary.html");
     fsassert.file([
-      file
+      path.join(expectedFolderPath, "fido-uaf-overview-v1.0-wd-20160202.html"),
+      path.join(expectedFolderPath, "fido-uaf-overview-v1.0-wd-20160202.pdf")
     ]);
   });
 });

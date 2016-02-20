@@ -7,6 +7,7 @@ var mocha = require('gulp-mocha');
 var istanbul = require('gulp-istanbul');
 var nsp = require('gulp-nsp');
 var plumber = require('gulp-plumber');
+var html2pdf = require('gulp-html2pdf');
 
 var respec = require("./generators/app/gulp-respec2html");
 
@@ -53,6 +54,14 @@ gulp.task('test', ['pre-test'], function(cb) {
 gulp.task('test-respec', function(cb) {
   gulp.src(['test/fixtures/simple/respec.html'])
     .pipe(respec("/Users/apowers/Projects/generator-fido-release/.fido-template"))
+    .pipe(gulp.dest("."));
+});
+
+// for testing html2pdf
+gulp.task('test-html2pdf', function(cb) {
+  gulp.src(['.fido-template/fido-uaf-overview.html'])
+    .pipe(respec("/Users/apowers/Projects/generator-fido-release/.fido-template"))
+    .pipe(html2pdf())
     .pipe(gulp.dest("."));
 });
 
