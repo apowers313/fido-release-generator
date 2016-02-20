@@ -10,7 +10,6 @@ var phantomjs = require("phantomjs-prebuilt");
 var uuid = require("uuid");
 var fs = require("fs");
 
-// var command = path.join(__dirname, "../../node_modules/.bin/phantomjs");
 var command = phantomjs.path;
 var phantom_script = path.join(__dirname, "./respec2html.js");
 var srcPath;
@@ -32,8 +31,8 @@ module.exports = function(pathIn) {
 			return callback();
 		}
 
-		var origCwd = process.cwd();
 		// need to make sure that we are in the right directory so that phantomjs picks up any JavaScript includes from their relative paths
+		var origCwd = process.cwd();
 		process.chdir (srcPath);
 
 		// sadly, phantomjs doesn't seem to accept opening a page from stdin very well
@@ -78,7 +77,7 @@ module.exports = function(pathIn) {
 			return function() {
 				file.contents = b;
 				process.chdir (origCwd);
-				// todo: remove sourceFile
+				fs.unlinkSync (sourceFile);
 				return callback(null, file);
 			};
 		})(this));
