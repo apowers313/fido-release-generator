@@ -29,7 +29,6 @@ page.onResourceError = function(resourceError) {
 };
 
 page.open(source, function(status) {
-    console.log ("load finished");
     if (status !== "success") {
         console.error("Unable to access ReSpec source file:", page.reason_url + "\": " + page.reason);
         phantom.exit(1);
