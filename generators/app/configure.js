@@ -1,7 +1,7 @@
 module.exports = {
   vars: create_derived_vars,
   paths: set_paths,
-  template: remove_existing_dirs,
+  template: remove_existing,
   clone: clone_from_github,
   maifest: load_manifests,
   merge: merge_common
@@ -61,11 +61,15 @@ function set_paths() {
   this.log.debug("Destination dir:", this.destinationPath());
 }
 
-function remove_existing_dirs() {
+function remove_existing() {
   this.log("Removing", this.templatePath());
   fse.removeSync(this.templatePath());
   this.log("Removing", this.destinationPath());
   fse.removeSync(this.destinationPath());
+  this.log("Removing ", this.destinationPath() + ".zip");
+  fse.removeSync(this.destinationPath() + ".zip");
+  this.log("Creating", this.destinationPath());
+  fse.mkdirsSync(this.destinationPath());
 }
 
 // release.pl: 250-273
@@ -104,31 +108,19 @@ function clone_from_github() {
 
 function load_manifests() {
   this.coreManifest = require(this.templatePath(".fido-manifest.json"));
-  console.log ("coreManifest");
-  console.log (this.coreManifest);
-
   this.commonManifest = require(this.templatePath("common/.fido-manifest.json"));
-  console.log ("commonManifest");
-  console.log (this.commonManifest);
-
   this.resourcesManifest = require(this.templatePath("resources/.fido-manifest.json"));
-  // console.log ("resourcesManifest");
-  // console.log (this.resourcesManifest);
 }
 
 // git.clone doesn't like to clone into the same directory, so we have to manually shuffle the files from the "common-specs" repo around
+// XXX this is perhaps the one part of the program that makes the most assumptions of the file hierarchy in GitHub... but isn't that the point of "common"?
 function merge_common() {
   fse.copySync(this.templatePath("common"), this.templatePath(), {
     clobber: true
   });
   fse.removeSync(this.templatePath("common"));
 
-  this.coreManifest.files = _.union (this.coreManifest.files, this.commonManifest.files);
-  this.coreManifest.templates = _.union (this.coreManifest.templates, this.commonManifest.templates);
+  this.coreManifest.files = _.union(this.coreManifest.files, this.commonManifest.files);
+  this.coreManifest.templates = _.union(this.coreManifest.templates, this.commonManifest.templates);
   this.coreManifest.config = _.extend(this.coreManifest.config, this.commonManifest.config);
-  console.log ("+++ COMMON MANIFEST");
-  console.log(this.commonManifest);
-  console.log ("=== MAIN MAINIFEST");
-  console.log(this.coreManifest);
-
 }
