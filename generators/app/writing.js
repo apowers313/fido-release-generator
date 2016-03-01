@@ -16,7 +16,7 @@ var gulpClone = require("gulp-clone");
 var gulpRename = require("gulp-rename");
 var gulpIf = require("gulp-if");
 var through = require("through2");
-var gulpDebug = require("gulp-debug");
+// var gulpDebug = require("gulp-debug");
 var gulpRespec = require("./gulp-respec2html");
 var gulpWkhtmltopdf = require("./gulp-wkhtmltopdf");
 
@@ -37,7 +37,6 @@ function update_refs() {
 		.map (function(element, index, array) {
 			return (element.substring(0, element.length - 5));
 		});
-	console.log ("File names:", fileNames);
 
 	// WARNING: BIG UGLY REGEX AHEAD
 	// This RegEx attempts to update all filename and paths for the current spec release
@@ -73,7 +72,7 @@ function update_refs() {
 	       "(-v\\d+\\.\\d+-(wd|rd|id|ps)-\\d{8})?" + // and maybe the file name has a version label at the end like "-v1.1-id-20150902"
 	       "(\\.html|\\.pdf))", // and the file should end in ".html" or ".pdf"
 	       "g"); // and do it globally
-	console.log("Ref regex:", refRegex);
+	this.log.debug("Ref regex:", refRegex);
 
 	var matchVersionLabel = "-v\\d+\\.\\d+-(wd|rd|id|ps)-\\d{8}"; // this just matches a version label like "-v1.1-id-20150902"
 
@@ -85,19 +84,19 @@ function update_refs() {
 
 		// make sure the reference is one from this package -- we don't want to mess with references from other FIDO specs
 		if (new RegExp(fileNames.join("|")).test(found)) {
-			console.log(found, "is one of ours");
+			this.log.debug(found, "is one of ours");
 		} else {
-			console.log("IGNORING: ", found);
+			this.log.debug("IGNORING: ", found);
 			return (found);
 		}
 
 		// replace path with our desired destination path
 		found = found.replace(new RegExp("\\./|(http|https)://fidoalliance\\.org/specs/(fido-[\\w]+-v\\d+\\.\\d+-(wd|rd|id|ps)-\\d{8}/)?", "g"), newPath);
-		console.log("New Path:", found);
+		this.log.debug("New Path:", found);
 
 		// replace version label with the most recent one
 		found = found.replace(new RegExp(matchVersionLabel, "g"), this.versionLabel);
-		console.log("New Version Label:", found);
+		this.log.debug("New Version Label:", found);
 
 		// insert tag if not found
 		if (found.match(matchVersionLabel) === null) {
@@ -142,12 +141,6 @@ function modify_html_files() {
 	} else {
 		// TODO: public links
 	}
-
-	// TODO: update ReSpec params
-	// $data =~ s/specStatus:\s+"[\w]+",/specStatus: "$specStatusUC",/g;
-	// $data =~ s/specVersion:\s+"[v.\d]+"\s+,/specVersion: "$targetVersion",/g;
-	// $data =~ s/specFamily:\s+"[\w\d]+"\s+,/specFamily: "$specSet",/g;
-	// $data =~ s/publishDate:\s+"[\d-]*",/publishDate: "$publishYear-$publishMonth-$publishDay",/g;
 
 	// Check to see if this is a respec HTML file
 	this.registerTransformStream(through.obj(function(chunk, enc, cb) { // set isRespec to 'false'
@@ -241,7 +234,7 @@ function create_pdfs() {
 	});
 	this.registerTransformStream(filter);
 
-	this.registerTransformStream (gulpDebug({title: "PDF in"}));
+	// this.registerTransformStream (gulpDebug({title: "PDF in"}));
 
 	// duplicate HTML files to convert them to PDF files
 	var cloneSink = gulpClone.sink();
@@ -256,8 +249,12 @@ function create_pdfs() {
 	// // put our old HTML files back into the stream
 	this.registerTransformStream(cloneSink.tap());
 
-	this.registerTransformStream (gulpDebug({title: "PDF out"}));
-
+	// this.registerTransformStream (gulpDebug({title: "PDF out"}));
+	// this.log("Removing", this.templatePath());
+	// fse.removeSync(this.templatePath());
+	// this.log("Creating", this.templatePath());
+	// fse.mkdirsSync(this.templatePath());
+  
 	// go back to working on all files
 	this.registerTransformStream(filter.restore);
 }

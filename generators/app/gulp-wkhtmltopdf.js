@@ -53,12 +53,11 @@ module.exports = function(opts) {
 
 		
 		var args = [];
-		// console.log ("Calling: `" + command + " --quiet " + sourceFile + "`");
 		args.push("--quiet");
 		if (wkhtmltopdfArgs !== undefined) args = args.concat(wkhtmltopdfArgs);
 		args.push(sourceFile);
 		args.push("-");
-		console.log (command, args);
+		// console.log (command, args);
 		var program = spawn(command, args, {
 			// TODO: cwd here
 			// cwd: srcPath

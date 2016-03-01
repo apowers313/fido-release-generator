@@ -55,21 +55,22 @@ function set_paths() {
   this.sourceRoot(this.defaultSourcePath);
 
   var path = this.destinationPath(this.tag);
+  this.log("Removing", path);
+  fse.removeSync(path);
   this.destinationRoot(path); // will be created automatically
 
   this.log.debug("Template dir:", this.templatePath());
-  this.log.debug("Destination dir:", this.destinationPath());
+  this.log("Destination dir:", this.destinationPath());
 }
 
 function remove_existing() {
   this.log("Removing", this.templatePath());
   fse.removeSync(this.templatePath());
-  this.log("Removing", this.destinationPath());
-  fse.removeSync(this.destinationPath());
+  this.log("Creating", this.templatePath());
+  fse.mkdirsSync(this.templatePath());
+
   this.log("Removing ", this.destinationPath() + ".zip");
   fse.removeSync(this.destinationPath() + ".zip");
-  this.log("Creating", this.destinationPath());
-  fse.mkdirsSync(this.destinationPath());
 }
 
 // release.pl: 250-273
@@ -87,7 +88,7 @@ function clone_from_github() {
       if (err) {
         this.log.error("FATAL ERROR: git clone: ", err);
         throw (err);
-        // process.exit(-1); // TODO: is there a way to skip to the clean-up / end?
+        process.exit(-1); // TODO: is there a way to skip to the clean-up / end?
       }
 
       --thread_count;
@@ -100,6 +101,7 @@ function clone_from_github() {
   }.bind(this);
 
   this.log.debug("Setting template source to:" + this.defaultSourcePath + " ...");
+  console.log("CWD", process.cwd());
   clone_github_sync(repos[this.answers.specset], this.templatePath());
   clone_github_sync(repos["resources"], this.templatePath("resources"));
   clone_github_sync(repos["common"], this.templatePath("common"));
