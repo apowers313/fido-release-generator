@@ -8,7 +8,7 @@ var zipdir = require('zip-dir');
 
 function remove_template() {
 	// TODO: add this back in
-	// fse.removeSync (this.templatePath());
+	fse.removeSync (this.templatePath());
 }
 
 function zip_dir() {
@@ -21,7 +21,7 @@ function zip_dir() {
 			this.log.error("Error zipping:", err);
 			return;
 		}
-		this.log.debug("done zipping");
+		this.log ("done creating", this.destinationPath() + ".zip");
 		done();
 	}.bind(this));
 }
