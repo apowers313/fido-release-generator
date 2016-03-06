@@ -109,9 +109,40 @@ function clone_from_github() {
 
 
 function load_manifests() {
-  this.coreManifest = require(this.templatePath(".fido-manifest.json"));
-  this.commonManifest = require(this.templatePath("common/.fido-manifest.json"));
-  this.resourcesManifest = require(this.templatePath("resources/.fido-manifest.json"));
+  var test_status = function(elem, index, array) {
+    return (elem.toLowerCase() === this.answers.specstatus);
+  }.bind(this);
+
+  var parse_manifest = function(manifest) {
+    var i, filename;
+    for (i = 0; i < manifest.files.length; i++) {
+      filename = manifest.files[i];
+      // if the filename is always a string, just pass it along
+      if (typeof filename === "string") {
+        continue;
+      }
+      // if the file name is an object, dig deeper to decide whether or not to include it
+      if (typeof filename === "object") {
+        // if the file should only be included in a specific spec status, check that here
+        if ((typeof filename.status === "string" && filename.status.toLowerCase() === this.answers.specstatus) ||
+          (Array.isArray(filename.status) && filename.status.some(test_status))) {
+          this.log.debug("Using optional manifest file:", require("util").inspect(filename.file));
+          manifest.files[i] = filename.file;
+          continue;
+        }
+
+        // didn't add the file, so delete it from the manifest
+        this.log.debug("Not using optional manifest file:", require("util").inspect(filename));
+        manifest.files.splice(i, 1);
+        i--;
+      }
+    }
+    return manifest;
+  }.bind(this);
+
+  this.coreManifest = parse_manifest(require(this.templatePath(".fido-manifest.json")));
+  this.commonManifest = parse_manifest(require(this.templatePath("common/.fido-manifest.json")));
+  this.resourcesManifest = parse_manifest(require(this.templatePath("resources/.fido-manifest.json")));
 }
 
 // git.clone doesn't like to clone into the same directory, so we have to manually shuffle the files from the "common-specs" repo around
