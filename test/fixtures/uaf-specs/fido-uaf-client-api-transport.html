@@ -1,0 +1,2514 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>FIDO UAF Application API and Transport Binding Specification</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <script src='resources/respec-fido-common.js' class='remove' async></script>
+    <script type="text/javascript" class="remove">
+     var respecConfig = {
+       // specification status (e.g. WD, LCWD, NOTE, etc.). If in doubt use ED.
+       // Member-SUBM
+       specStatus: "WD",
+       specVersion: "v1.3",
+       specFamily: "uaf",
+
+      // shortName is what is termed specInRepoStemFN in..
+      // https://confluence.fidoalliance.org/display/ALL/FIDO+Alliance+filenaming+and+version+labeling+conventions
+       shortName:  "fido-uaf-client-api-transport",
+
+       // if your specification has a subtitle that goes below the main
+       // formal title, define it here
+       // subtitle   :  "an excellent document",
+
+      // if you wish the publication date to be other than today, set this
+      // NOTE: UNCOMMENT THIS PRIOR TO RUNNING release-tool/release.pl for a release, 
+      //       whether internal or external (TODO: release-tool should take care of this)...
+      //publishDate: "2015-09-02", 
+      
+      // if the specification's copyright date is a range of years, specify
+      // the start date here:
+      copyrightStart: "2013",
+      
+      // if there is a previously published draft, uncomment this and set its YYYY-MM-DD date
+      // and its maturity status, OR, comment the latter two items out, and add an 
+      // explicit prevVersion URI pointing to the previously publicly published version...
+      //previousPublishDate: "",
+      //previousMaturity: "",
+       prevVersion: "https://fidoalliance.org/specs/fido-uaf-v1.0-ps-20141208/fido-uaf-client-api-transport-v1.0-ps-20141208.html",
+
+       // if there a publicly available Editor's Draft, this is the link
+       edDraftURI: "",
+
+       // if this is a LCWD, uncomment and set the end of its review period
+       // lcEnd: "2009-08-05",
+
+       // editors, add as many as you like
+       // only "name" is required
+       editors:  [
+         { name: "Dr. Rolf Lindemann", url: "mailto:rolf@noknok.com", 
+           company: "Nok Nok Labs, Inc.", companyURL: "https://www.noknok.com/" },
+       ],
+
+       // authors, add as many as you like. 
+       // This is optional, uncomment if you have authors as well as editors.
+       // only "name" is required. Same format as editors.
+
+       authors:  [
+         { name: "Brad Hill", url: "mailto:bhill@paypal.com", company: "PayPal, Inc.", companyURL: "https://www.paypal.com/" },
+	 { name: "Davit Baghdasaryan", url: "", company: "Nok Nok Labs, Inc.", companyURL: "https://www.noknok.com/" },
+         { name: "Bill Blanke", url: "mailto:bblanke@noknok.com", company: "Nok Nok Labs, Inc.", companyURL: "https://www.noknok.com/" },
+         { name: "Jeff Hodges", url: "mailto:Jeff.Hodges@KingsMountain.com", company: "PayPal, Inc.", companyURL: "https://www.paypal.com/" },
+         { name: "Ka Yang", url: "mailto:kyang@noknok.com",
+           company: "Nok Nok Labs, Inc.", companyURL: "https://www.noknok.com/" }
+       ],
+
+       // name of the WG
+       wg:           "FIDO Alliance",
+
+       // URI of the public WG page
+       wgURI:        "https://fidoalliance.org/",
+
+       // name (with the @w3c.org) of the public mailing to which comments are due
+       //wgPublicList: "public-webappsec",
+
+
+       // local bibliography
+
+
+     };
+    </script>
+    <script src='resources/fido-refs.js' class='remove'></script>
+
+  </head>
+  <body>
+
+    <!-- only put content here if you want a custom status of document not
+    the specification-maturity-appropriate boilerplate -->
+    <section id='sotd'></section>
+
+    <section id='abstract'>
+      Describes APIs and an interoperability profile for client
+      applications to utilize FIDO UAF. This includes methods of
+      communicating with a FIDO UAF Client for both Web platform and
+      Android applications, transport requirements, and an HTTPS
+      interoperability profile for sending FIDO UAF messages to a
+      compatible server.
+    </section>
+    
+    <section>
+      <h2>Notation</h2>
+      
+      <p>Type names, attribute names and element names are written as <code>code</code>.</p>
+	
+      <p>String literals are enclosed in “”, e.g. “UAF-TLV”.</p>
+	  
+      <p>In formulas we use “|” to denote byte wise concatenation
+	operations.</p>
+      
+	<p>The notation base64url refers to "Base 64 Encoding with URL and Filename
+	  Safe Alphabet" [[!RFC4648]] <em>without padding</em>.  </p>
+
+	<p>DOM APIs are described using the ECMAScript [[!ECMA-262]] bindings
+	  for WebIDL [[!WebIDL-ED]].</p>
+
+	<p>Following [[!WebIDL-ED]], dictionary members are optional unless they are explicitly 
+	  marked as <code>required</code>.</p>
+
+	<p>WebIDL dictionary members MUST NOT have a value of null.</p>
+	
+	<p>Unless otherwise specified, if a WebIDL dictionary member is DOMString, 
+	  it MUST NOT be empty.</p>
+	
+	<p>Unless otherwise specified, if a WebIDL dictionary member is a List, 
+	  it MUST NOT be an empty list.</p>
+	
+	<p>UAF specific terminology used in this document is defined in
+	  [[!FIDOGlossary]].</p>
+
+	<p>All diagrams, examples, notes in this specification are non-normative.</p>
+
+	<p class="note">
+	  Note: Certain dictionary members need to be present in order to
+	  comply with FIDO requirements. Such members are marked in the
+	  WebIDL definitions found in this document, as
+	  <code>required</code>. The keyword <code>required</code> has been
+	  introduced by [[WebIDL-ED]], which is a work-in-progress. If you
+	  are using a WebIDL parser which implements [[WebIDL]], then you
+	  may remove the keyword <code>required</code> from your WebIDL and
+	  use other means to ensure those fields are present.  
+	</p>
+
+	<section>
+	  <h3>Key Words</h3>
+	  
+	  <p>The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL
+	    NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “MAY”, and
+	    “OPTIONAL” in this document are to be interpreted as
+	    described in [[!RFC2119]].</p>
+	</section>
+    </section>
+
+    <section class="informative">
+      <h2>Overview</h2>
+      
+      <p>The FIDO UAF technology replaces traditional username and
+	password-based authentication solutions for online services,
+	with a stronger and simpler alternative. The core UAF protocol
+	consists of four conceptual conversations between a FIDO UAF Client
+	and FIDO Server: Registration, Authentication, Transaction
+	Confirmation, and Deregistration. As specified in the core
+	protocol, these messages do not have a defined network
+	transport, or describe how application software that a user
+	interfaces with can use UAF. This document describes the
+	API surface that a client application can use to communicate
+	with FIDO UAF Client software, and transport patterns and security
+	requirements for delivering UAF Protocol messages to a
+	remote server.
+      </p>
+      <p>The reader should also be familiar with the FIDO Glossary of
+	Terms [[!FIDOGlossary]] and the UAF Protocol specification [[!UAFProtocol]].</p>
+      
+      <section>
+	<h3>Audience</h3>
+	
+	<p>This document is of interest to client-side application authors
+	  that wish to utilize FIDO UAF, as well as implementers of web
+	  browsers, browser plugins and FIDO clients, in that it
+	  describes the API surface they need to expose to application
+	  authors.
+	</p>
+      </section>
+      
+      <section>
+	<h3>Scope</h3>
+	
+	<p>This document describes:</p>
+	
+	<ul>
+	  <li>The local ECMAScript [[!ECMA-262]] API exposed by a FIDO
+	    UAF-enabled web browser to client-side web applications.</li>
+	  
+	  <li>The mechanisms and APIs for Android [[ANDROID]] applications to
+	    discover and utilize a shared FIDO UAF Client service.</li>
+	  
+	  <li>The general security requirements for applications initiating
+	    and transporting UAF protocol exchanges.</li>
+	  
+	  <li>An interoperability profile for transporting FIDO UAF messages over
+	    HTTPS [[!RFC2818]].</li>
+	</ul>
+	
+	<p>The following are out of scope for this document:</p>
+	<ul>
+	  <li>The format and details of the underlying UAF Protocol messages</li>
+	  
+	  <li>APIs for, and any details of interactions between FIDO Server
+	    software and the server-side application stack.</li>
+	</ul>
+	
+	<p class="note">The goal of describing standard APIs and an interoperability
+	  profile for the transport of FIDO UAF messages here is to provide an
+	  example of how to develop a FIDO-enabled application and to
+	  promote the ease of integrating interoperable layers from
+	  different vendors to build a complete FIDO UAF solution. For
+	  any given application instance, these particular patterns may
+	  not be ideal and are not mandatory. Applications may use
+	  alternate transports, bundle UAF Protocol messages with other
+	  network data, or discover and utilize alternative APIs as they
+	  see fit.</p>
+      </section>
+      <section>
+	<h3>Architecture</h3>
+	
+	<p>The overall architecture of the UAF protocol and its various
+	  operations is described in the FIDO UAF Protocol Specification
+	  [[!UAFProtocol]]. The following simplified architecture diagram
+	  illustrates the interactions and actors this document is
+	  concerned with:</p>
+	
+	<figure title="UAF Architecture" alt="Diagram showing layers addressed by this specification."> 
+	  <img src="./img/fido-uaf-client-api-transport-layers.png"
+	       onerror="./img/fido-uaf-client-api-transport-layers.png"
+	       alt="UAF Application API Architecture and Transport Layers"/>
+	  
+	  <figcaption>UAF Application API Architecture and Transport Layers</figcaption>	
+	</figure>
+
+	<p>This document describes the shaded components in Fig 1.</p>
+	
+	<section>
+	  <h4>Protocol Conversation</h4>
+
+	  <p>The core UAF protocol consists of five conceptual phases:</p>
+	  <ul>
+	    <li><strong>Discovery</strong> allows the relying party server to determine the
+	      availability of FIDO capabilities at the client, including
+	      metadata about the available authenticators.</li>
+	    
+	    <li><strong>Registration</strong> allows the client to generate and associate new key
+	      material with an account at the relying party server, subject to
+	      policy set by the server and acceptable attestation that the
+	      authenticator and registration matches that policy.</li>
+	    
+	    <li><strong>Authentication</strong> allows a user to provide an account identifier,
+	      proof-of-possession of previously registered key material
+	      associated with that identifier, and potentially other attested
+	      data, to the relying party server.</li>
+	    
+	    <li><strong>Transaction Confirmation</strong> allows a server to request that a FIDO
+	      client and authenticator with the appropriate capabilities
+	      display some information to the user, request that the user
+	      authenticate locally to their FIDO authenticator to confirm it,
+	      and provide proof-of-possession of previously registered key
+	      material and an attestation of the confirmation back to the
+	      relying party server.</li>
+	    
+	    <li><strong>Deregistration</strong> allows a relying party
+	      server to tell an authenticator to forget selected
+	      locally managed key material associated with that
+	      relying party in case such keys are no longer considered
+	      valid by the relying party.</li>
+	  </ul>
+	  
+	  <p>Discovery does not involve a protocol exchange with the
+	    FIDO Server. However, the information available through the
+	    discovery APIs might be communicated back to the server in
+	    an application-specific manner, such as by obtaining a UAF
+	    protocol request message containing an authenticator policy
+	    tailored to the specific capabilities of the FIDO user
+	    device.</p>
+	  
+	  <p>Although the UAF protocol abstractly defines the FIDO
+	    server as the initiator of requests, UAF client applications
+	    working as described in this document will always transport
+	    UAF protocol messages over a client-initiated
+	    request/response protocol such as HTTP.</p>
+	  
+	  <p>The protocol flow from the point of view of the relying party
+	    client application for registration, authentication, and
+	    transaction confirmation is as follows:</p>
+
+	  <ol>
+	    <li>The client application either explicitly contacts the server to
+	      obtain a UAF Protocol Request Message, or this message is
+	      delivered along with other client application content.</li>
+	    
+	    <li>The client application invokes the appropriate API to pass the
+	      UAF protocol request message asynchronously to the FIDO UAF Client,
+	      and receives a set of callbacks.</li>
+	    
+	    <li>The FIDO UAF Client performs any necessary interactions with the
+	      user and authenticator(s) to complete the request and uses a
+	      callback to either notify the client application of an error, or to
+	      return a UAF response message.</li>
+	    
+	    <li>The client application delivers the UAF response message to
+	      the server over a transport protocol such as HTTP.</li>
+	    
+	    <li>The server optionally returns an indication of the results of
+	      the operation and additional data such as authorization tokens
+	      or a redirect.</li>
+	    
+	    <li>The client application optionally uses the appropriate API to
+	      inform the FIDO UAF Client of the results of the operation. This
+	      allows the FIDO UAF Client to perform “housekeeping” tasks for a
+	      better user experience, e.g. by not attempting to use again
+	      later a key that the server refused to register.</li>
+	    
+	    <li>The client application optionally processes additional data
+	      returned to it in an application-specific manner, e.g.
+	      processing new authorization tokens, redirecting the user to a
+	      new resource or interpreting an error code to determine if and
+	      how it should retry a failed operation.</li>
+	  </ol>
+
+	  <p>Deregister does not involve a UAF protocol round-trip. If the
+	    relying party server instructs the client application to
+	    perform a deregistration, the client application simply
+	    delivers the UAF protocol Request message to the FIDO UAF Client
+	    using the appropriate API. The FIDO UAF Client does not return the
+	    results of a deregister operation to the relying party client
+	    application or FIDO Server.</p>
+	  
+	  <p>UAF protocol Messages are JSON [[!ECMA-404]] structures, but client
+	    applications are discouraged from modifying them. These messages
+	    may contain embedded cryptographic integrity protections and any
+	    modifications might invalidate the messages from the point of
+	    view of the FIDO UAF Client or Server.</p>
+	  
+	</section>
+      </section>
+    </section>
+    <section class="normativeDisclaimer">
+      <h2>Common Definitions</h2>
+
+      <p>These elements are shared by several APIs and layers.</p>
+      
+      <section>
+	<h3>UAF Status Codes</h3>
+	
+	<p>This table lists UAF protocol status codes. </p>
+	<div class="note">
+	  These codes indicate the
+	  result of the UAF operation at the FIDO Server. They do not
+	  represent the HTTP [[!RFC7230]] layer or other transport layers. These
+	  codes are intended for consumption by both the client-side web
+	  app and FIDO UAF Client to inform application-specific error
+	  reporting, retry and housekeeping behavior.
+	</div>
+
+	<table title="Table 1" border="1" cellspacing="0" cellpadding="5">
+	  <tr><th>Code</th><th>Meaning</th></tr>	
+	  <tr><td>1200</td><td>
+	    OK. Operation completed</td></tr>
+	  <tr><td>1202</td><td>
+	    Accepted. Message accepted, but not completed at this time. The
+	    RP may need time to process the attestation, run risk scoring,
+	    etc. The server SHOULD NOT send an authenticationToken with a
+	    1202 response</td></tr>
+	  <tr><td>1400</td><td>	    
+	    Bad Request. The server did not understand the message</td></tr>
+	  <tr><td>1401</td><td>
+	    Unauthorized. The userid must be authenticated to perform this
+	    operation, or this KeyID is not associated with this UserID.</td></tr>
+	  <tr><td>1403</td><td>
+	    Forbidden. The userid is not allowed to perform this operation.
+	    Client SHOULD NOT retry</td></tr>
+	  <tr><td>1404</td><td>
+	    Not Found.</td></tr>
+	  <tr><td>1408</td><td>
+	    Request Timeout.</td></tr>
+	  <tr><td>1480</td><td>
+	    Unknown AAID. The server was unable to locate authoritative
+	    metadata for the AAID.</td></tr>
+	  <tr><td>1481</td><td>
+	    Unknown KeyID. The server was unable to locate a registration
+	    for the given UserID and KeyID combination.
+	    <p> This error indicates that there is an invalid registration on the user's device. It is recommended
+	      that FIDO UAF Client deletes the key from local device when this error is received.</p>
+	  </td></tr>
+	  <tr><td>1490</td><td>
+	    Channel Binding Refused. The server refused to service the
+	    request due to a missing or mismatched channel binding(s).</td></tr>
+	  <tr><td>1491</td><td>
+	    Request Invalid. The server refused to service the request
+	    because the request message nonce was unknown, expired or the
+	    server has previously serviced a message with the same nonce
+	    and user ID.</td></tr>
+	  <tr><td>1492</td><td>
+	    Unacceptable Authenticator. The authenticator is not acceptable
+	    according to the server's policy, for example because the
+	    capability registry used by the server reported different
+	    capabilities than client-side discovery.</td></tr>
+	  <tr><td>1493</td><td>
+	    Revoked Authenticator. The authenticator is considered revoked
+	    by the server.</td></tr>
+	  <tr><td>1494</td><td>	    
+	    Unacceptable Key. The key used is unacceptable. Perhaps it is on
+	    a list of known weak keys or uses insecure parameter choices.</td></tr>
+	  <tr><td>1495</td><td>
+	    Unacceptable Algorithm. The server believes the authenticator to
+	    be capable of using a stronger mutually-agreeable algorithm than
+	    was presented in the request.</td></tr>
+	  <tr><td>1496</td><td>
+	    Unacceptable Attestation. The attestation(s) provided were not
+	    accepted by the server.</td></tr>
+	  <tr><td>1497</td><td>
+	    Unacceptable Client Capabilities. The server was unable or
+	    unwilling to use required capabilities provided supplementally
+	    to the authenticator by the client software.</td></tr>
+	  <tr><td>1498</td><td>
+	    Unacceptable Content. There was a problem with the contents of
+	    the message and the server was unwilling or unable to process
+	    it.</td></tr>
+	  <tr><td>1500</td><td>
+	    Internal Server Error</td></tr>
+	</table>
+      </section>
+    </section>
+
+    <section class="normativeDisclaimer">
+      <h2>Shared Definitions</h2>
+      <p class="note">This section defines a number of JSON structures, specified 
+	with WebIDL [[WebIDL-ED]].  These structures are 
+	shared among APIs for multiple target platforms.
+      </p>
+      <section>
+	<h3>UAFMessage Dictionary</h3>
+
+	<p>The UAFMessage dictionary is a wrapper object that contains the
+	  raw UAF protocol Message and additional JSON data that may be
+	  used to carry application-specific data for use by either the
+	  client application or FIDO UAF Client.
+	</p>	
+	<dl title='dictionary UAFMessage' class='idl'>
+	  <dt>required DOMString uafProtocolMessage</dt>
+	  <dd>This key contains the UAF protocol Message that will be
+	    processed by the FIDO UAF Client or Server. Modification by the
+	    client application may invalidate the message. A client
+	    application MAY examine the contents of a message, for example,
+	    to determine if a message is still fresh. Details of the
+	    structure of the message can be found in the UAF protocol
+	    Specification [[UAFProtocol]].</dd>
+	  
+	  <dt>Object additionalData</dt>
+	  <dd>This key allows the FIDO Server or client application to attach
+	    additional data for use by the FIDO UAF Client as a JSON object, or
+	    the FIDO UAF Client or client application to attach additional data
+	    for use by the client application.</dd>	 
+	</dl>
+      </section>
+      
+      <section>
+	<h3>Version interface</h3>
+	
+	<p>Describes a version of the UAF protocol or FIDO UAF Client for
+	  compatibility checking.
+	</p>
+	<dl title='interface Version' class='idl'>
+	  <dt>readonly attribute unsigned short major</dt>
+	  <dd>Major version number.</dd>
+	  <dt>readonly attribute unsigned short minor</dt>
+	  <dd>Minor version number.</dd>
+	</dl>
+      </section>
+      <section>
+	<h3>Authenticator interface</h3>      
+	<p>Used by several phases of UAF, the <code>Authenticator</code> interface
+	  exposes a subset of both verified metadata [[!FIDOMetadataStatement]] and
+	  transient information about the state of an available
+	  authenticator.
+	</p>
+	<dl title="interface Authenticator" class="idl">
+	  <dt>readonly attribute DOMString title</dt>
+	  <dd>
+	    A short, user-friendly name for the authenticator.
+	    <div class="note">
+	      <p>This text must be localized for current locale.</p>
+	      <p>If the ASM doesn't return a title in the <code>AuthenticatorInfo</code> object [[UAFASM]], 
+		the FIDO UAF Client must generate a title based 
+		on the other fields in <code>AuthenticatorInfo</code>, because <code>title</code> must not be empty 
+		(see section <a href="#notation"></a>).</p>
+	    </div>
+	  </dd>
+	  <dt>readonly attribute AAID aaid</dt>
+	  <dd>
+	    The <em>Authenticator Attestation ID</em>, which identifies the type and
+	    batch of the authenticator. See [[UAFProtocol]] for the definition of the AAID structure.
+	  </dd>
+	  
+	  <dt>readonly attribute DOMString description</dt>
+	  <dd>
+	    A user-friendly description string for the authenticator.
+	    <div class="note">
+	      <p>This text must be localized for current locale.</p>
+	      <p>It is intended to be displayed to the user. It might deviate from the description 
+		specified in the authenticator's metadata statement [[FIDOMetadataStatement]].</p>
+	      <p>If the ASM doesn't return a description in the <code>AuthenticatorInfo</code> object [[UAFASM]], 
+		the FIDO UAF Client must generate a meaningful description to the calling App based 
+		on the other fields in <code>AuthenticatorInfo</code>, because <code>description</code> must not be empty 
+		(see section <a href="#notation"></a>).</p>
+	    </div>
+	  </dd>
+	  
+	  <dt>readonly attribute Version[] supportedUAFVersions</dt>
+	  <dd>
+	    Indicates the UAF protocol Versions supported by the
+	    authenticator.
+	  </dd>
+
+	  <dt>readonly attribute DOMString assertionScheme</dt>
+	  <dd>
+	    <p>The assertion scheme the authenticator uses for attested data and
+	      signatures.
+	    </p>
+	    <p>Assertion scheme identifiers are defined in the UAF Registry of Predefined
+	      Values. [[!UAFRegistry]]</p>
+	  </dd>
+	  <dt>readonly attribute unsigned short authenticationAlgorithm</dt>
+	  <dd>
+	    Supported Authentication Algorithm. The value MUST be related to
+	    constants with prefix <code>ALG_SIGN</code>.
+	  </dd>
+	  <dt>readonly attribute unsigned short[] attestationTypes</dt>
+	  <dd>
+            A list of supported attestation types. The values are defined in [[!UAFRegistry]] by the
+            constants with the prefix <code>TAG_ATTESTATION</code>.
+	  </dd>
+
+	  <dt>readonly attribute unsigned long userVerification</dt>
+	  <dd>
+	    A set of bit flags indicating the user verification methods
+	    supported by the authenticator. The values are defined by the
+	    constants with the prefix <code>USER_VERIFY</code>.
+	  </dd>	
+	  <dt>readonly attribute unsigned short keyProtection</dt>
+	  <dd>
+	    A set of bit flags indicating the key protection used by the
+	    authenticator. The values are defined by the constants with
+	    the prefix <code>KEY_PROTECTION</code>.
+	  </dd>
+	  <dt>readonly attribute unsigned short matcherProtection</dt>
+	  <dd>
+	    A set of bit flags indicating the matcher protection used by the
+	    authenticator. The values are defined by the constants with
+	    the prefix <code>MATCHER_PROTECTION</code>.  
+	  </dd>
+	  <dt>readonly attribute unsigned long attachmentHint</dt>
+	  <dd>
+	    A set of bit flags indicating how the authenticator is <i>currently</i>
+	    connected to the FIDO User Device. The values are defined by the 
+	    constants with the prefix <code>ATTACHMENT_HINT</code>.
+	    <p class="note">
+	      Because the connection state and topology of an
+	      authenticator may be transient, these values are only
+	      hints that can be used in applying server-supplied
+	      policy to guide the user experience. This can be used
+	      to, for example, prefer a device that is connected and
+	      ready for authenticating or confirming a low-value
+	      transaction, rather than one that is more secure but
+	      requires more user effort.</p>
+	    <p>These values are not
+	      reflected in authenticator metadata and cannot be relied
+	      upon by the relying party, although some models of
+	      authenticator may provide attested measurements with
+	      similar semantics as part of UAF protocol messages.</p>
+	  </dd>
+	  <dt>readonly attribute boolean isSecondFactorOnly</dt>
+	  <dd>
+	    Indicates whether the authenticator can only be used as a second-factor.
+	  </dd>
+	  <dt>readonly attribute unsigned short tcDisplay</dt>
+	  <dd>
+	    A set of bit flags indicating the availability and type of
+	    transaction confirmation display. The values are defined by the constants with
+	    the prefix <code>TRANSACTION_CONFIRMATION_DISPLAY</code>.
+	    <p>This value MUST be 0 if transaction confirmation is not supported by the authenticator.</p>
+	  </dd>	  
+	  <dt>readonly attribute DOMString tcDisplayContentType</dt>
+	  <dd>
+	    The MIME content-type [[RFC2045]] supported by the transaction confirmation display, such as
+	    <code>text/plain</code> or <code>image/png</code>.
+	    <p>This value MUST be non-empty if transaction confirmation is supported (<code>tcDisplay</code> is non-zero).</p>
+	  </dd>
+	  <dt>readonly attribute DisplayPNGCharacteristicsDescriptor[] tcDisplayPNGCharacteristics</dt>
+	  <dd>
+	    The set of PNG characteristics <i>currently</i> supported by the transaction confirmation display (if any).
+	    <p class="note">See [[!FIDOMetadataStatement]] for additional information on the format of
+	      this field and the definition of the <code>DisplayPNGCharacteristicsDescriptor</code> structure. </p>
+	    <p>This list MUST be non-empty if PNG-image based transaction confirmation is supported, 
+	      i.e. <code>tcDisplay</code> is non-zero and <code>tcDisplayContentType</code> is <code>image/png</code>.</p>
+	  </dd>
+
+	  <dt>readonly attribute DOMString icon</dt>
+	  <dd>
+	    A PNG [[!PNG]] icon for the authenticator, encoded as a <code>data:</code> url
+	    [[!RFC2397]].
+	    <p class="note">If the ASM doesn't return an icon in the <code>AuthenticatorInfo</code> object [[UAFASM]], 
+	      the FIDO UAF Client must set a default icon, because <code>icon</code> must not be empty 
+	      (see section <a href="#notation"></a>).</p>
+	  </dd>
+	  <dt>readonly attribute DOMString[] supportedExtensionIDs</dt>
+	  <dd>
+	    A list of supported UAF protocol extension identifiers. These MAY be vendor-specific.
+	  </dd>
+	</dl>
+
+	<section>
+	  <h5>Authenticator Interface Constants</h5>
+	  <p>	
+	    A number of constants are defined for use with the bit flag
+	    fields <code>userVerification</code>, <code>keyProtection</code>,
+	    <code>attachmentHint</code>, and <code>tcDisplay</code>. 
+	    To avoid duplication and inconsistencies, 
+	    these are defined in the FIDO 
+	    Registry of Predefined Values [[!FIDORegistry]].
+	  </p>
+	</section>
+      </section>
+
+      <section>
+	<h4>DiscoveryData dictionary</h4>
+	
+	<dl class='idl' title='dictionary DiscoveryData'>
+	  <dt>required Version[] supportedUAFVersions</dt>
+	  <dd>A list of the FIDO UAF protocol versions supported by the client, most-preferred first.</dd>
+	  <dt>required DOMString clientVendor</dt>
+	  <dd>The vendor of the FIDO UAF Client.</dd>
+	  <dt>required Version clientVersion</dt>
+	  <dd>The version of the FIDO UAF Client. This is a vendor-specific version for the client
+	    software, not a UAF version.</dd>
+	  <dt>required Authenticator[] availableAuthenticators</dt>
+	  <dd>An array containing Authenticator dictionaries describing the available UAF authenticators.
+	    The order is not significant. The list MAY be empty.</dd>
+	</dl>      
+      </section>
+
+      <section>
+	<h4>ErrorCode interface</h4>
+	<dl title='interface ErrorCode' class='idl'>
+	  <dt>const short NO_ERROR = 0x0</dt>
+	  <dd>The operation completed with no error condition encountered.
+	    Upon receipt of this code, an application should no longer
+	    expect an associated <a title='UAFResponseCallback'>UAFResponseCallback</a> to fire.
+	  </dd>
+	  
+	  <dt>const short WAIT_USER_ACTION = 0x01</dt>
+	  <dd>Waiting on user action to proceed. For example, selecting an
+	    authenticator in the FIDO client user interface, performing
+	    user verification, or completing an enrollment step with an
+	    authenticator.
+	  </dd>
+	  
+	  <dt>const short INSECURE_TRANSPORT = 0x02</dt>
+	  <dd><code>window.location.protocol</code> is not "https" or the DOM contains
+	    insecure mixed content.
+	  </dd>
+	  
+	  <dt>const short USER_CANCELLED = 0x03</dt>
+	  <dd>The user declined any necessary part of the interaction to
+	    complete the registration.
+	  </dd>
+	  
+	  <dt>const short UNSUPPORTED_VERSION = 0x04</dt>
+	  <dd>The <a title='UAFMessage'>UAFMessage</a> does not specify a protocol version supported by
+	    this FIDO UAF Client.
+	  </dd>
+	  
+	  <dt>const short NO_SUITABLE_AUTHENTICATOR = 0x05</dt>
+	  <dd>No authenticator matching the authenticator policy specified in
+	    the <a title='UAFMessage'>UAFMessage</a> is available to
+	    service the request, or the user declined to consent to the
+	    use of a suitable authenticator.
+	  </dd>
+	  
+	  <dt>const short PROTOCOL_ERROR = 0x06</dt>
+	  <dd>A violation of the UAF protocol occurred. The interaction may have
+	    timed out; the origin associated with the message may not match
+	    the origin of the calling DOM context, or the protocol message
+	    may be malformed or tampered with.
+	  </dd>
+	  
+	  <dt>const short UNTRUSTED_FACET_ID = 0x07</dt>
+	  <dd>The client declined to process the operation because the
+	    caller's calculated facet identifier was not found in the
+	    trusted list for the application identifier specified in the
+	    request message.
+	  </dd>
+
+	  <dt>const short KEY_DISAPPEARED_PERMANENTLY = 0x09</dt>
+	  <dd>The UAuth key disappeared from the authenticator and canot be restored. 
+	    <p class="note">The RP App might want to re-register the authenticator in this case.
+	    </p>
+	  </dd>
+
+	  <dt>const short AUTHENTICATOR_ACCESS_DENIED = 0x0c</dt>
+	  <dd>The authenticator denied access to the resulting request.  
+	    <p class="note">TODO: when does that occur and what should RP app do?</p>
+	  </dd>
+
+	  <dt>const short INVALID_TRANSACTION_CONTENT = 0x0d</dt>
+	  <dd>Transaction content cannot be rendered, e.g. format doesn't fit authenticator's need.
+	    <p class="note">The transaction content format requirements are specified in the authenticator's
+	      metadata statement. 
+	    </p>
+	  </dd>
+
+	  <dt>const short USER_NOT_RESPONSIVE = 0x0e</dt>
+	  <dd>The user took too long to follow an instruction, e.g. didn't swipe the finger within the accepted time.
+	  </dd>
+
+	  <dt>const short INSUFFICIENT_AUTHENTICATOR_RESOURCES = 0x0f</dt>
+	  <dd>Insufficient resources in the authenticator to perform the requested task.</dd>
+
+	  <dt>const short USER_LOCKOUT = 0x10</dt>
+	  <dd>
+	    The operation failed because the user is locked out and the authenticator 
+	    cannot automatically trigger an action to change that.
+	    Typically the user would have to enter an alternative password 
+	    (formally: undergo some other alternative user verification method) to re-enable the use
+	    of the main user verification method.
+	  </dd>
+
+	  <dt>const short USER_NOT_ENROLLED = 0x11</dt>
+	  <dd>The operation failed because the user is not enrolled to the authenticator and the 
+	    authenticator cannot automatically trigger user enrollment.
+	  </dd>
+
+	  <dt>const short UNKNOWN = 0xFF</dt>
+	  <dd>An error condition not described by the above-listed codes.
+	  </dd>
+	</dl>
+      </section>
+    </section>
+
+    <section class="normativeDisclaimer">
+      <h2>DOM API</h2>
+
+      <p>This section describes the API details exposed by a web browser
+	or browser plugin to a client-side web application executing in
+	a <code>Document</code> [[!DOM]] context.</p>
+      
+      <section>
+	<h3>Feature Detection</h3>
+	
+	<p>FIDO's UAF DOM APIs are rooted in a new <code>fido</code> object, a property
+	  of <code>window.navigator</code> code; the existence and properties of which
+	  MAY be used for feature detection.</p>
+	
+	<p>Example 1: Feature Detection of UAF APIs</p>
+	
+	<pre class='example'>
+	  &lt;script&gt;
+
+	  if(!!window.navigator.fido.uaf) { var useUAF = true; }
+
+	  &lt;/script&gt;
+	</pre>
+      </section>
+
+      <section>
+	<h3>uaf Interface</h3>
+	<p>The <code>window.navigator.fido.uaf</code> interface is the primary means of
+	  interacting with the FIDO UAF Client.  All operations are asynchronous.</p>
+	
+	<dl title='interface uaf' class='idl'>
+	  <dt>void discover ()</dt>
+	  <dd>
+	    <p>Discover if the user's client software and devices support
+	      UAF and if authenticator capabilities are available that it may
+	      be willing to accept for authentication.</p>
+	    <dl class="parameters">
+	      <dt>DiscoveryCallback completionCallback</dt>
+	      <dd>The callback that receives <a title='DiscoveryData'>DiscoveryData</a> from
+		the FIDO UAF Client.</dd>
+	      
+	      <dt>ErrorCallback errorCallback</dt>
+	      <dd>A callback function to receive error and progress events.</dd>		
+            </dl>
+	  </dd>
+	  
+	  <dt>void checkPolicy(DOMString message, ErrorCallback cb)</dt>
+	  <dd>
+	    <p>Ask the browser or browser plugin if it would be able to process the supplied
+	      request message without prompting the user.
+	    </p>
+	    <p>Unlike other operations using an <a title='ErrorCallback'>ErrorCallback</a>,
+	      this operation MUST always trigger the callback and
+	      return <code>NO_ERROR</code> if
+	      it believes that the message can be processed and a
+	      suitable authenticator matching the embedded policy is
+	      available, or the appropriate<a title='ErrorCode'>ErrorCode</a> value otherwise. 
+	    </p>
+	    <p class="note">Because this call should not prompt
+	      the user, it should not incur a potentially disrupting
+	      context-switch even if the FIDO UAF Client is implemented
+	      out-of-process.</p>
+	    <dl class="parameters">
+	      <dt>UAFMessage message</dt>
+	      <dd>
+		A <a title='UAFMessage'>UAFMessage</a> containing the policy and operation to be
+		tested.
+	      </dd>
+	      
+	      <dt>ErrorCallback cb</dt>
+	      <dd>The callback function which receives the status of the operation.</dd>
+            </dl>
+	  </dd>
+	  <dt>void processUAFOperation(UAFMessage message, UAFResponseCallback completionCallback, 
+	    ErrorCallback errorCallback)</dt>
+	  <dd>
+	    Invokes the FIDO UAF Client, transferring control to prompt the user
+	    as necessary to complete the operation, and returns to the
+	    callback a message in one of the supported protocol versions
+	    indicated by the UAFMessage.
+  	    <dl class='parameters'>
+	      <dt>UAFMessage message</dt>
+	      <dd>The <a title='UAFMessage'>UAFMessage</a> to be used by the FIDO client software.</dd>
+	      
+	      <dt>UAFResponseCallback completionCallback</dt>
+	      <dd>The callback that receives the client response <a title='UAFMessage'>UAFMessage</a> from
+		the FIDO UAF Client, to be delivered to the relying party server.</dd>
+	      
+	      <dt>ErrorCallback errorCallback</dt>
+	      <dd>A callback function to receive error and progress events from
+		the FIDO UAF Client.</dd>
+	      
+  	    </dl>
+	  </dd>
+          <dt>void notifyUAFResult ()</dt>
+	  <dd>
+	    <p>Used to indicate the status code resulting from a FIDO UAF message delivered to the
+	      remote server. Applications MUST make this call when they
+	      receive a UAF status code from a server. This allows the FIDO UAF Client to
+	      perform housekeeping for a better user experience, for example
+	      not attempting to use keys that a server refused to register.</p>
+	    
+	    <p class="note">If, and how, a status code is delivered by the server, is
+	      application and transport specific. A non-normative example can
+	      be found below in the <a href=#HttpsTransportInteroperabilityProfile>
+ 	      HTTPS Transport Interoperability Profile</a>.</p>
+	    
+	    <dl class="parameters">
+	      <dt>int responseCode</dt>
+	      <dd>The <code>uafResult</code> field of a <a title='ServerResponse'>ServerResponse</a>.</dd>
+	      
+	      <dt>UAFMessage uafResponse</dt>
+	      <dd>The <a title='UAFMessage'>UAFMessage</a> to which this <code>responseCode</code> applies.</dd>
+            </dl>
+	  </dd>
+	</dl>
+      </section>
+
+      <section>
+	<h3>UAFResponseCallback</h3>
+	
+	<p>A <code>UAFResponseCallback</code> is used upon successful completion of an
+	  asynchronous operation by the FIDO UAF Client to return the
+	  protocol response message to the client application for
+	  transport to the server.</p>
+	
+	<dl title='callback UAFResponseCallback = void' class='idl'>
+	  <dt>UAFMessage uafResponse</dt>
+	  <dd>The message and any additional data representing the FIDO
+	    UAF Client's response to the server's request message.</dd>
+	</dl>
+	
+      </section>
+      
+      <section>
+	<h3>DiscoveryCallback</h3>
+	
+	<p>A <code>DiscoveryCallback</code> is used upon successful completion of an
+	  asynchronous discover operation by the FIDO UAF Client to return the 
+	  <a title='DiscoveryData'>DiscoveryData</a> to the client application.</p>
+	
+	<dl title='callback DiscoveryCallback = void' class='idl'>
+	  <dt>DiscoveryData data</dt>
+	  <dd>Describes the current state of FIDO UAF client software and authenticators available to the application.</dd>
+	</dl>
+	
+      </section>
+      
+      
+      <section>
+	<h3>ErrorCallback</h3>
+	
+	<p>An ErrorCallback is used to return progress and error codes from
+	  asynchronous operations performed by the FIDO UAF Client.</p>
+	
+	<dl title='callback ErrorCallback = void' class='idl'>
+	  <dt>ErrorCode code</dt>
+	  <dd>A value from the <code>ErrorCode</code> interface indicating the 
+	    result of the operation.</dd>
+	</dl>
+	<p>For certain operations, an ErrorCallback may be called multiple
+	  times, for example with the <code>WAIT_USER_ACTION</code> code.</p>
+      </section>
+
+      
+      <section class='informative'>
+	<h3>Privacy Considerations for the DOM API</h3>
+	
+	<p>Differences in the FIDO capabilities on a user device may (among
+	  many other characteristics) allow a server to "fingerprint" a
+	  remote client and attempt to persistently identify it, even in
+	  the absence of any explicit session state maintenance
+	  mechanism. Although it may contribute some amount of signal to
+	  servers attempting to fingerprint clients, the attributes
+	  exposed by the Discovery API are designed to have a large
+	  anonymity set size and should present little or no
+	  qualitatively new privacy risk. Nonetheless, an unusual
+	  configuration of FIDO Authenticators may be sufficient to
+	  uniquely identify a user.</p>
+	<p>It is recommended that user agents
+	  expose the Discovery API to all applications without requiring
+	  explicit user consent by default, but user agents or FIDO
+	  Client implementers should provide users with the means to
+	  opt-out of discovery if they wish to do so for privacy reasons.
+	</p>
+      </section>
+      <section class="informative">
+	<h3>Security Considerations for the DOM API</h3>
+	
+	<section>
+	  <h4>Insecure Mixed Content</h4>
+	  
+	  <p>When FIDO UAF APIs are called and operations are performed in a
+	    <code>Document</code> context in a web user agent, such a context MUST NOT
+	    contain insecure mixed content. The exact definition insecure
+	    mixed content is specific to each user agent, but generally
+	    includes any script, plugins and other "active" content,
+	    forming part of or with access to the DOM, that was not itself
+	    loaded over HTTPS.</p>
+	  
+	  <p>The UAF APIs must immediately trigger the <a title='ErrorCallback'>ErrorCallback</a> with the
+	    <code>INSECURE_TRANSPORT</code> code and cease any further processing if any
+	    APIs defined in this document are invoked by a Document context
+	    that was not loaded over a secure transport and/or which
+	    contains insecure mixed content.</p>
+	</section>
+	<section>
+	  <h4>The Same Origin Policy, HTTP Redirects and Cross-Origin Content</h4>
+	  
+	  <p>When retrieving or transporting UAF protocol messages over HTTP,
+	    it is important to maintain consistency among the web origin of
+	    the document context and the origin embedded in the UAF
+	    protocol message. Mismatches may cause the protocol to fail or
+	    enable attacks against the protocol. Therefore:</p>
+
+	  <p>FIDO UAF messages should not be transported using methods that
+	    opt-out of the Same Origin Policy [[SOP]], for example, using
+	    <code>&lt;script src=”url”&gt;</code> to non-same-origin
+	    URLs or by setting the <code>Access-Control-Allow-Origin</code> header
+	    at the server.</p>
+	  
+	  <p>When transporting FIDO UAF messages using XMLHttpRequest
+	    [[XHR]] the client should not follow redirects that are to
+	    URLs with a different origin than the requesting document.</p>
+	  
+	  <p>FIDO UAF messages should not be exposed in HTTP responses where the
+	    entire response body parses as valid ECMAScript. Resources
+	    exposed in this manner may be subject to unauthorized
+	    interactions by hostile applications hosted at untrusted
+	    origins through cross-origin embedding using <code>&lt;script
+	    src=”url”&gt;</code>.
+	    
+	    <P>Web applications should not share FIDO UAF messages
+	      across origins through channels such as <code>postMessage()</code> [[webmessaging]].
+	</section>
+      </section>
+
+      <section class='informative'>
+	<h3>Implementation Notes for Browser/Plugin Authors</h3>
+
+	<p>Web applications utilizing UAF depend on services from the web
+	  browser as a trusted platform. The APIs for web applications do
+	  not provide a means to assert an origin as an application
+	  identity for the purposes of FIDO operations as this will be
+	  provided to the FIDO UAF Client by the browser based on its
+	  privileged understanding of the actual origin context. 
+	</p>
+	<p>The browser must enforce that the web origin communicated to the
+	  FIDO UAF Client as the application identity is accurate
+	</p>
+	<p>
+	  The browser must also enforce that resource instances containing
+	  insecure mixed-content cannot utilize the UAF DOM APIs.</p>
+      </section>
+    </section>
+
+    <section class="normativeDisclaimer">
+      <h2>Android Intent API</h2>
+      <p>This section describes how an Android [[ANDROID]] client
+	application can locate and communicate with a conforming FIDO
+	Client installation operating on the host device.</p>
+      
+      <p class="note">As with web applications, a variety of integration patterns are
+	possible on the Android platform. The API described here allows
+	an app to communicate with a shared FIDO UAF Client on the user device
+	in a loosely-coupled fashion using Android <em>Intents</em>.</p>
+      
+      <section>
+	<h3>Android-specific Definitions</h3>
+	
+	<section>      
+	  <h4>org.fidoalliance.uaf.permissions.FIDO_CLIENT</h4>
+	  
+	  <p>FIDO UAF Clients running on Android versions prior to Android 5 MUST declare
+            the <code>org.fidoalliance.uaf.permissions.FIDO_CLIENT</code>
+            permission and they also MUST declare the related "uses-permission". 
+	    See the below example of this permission expressed in an Android app manifest file 
+            <code>&lt;permission/&gt;</code> and <code>&lt;uses-permission/&gt;</code> element [[!AndroidAppManifest]].</p>
+	  <p>FIDO UAF Clients running on Android version 5 or later SHOULD NOT declare this permission and they 
+	    also SHOULD NOT declare the related "uses-permission".</p>
+	  <pre class='example highlight'>
+&lt;permission
+    android:name="org.fidoalliance.uaf.permissions.FIDO_CLIENT"
+    android:label="Act as a FIDO Client."
+    android:description="This application acts as a FIDO Client. It may 
+       access authentication devices available on the system, create and 
+       delete FIDO registrations on behalf of other applications."
+    android:protectionLevel="dangerous" 
+/&gt;
+&lt;uses-permission android:name="org.fidoalliance.uaf.permissions.FIDO_CLIENT"/&gt;
+	  </pre>
+	  <div class="note">
+  	  <ul>
+  	  <li>
+  	    Since FIDO Clients perform security relevant tasks (e.g. verifying 
+  	    the AppID/FacetID relation and asking for user consent), 
+  	    users should carefully select the FIDO Clients they use. 
+  	    Requiring apps acting as FIDO Clients to declare and use this permission
+  	    allows them to be identified as such to users.
+  	  </li>
+  	  <li>
+  	    There are not any FIDO Client resources needing "protection" 
+  	    based upon the FIDO_CLIENT permission. 
+  	    The reason for having FIDO Client declare the FIDO_CLIENT 
+  	    permission is solely that users should be able to
+  	    carefully decide which FIDO Clients to install.
+  	    </li>
+	  <li>
+	    Android version 5 changed the way it handles the case where multiple apps declare the same 
+	    permission [[Android5Changes]]; it blocks
+	    the installation of all subsequent apps declaring that permission.
+	  </li>
+	  <li><em>The best way to flag the fact that an app 
+	    may act as a FIDO Client needs to be determined for Android version 5.</em>
+	  </li>
+  	  </ul>
+	  </div>
+	 
+	</section>
+	<section>
+	  <h4>org.fidoalliance.uaf.permissions.ACT_AS_WEB_BROWSER</h4>
+	  <p>Android applications requesting services from the FIDO UAF
+	    Client can do so under their own identity, or they can act as
+	    the user's agent by explicitly declaring an RFC6454
+	    [[!RFC6454]] serialization of the remote server's origin when
+	    invoking the FIDO UAF Client.</p>
+	  
+	  <p>An application that is operating on behalf of a single entity
+	    MUST NOT set an explicit origin. Omitting an explicit origin
+	    will cause the FIDO UAF Client to determine the caller's identity as
+	    <code>android:apk-key-hash:&lt;hash-of-public-key&gt;</code>. The FIDO UAF Client will
+	    then compare this with the list of authorized application facets
+	    for the target AppID and proceed if it is listed as trusted.</p>
+	  
+	  <p class="note">See the UAF Protocol Specification [[!UAFProtocol]] for more
+	    information on application and facet identifiers.</p>
+	  
+	  <p>If the application is explicitly intended to operate as the
+	    user's agent in the context of an arbitrary number of remote
+	    applications (as when implementing a full web browser) it may
+	    set its origin to the RFC6454 [[!RFC6454]] Unicode
+	    serialization of the remote application's Origin. The
+	    application MUST satisfy the necessary conditions described in
+	    <a href='#TransportSecurityRequirements'>Transport Security Requirements</a>
+	    for authenticating the remote server before
+	    setting the origin.</p>
+	  
+	  <p>Use of the origin parameter requires the application to declare
+	    the <code>org.fidoalliance.uaf.permissions.ACT_AS_WEB_BROWSER</code>
+	    permission, and the FIDO UAF Client MUST verify that the calling
+	    application has this permission before processing the
+	    operation.</p>
+	  
+	  <pre class='example highlight'>
+&lt;permission 
+   android:name="org.fidoalliance.uaf.permissions.ACT_AS_WEB_BROWSER"
+   android:label="Act as a browser for FIDO registrations."
+   android:description="This application may act as a web browser,
+       creating new and accessing existing FIDO registrations for any domain."
+   android:protectionLevel="dangerous" 
+/&gt;
+	  </pre>
+	</section>
+
+	<section class="informative">
+	  <h4>channelBindings</h4>
+	  <p>In the DOM API, the browser or browser plugin is responsible for
+	    supplying any available channel binding information to the FIDO
+	    Client, but an Android application, as the direct owner of the
+	    transport channel, must provide this information itself.</p>
+	  
+	  <p>The <code>channelBindings</code> data structure is:</p>
+	  <p><code>Map&lt;String,String&gt;</code></p>
+	  <p>with the keys as defined for the <code>ChannelBinding</code> structure in the UAF
+	    Protocol Specification. [[!UAFProtocol]]</p>
+	  
+	  <p>The use of channel bindings for TLS helps assure the server that
+	    the channel over which UAF protocol messages are transported is
+	    the same channel the legitimate client is using and that
+	    messages have not been forwarded through a malicious party.</p>
+	  <p>UAF defines support for the <code>tls-unique</code> and
+	    <code>tls-server-end-point</code> bindings from [[!RFC5929]], as well as
+	    server certificate and ChannelID [[!ChannelID]] bindings. The
+	    client should supply all channel binding information available
+	    to it.</p>
+	  <p>Missing or invalid channel binding information may cause a relying
+	    party server to reject a transaction.</p>
+	</section>
+	
+	<section>
+	  <h4>UAFIntentType enumeration</h4>
+	  <p>This enumeration describes the type of operation for the intent implementing the Android API.</p>
+	  
+	  <p class='note'>UAF uses only a single intent to simplify
+	    behavior in the situation even where multiple FIDO clients may be
+	    installed. In such a case, the user will be prompted which of
+	    the installed FIDO UAF clients should be used to handle an
+	    implicit intent.</p>  
+	  <p>If the user selected to make different FIDO
+	    UAF Clients the default for different intents representing
+	    different phases, it could produce inconsistent results or
+	    fail to function at all.</p>
+	  <p>If the application workflow requries
+	    multiple calls to the client (and it usually does)
+	    the application should read the <code>componentName</code> from the intent extras it receives
+	    from <code>startActivityForResult()</code>
+	    and pass it to <code>setComponent()</code> for subsequent intents to be sure they are 
+	    explicitly resolved to the same FIDO UAF Client.</p>
+	  
+	  <dl title='enum UAFIntentType' class='idl'>
+	    <dt>DISCOVER</dt><dd>Discovery</dd>
+	    <dt>DISCOVER_RESULT</dt><dd>Discovery results</dd>
+	    <dt>CHECK_POLICY</dt><dd>Perform a no-op check if a message could be processed.</dd>
+	    <dt>CHECK_POLICY_RESULT</dt><dd>Check Policy results.</dd>
+	    <dt>UAF_OPERATION</dt><dd>Process a Registration, Authentication, Transaction Confirmation 
+	      or Deregistration message.</dd>
+	    <dt>UAF_OPERATION_RESULT</dt><dd>UAF Operation results.</dd>
+	    <dt>UAF_OPERATION_COMPLETION_STATUS</dt><dd>Inform the FIDO UAF Client 
+	      of the completion status of a Registration, Authentication, Transaction Confirmation 
+	      or Deregistration message.</dd>
+	  </dl>
+	</section>
+      </section>
+	
+      <section>
+	<h3>org.fidoalliance.intent.FIDO_OPERATION Intent</h3>
+	
+	<p>All interactions between a FIDO UAF Client and an application
+	  on Android takes place via a single Android intent:</p>
+	
+	<code>org.fidoalliance.intent.FIDO_OPERATION</code>
+	
+	<p>The specifics of the operation are carried by the MIME media type and various extra data 
+	  included with the intent.</p>
+	
+	<p>The operations described in this document are of MIME media type 
+	  <code>application/fido.uaf_client+json</code> 
+	  and this MUST be set as the <code>type</code> attribute of any intent.</p>
+	
+	<p class="note">Client applications can discover if a FIDO UAF Client (or several) is available 
+	  on the system by using 
+	  <code><a href='http://developer.android.com/reference/android/content/pm/PackageManager.html#queryIntentActivities(android.content.Intent,%20int)'>PackageManager.queryIntentActivities(Intent intent, int flags)</a></code>
+	  with this intent to see if any activities are available.</p>
+	
+	<table class='tlv'>
+	  <thead>
+	    <tr><th>Extra</th><th>Type</th><th>Description</th></tr>
+	  </thead>
+	  <tbody>
+	    <tr>
+	      <td><code>UAFIntentType</code></td>
+	      <td>String</td>
+	      <td>One of the <a title='UAFIntentType'>UAFIntentType</a> enumeration values describing the intent.</td>
+	    </tr>
+	    <tr>
+	      <td><code>discoveryData</code></td>
+	      <td>String</td>
+	      <td><a title='DiscoveryData'>DiscoveryData</a> JSON dictionary.</td>
+	    </tr>
+	    <tr>
+	      <td><code>componentName</code></td>
+	      <td>String</td>
+	      <td>The component name of the responding FIDO UAF Client. It must be serialized using
+		<a href="http://developer.android.com/reference/android/content/ComponentName.html#flattenToString()">
+		  ComponentName.flattenString()</a>
+	    </tr>
+	    <tr>
+	      <td><code>errorCode</code></td>
+	      <td>short</td>
+	      <td><a title='ErrorCode'>ErrorCode</a> value for operation</td>
+	    </tr>
+	    <tr>
+	      <td><code>message</code></td>
+	      <td>String</td>
+	      <td><a title='UAFMessage'>UAFMessage</a> request to test or process, 
+		depending on <a title='UAFIntentType'>UAFIntentType</a>.</td>
+	    </tr>
+	    <tr>
+	      <td><code>origin</code></td>
+	      <td>String</td>
+	      <td>An RFC6454 Web Origin [[RFC6454]] 
+		string for the request, if the caller has 
+		the <code>org.fidoalliance.permissions.ACT_AS_WEB_BROWSER</code> permission.</td>
+	    </tr>
+	    <tr>
+	      <td><code>channelBindings</code></td>
+	      <td>String</td>
+	      <td>The JSON dictionary of channel bindings for the
+		operation.</td>
+	    </tr>
+	    <tr>
+	      <td><code>responseCode</code></td>
+	      <td>short</td>
+	      <td>The <code>uafResult</code> field of a <code>ServerResponse</code>. </td>
+	    </tr>
+	  </tbody>
+	</table>
+	
+	<p>The following table shows what intent extras are expected, depending on the value of 
+	  the <code>UAFIntentType</code> extra:</p>
+	<table class='tlv'>
+	  <thead>
+	    <tr>
+	      <th>UAFIntentType value</th>
+	      <th><font size="-1">discoveryData</font></th>
+	      <th><font size="-1">componentName</font></th>
+	      <th><font size="-1">errorCode</font></th>
+	      <th><font size="-1">message</font></th>
+	      <th><font size="-1">origin</font></th>
+	      <th><font size="-1">channelBindings</font></th>
+	      <th><font size="-1">responseCode</font></th>
+	    </tr>
+	  </thead>
+	  <tbody>
+	    <tr>
+	      <td>"DISCOVER"</td>
+	      <td></td>
+	      <td></td>
+	      <td></td>
+	      <td></td>
+	      <td></td>
+	      <td></td>
+	      <td></td>
+	    </tr>
+	    <tr>
+	      <td>"DISCOVER_RESULT"</td>
+	      <td>OPTIONAL</td>
+	      <td>REQUIRED</td>
+	      <td>REQUIRED</td>
+	      <td></td>
+	      <td></td>
+	      <td></td>
+	      <td></td>
+	    </tr>
+	    <tr>
+	      <td>"CHECK_POLICY"</td>
+	      <td></td>
+	      <td></td>
+	      <td></td>
+	      <td>REQUIRED</td>
+	      <td>OPTIONAL</td>
+	      <td></td>
+	      <td></td>
+	    </tr>
+	    <tr>
+	      <td>"CHECK_POLICY_RESULT"</td>
+	      <td></td>
+	      <td>REQUIRED</td>
+	      <td>REQUIRED</td>
+	      <td></td>
+	      <td></td>
+	      <td></td>
+	      <td></td>
+	    </tr>
+	    <tr>
+	      <td>"UAF_OPERATION"</td>
+	      <td></td>
+	      <td></td>
+	      <td></td>
+	      <td>REQUIRED</td>
+	      <td>OPTIONAL</td>
+	      <td>REQUIRED</td>
+	      <td></td>
+	    </tr>
+	    <tr>
+	      <td>"UAF_OPERATION_RESULT"</td>
+	      <td></td>
+	      <td>REQUIRED</td>
+	      <td>REQUIRED</td>
+	      <td>OPTIONAL</td>
+	      <td></td>
+	      <td></td>
+	      <td></td>
+	    </tr>
+	    <tr>
+	      <td>"UAF_OPERATION_COMPLETION_STATUS"</td>
+	      <td></td>
+	      <td></td>
+	      <td></td>
+	      <td>REQUIRED</td>
+	      <td></td>
+	      <td></td>
+	      <td>REQUIRED</td>
+	    </tr>
+	  </tbody>
+	</table>
+	
+	<section>
+	  <h4>UAFIntentType.DISCOVER</h4>
+	  <p>This Android intent invokes the FIDO UAF Client to discover the available authenticators and capabilties.
+	    The FIDO UAF Client generally will not show a UI associated with the handling of this intent, but
+	    immediately return the JSON structure.  The calling
+	    application cannot depend on this however, as the FIDO UAF Client MAY show a UI for privacy purposes,
+	    allowing the user to choose whether and which authenticators to disclose to the calling application.</p>
+	  
+	  <p>This intent MUST be invoked with <code>startActivityForResult()</code>.</p>      
+	</section>
+	<section>
+	  <h4>UAFIntentType.DISCOVER_RESULT</h4>
+	  
+	  <p>An intent with this type is returned by the FIDO UAF Client as an argument to <code>onActivityResult()</code> 
+	    in response to receiving an intent of type <code>DISCOVER</code>.</p>
+	  
+	  <p>If the <code>resultCode</code> passed to <code>onActivityResult()</code> is <code>RESULT_OK</code>,
+	    and the intent extra <code>errorCode</code> is <a href='#NO_ERROR'>NO_ERROR</a>,
+	    this intent has an extra, <code>discoveryData</code>, containing a <code>String</code> 
+	    representation of a <a title='DiscoveryData'>DiscoveryData</a> JSON dictionary with the 
+	    available authenticators and capabilities. </p>
+	</section>
+	<section>
+	  <h4>UAFIntentType.CHECK_POLICY</h4>
+	  <p>This intent invokes the FIDO UAF Client to discover if it would be able to process the supplied
+	    message without prompting the user.  The action handling this intent SHOULD NOT show a UI to
+	    the user.</p>
+	  
+	  <p>This intent requires the following extras: </p>
+	  <ul>
+	    <li><code>message</code>, containing a <code>String</code> representation
+     	      of a <a title='UAFMessage'>UAFMessage</a> representing the request message to test.</li>
+	    <li><code>origin</code>, an OPTIONAL extra that allows a caller with the
+              <code>org.fidoalliance.uaf.permissions.ACT_AS_WEB_BROWSER</code> permission 
+	      to supply an RFC6454 Origin [[RFC6454]] string to be used instead of the application's
+	      own identity.</li>
+	  </ul>
+	  
+	  <p>This intent MUST be invoked with <code>startActivityForResult()</code>.</p>
+	  
+	</section>
+	<section>
+	  <h4>UAFIntentType.CHECK_POLICY_RESULT</h4>
+	  
+	  <p>This Android intent is returned by the FIDO UAF Client as an argument to <code>onActivityResult()</code> 
+	    in response to receiving a <code>CHECK_POLICY</code> intent.</p>
+	  
+	  <p>In addition to the <code>resultCode</code> passed to <code>onActivityResult()</code>,
+	    this intent has an extra, <code>errorCode</code>, containing an <a title='ErrorCode'>ErrorCode</a> value
+	    indicating the specific error condition or <a href='#NO_ERROR'>NO_ERROR</a> if the FIDO UAF Client could
+	    process the message.</p>
+	  
+	</section>
+	
+	<section>
+	  <h4>UAFIntentType.UAF_OPERATION</h4>
+	  
+	  
+	  <p>This Android intent invokes the FIDO UAF Client to process the supplied request
+	    message and return a response message ready for delivery to the FIDO UAF Server.</p>
+	  <p>
+	    The sender SHOULD assume that the FIDO UAF Client will display
+	    a user interface allowing the user to handle this intent,
+	    for example, prompting the user to complete their verification
+	    ceremony.</p>
+	  
+	  <p>This intent requires the following extras: </p>
+	  <ul>
+	    <li><code>message</code>, containing a <code>String</code> representation
+     	      of a <a title='UAFMessage'>UAFMessage</a> representing the request message to process.</li>
+	    <li><code>channelBindings</code>, containing a <code>String</code> representation
+     	      of a JSON dictionary as defined by the <code>ChannelBinding</code> structure in the 
+              FIDO UAF Protocol Specification [[UAFProtocol]].</li>
+	    <li><code>origin</code>, an OPTIONAL parameter that allows a caller with the
+              <code>org.fidoalliance.uaf.permissions.ACT_AS_WEB_BROWSER</code> permission 
+	      to supply an RFC6454 Origin [[RFC6454]] string to be used instead of the application's
+	      own identity.</li>
+	  </ul>
+	  
+	  <p>This intent MUST be invoked with <code>startActivityForResult()</code>.</p>
+	  
+	</section>
+	
+	<section>
+	  <h4>UAFIntentType.UAF_OPERATION_RESULT</h4>
+	  
+	  <p>This intent is returned by the FIDO UAF Client as an argument to <code>onActivityResult()</code>, 
+	    in response to receiving a <code>UAF_OPERATION</code> intent.</p>
+	  
+	  <p>If the <code>resultCode</code> passed to <code>onActivityResult()</code> is <code>RESULT_CANCELLED</code>,
+	    this intent will have an extra, <code>errorCode</code> parameter, containing an <a title='ErrorCode'>ErrorCode</a> value
+	    indicating the specific error condition.</p>
+	  
+	  <p>If the <code>resultCode</code> passed to <code>onActivityResult()</code> is <code>RESULT_OK</code>,
+            and the <code>errorCode</code> is <a href='#NO_ERROR'>NO_ERROR</a>,
+	    this intent has a <code>message</code>, containing a <code>String</code> 
+	    representation of a <a title='UAFMessage'>UAFMessage</a>, being the UAF protocol response message
+	    to be delivered to the FIDO Server. </p>
+	</section>
+	
+	
+	<section>
+	  <h4>UAFIntentType.UAF_OPERATION_COMPLETION_STATUS</h4>
+	  
+	  <p>This intent MUST be delivered to the FIDO UAF Client to
+	    indicate the processing status of a FIDO UAF message delivered
+	    to the remote server.  This is especially important as a new
+	    registration may be considered by the client to be in a
+	    pending state until it is communicated that the server
+	    accepted it.</p>
+	  
+	</section>
+      </section>
+
+      <section>
+	<h3>Alternate Android AIDL Service UAF Client Implementation</h3>
+	
+	<p>The Android Intent API can also be implemented using Android AIDL services as an alternative 
+	  transport mechanism to Android Intents. While Android Intents work at the UI layer, Android AIDL 
+	  services are performed at a lower level. This can ease integration with relying party apps, 
+	  since UAF requests can be fulfilled without interfering with existing relying party app UI and 
+	  application lifecycle behavior.</p>
+	
+	<p>The UAF Android AIDL service needs to be defined in the UAF client manifest. This is done 
+	  using the &ltservice&gt tag for an Android AIDL service instead of the &ltactivity&gt tag 
+	  in Android Intents. Just as with Android intents, the manifest definition for the AIDL 
+	  service uses an intent filter (note <code>org.fidoalliance.aidl.FIDO_OPERATION</code> 
+	  versus <code>org.fidoalliance.intent.FIDO_OPERATION</code>) to identify itself as a 
+	  FIDO UAF client to the relying party app:</p>
+	
+	<pre class="example">
+&ltservice android:name="foo" &gt
+&ltintent-filter&gt
+&ltaction android:name="org.fidoalliance.aidl.FIDO_OPERATION" /&gt
+&ltcategory android:name="android.intent.category.DEFAULT" /&gt
+&ltdata android:mimeType="application/fido.uaf_client+json" /&gt
+&lt/intent-filter&gt
+&lt/service&gt
+	</pre>
+	
+	<p>Once the relying party app choses a UAF client from the list discovered by 
+	  <code>PackageManager.queryIntentServices()</code>, the relying party app and 
+	  the FIDO UAF client share the following AIDL interface to service UAF requests:</p>
+	
+	<pre class="example">
+package org.fidoalliance.aidl
+
+oneway interface IUAFOperation
+{	
+	void process(in Intent uafRequest, in IUAFResponseListener uafResponseListener);
+}
+	</pre>
+
+	<p>Note that Android AIDL services use <code>Binder.getCallingUid()</code> 
+	  instead of <code>Activity.getCallingActivity()</code> with Android Intents to 
+	  identify the caller and obtain FacetID information.</p>
+	
+	<p>For consistency, the Intents for the Android AIDL service are the same as 
+	  defined in the Android Intent specification in the UAF standard. 
+	  In <code>process()</code>, the <code>uafRequest</code> parameter is the 
+	  Intent that would be passed to <code>startActivityForResult()</code>. The 
+	  <code>uafResponseListener</code> parameter is a listener interface that 
+	  receives the result. The following AIDL defines this interface:</p>
+	
+	<pre class="example">
+package org.fidoalliance.aidl
+
+interface IUAFResponseListener
+{
+	void onResult(in Intent uafResponse);
+}
+	</pre>
+	
+	<p>In the listener, the <code>uafResponse</code> parameter is the Intent 
+	  that would be passed to <code>onActivityResult</code>.</p>
+	
+      </section>
+	
+      <section class="informative">
+	<h3>Security Considerations for Android Implementations</h3>
+	
+	<p>Android applications may choose to implement the
+	  user-interactive portion of FIDO in at least two ways:
+	  <ul>
+	    <li>
+	      by authoring an Android Activity using Android-native user interface
+	      components, or</li>
+	    <li>
+	      with an HTML-based experience by loading an
+	      Android WebView and injecting the UAF DOM APIs with
+	      <code>addJavaScriptInterface()</code>.
+	    </li>
+	  </ul>
+	  
+	<p>
+	  An application that chooses to inject the UAF interface into a
+	  WebView MUST follow all appropriate security considerations
+	  that apply to usage of the DOM APIs, <em>and</em> those that apply to
+	  user agent implementers.</p>
+	
+	<p>In particular, the content of a WebView
+	  into which an API will be injected MUST be loaded only from
+	  trusted local content or over a secure channel as specified in
+	  <a href='#TransportSecurityRequirements'>Transport Security Requirements</a>
+	  and must not contain insecure mixed-content.</p>
+	
+	<p>Applications should not declare the <code>ACT_AS_WEB_BROWSER</code> permission
+	  unless they need to act as the user's agent for an un-predetermined
+	  number of third party applications. Where an Android application
+	  has an explicit relationship with a relying party application(s),
+	  the preferred method of access control is for those applications
+	  to list the Android application's identity as a trusted facet. See the UAF 
+	  Protocol Specification [UAFProtocol] for more information on application and facet identifiers.</p>
+	
+	<p>To protect against a malicious application registering itself
+	  as a FIDO UAF Client, relying party applications can obtain
+	  the identity of the responding application, and utilize it in
+	  risk management decisions around the authentication or
+	  transaction events. </p>
+	<p>For example, a relying party might
+	  maintain a list of application identities known to belong to
+	  malware and refuse to accept operations completed with such
+	  clients, or a list of application identities of known-good
+	  clients that receive preferred risk-scoring.</p>
+	<p>Relying party applications running on Android versions prior to Android 5 must make 
+	  sure that a FIDO UAF Client has 
+	  the "uses-permission" for <code>org.fidoalliance.uaf.permissions.FIDO_CLIENT</code>.  Relying party 
+	  applications running on Android 5 should not implement this check.
+	</p>
+	<p class="note">Relying party applications should implement the check on Android prior to 5 by using the 
+	  package manager to verify that the FIDO Client indeed 
+	  declared the <code>org.fidoalliance.uaf.permissions.FIDO_CLIENT</code> permission (see example below).  
+	  Relying party applications should not use a "uses-permission" for <code>FIDO_CLIENT</code>.  
+	</p>
+	<pre class='example highlight'>
+boolean checkFIDOClientPermission(String packageName) 
+                                  throws NameNotFoundException {
+  for (String requestedPermission : 
+         getPackageManager().getPackageInfo(packageName, 
+             PackageManager.GET_PERMISSIONS).requestedPermissions) {
+      if (requestedPermission.matches(
+           "org.fidoalliance.uaf.permissions.FIDO_CLIENT")) 
+        return true;
+  }
+ return false;
+}
+	</pre>
+	  
+      </section>      
+    </section>
+    
+    <section class="normativeDisclaimer">
+      <h2>iOS Custom URL API</h2>
+      <p>This section describes how an iOS relying party
+	application can locate and communicate with a conforming FIDO UAF
+	Client installed on the host device.</p>
+      <div class="note">
+	<p>Because of sandboxing and no true multitasking support, the iOS operating 
+	  system offers very limited ways to do interprocess communication (IPC). 
+	</p>
+	<p>
+	  Any IPC solution for a FIDO UAF Client must be able to:</p>
+	<ol>
+	  <li>Identify the calling app in order to provide FacetID approval.</li>
+	  <li>Allow transition to another app without user intervention</li>
+	</ol>
+	<p>Currently the only IPC method on iOS that satisfies both of these requirements is custom URL handlers.</p>
+	
+	<p>Custom URL handlers use the iOS operating system to handle URL requests from the sender, 
+	  launch the receiving app, and then pass the request to the receiving app for processing. 
+	  By enabling custom URL handlers for two different applications, it is possible to achieve bidirectional 
+	  IPC between them--one custom URL handler to send data from app A to app B and another custom URL 
+	  handler to send data from app B to app A.</p>
+	
+	<p>Because iOS has no true multitasking, there must be an app transition to process each 
+	  request and response. Too many app transitions can negatively affect the user experience, 
+	  so relying party applications must carefully choose when it is necessary to query the FIDO UAF Client.</p>
+      </div>
+      
+      <section>
+	<h3>iOS-specific Definitions</h3>
+	<section>
+	  
+	  <h4>X-Callback-URL Transport</h4>
+	  
+	  <p>When the relying party application communicates with the FIDO UAF Client, it sends a URL with the
+            standard <code>x-callback-url</code> format (see <a href="http://x-callback-url.com">x-callback-url.com</a>):</p>
+	  
+	  <pre class="example">
+FidoUAFClient1://x-callback-url/<code>[UAFxRequestType]</code>?x-success=<code>[RelyingPartyURL]</code>://x-callback-url/
+       <code>[UAFxResponseType]</code>&
+       key=<code>[SecretKey]</code>&
+       state=<code>[STATE]</code>&
+       json=<code>[Base64EncodedJSON]</code>
+	  </pre>
+
+	  <ul>
+            <li><code>FidoUAFClient1</code> is the iOS custom URL scheme used by FIDO UAF Clients. As specified
+              in the <code>x-callback-url</code> standard, version information for the transport layer is encoded in
+              the URL scheme itself (in this case, <code>FidoUAFClient1</code>). This is so other applications can check
+              for support for the 1.0 version by using the <code>canOpenURL</code> call.
+            </li>
+            <li>
+              <code>[UAFxRequestType]</code> is the type that should be used for request operations,
+              which are described later in this document.
+            </li>	
+            <li>
+              <code>[RelyingPartyURL]</code> is the URL that the relying party app has registered in order
+              to receive the response. According to the <code>x-callback-url</code> 
+	      standard, this is defined using the <code>x-success</code> parameter.
+            </li>
+            <li>
+              <code>[UAFxResponseType]</code> is the type that should be used for response operations,
+              which are described later in this document.
+            </li>
+            <li>
+              <code>[SecretKey]</code> is a base64url-encoded, without padding, random key generated for each request by the calling application.
+              <p>The response from the FIDO UAF Client will be encrypted with this key
+		in order to prevent rogue applications from obtaining information by spoofing the return URL.</p>
+            </li>	
+            <li>
+              <code>[STATE]</code> is data that can be used to match the request with the response.
+            </li>
+            <li>
+              Finally <code>[Base64EncodedJSON]</code> contains the message to be sent to the FIDO UAF Client.
+              <p>Items are stored in JSON format and then base64url-encoded without padding.</p>
+            </li>
+	  </ul>
+
+	  <p>For FIDO UAF Clients, the custom URL scheme handler entrypoint is the openURL() function:</p>
+
+
+   <pre class="example highlight">
+(BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation
+   </pre>
+
+	  <p>Here, the URL above is received via the <code>url</code> parameter. For security considerations,
+            the <code>sourceApplication</code> parameter contains the iOS bundle ID of the relying party application.
+            This bundle ID MUST be used to verify the application <code>FacetID</code>.</p>
+
+	  <p>Conversely, when the FIDO UAF Client responds to the request, it sends the following URL back
+            in standard <code>x-callback-url</code> format:</p>
+
+
+   <pre class="example">
+	      <code>[RelyingPartyURL]</code>://x-callback-url/<code>
+      [UAFxResponseType]</code>&
+      state=<code>[STATE]</code>&
+      json=<code>[Base64EncodedJWE]</code>
+   </pre>
+
+
+	  <p>The parameters in the response are similar to those of the request, except that the
+            <code>[Base64EncodedEncryptedJSON]</code> parameter is encrypted with the public key before
+            being base64url-encoded without padding. <code>[STATE]</code> is the same <code>STATE</code> as was sent in the request--it is echoed
+            back to the sender to verify the matched response.</p>
+
+	  <p>In the relying party application's <code>openURL()</code> handler, the <code>url</code> parameter will be the URL
+            listed above and the <code>sourceApplication</code> parameter
+            will be the iOS bundle ID for the FIDO client application.</p>
+	</section>
+
+	<section>      
+	  <h4>Secret Key Generation</h4>
+	  <p>A new secret encryption key MUST be generated by the calling application every time it sends a request to FIDO UAF Client.
+            The FIDO UAF Client MUST then use this key to encrypt the response message before responding to the caller.
+	  </p>
+	  <p>
+            <a href="http://tools.ietf.org/html/draft-ietf-jose-json-web-encryption-31">JSON Web Encryption (JWE)</a>,
+            JSON Serialization (<a href="http://tools.ietf.org/html/draft-ietf-jose-json-web-encryption-31#section-7.2">JWE Section 7.2</a>)
+            format MUST be used to represent the encrypted response message.
+	  </p>
+	  <p>The encryption algorithm is that specified in 
+	    <a href="http://tools.ietf.org/html/draft-ietf-jose-json-web-encryption-31#appendix-B">"A128CBC-HS256"</a>
+            where the JWE "Key Management Mode" employed is "Direct Encryption" and the JWE "Content Encryption Key (CEK)" is the secret key generated by the calling application and passed to the FIDO UAF Client in the <code>key</code> parameter of the request.</p>
+
+
+   <pre class="example">
+ {
+    "unprotected": {"alg": "dir", "enc": "A128CBC-HS256"},
+    "iv": "...",
+    "ciphertext": "...",
+    "tag": "..."
+ }
+   </pre>
+
+	</section>
+
+	<section>
+	  <h4>Origin</h4>
+	  <p>iOS applications requesting services from the FIDO
+            Client can do so under their
+            own identity, or they can act as the
+            user's agent by explicitly declaring an
+            RFC6454 [[!RFC6454]] serialization of the
+            remote server's origin when invoking the FIDO UAF Client.</p>
+	  
+	  <p>An application that is operating on behalf of a single entity
+            MUST NOT set an explicit origin. Omitting an explicit origin
+            will cause the FIDO UAF Client to determine the caller's identity as
+            <code>"ios:bundle-id"</code>. The FIDO UAF Client will
+            then compare this with the list of authorized application facets
+            for the target AppID and proceed if it is listed as trusted.</p>
+
+	  <p>See the UAF Protocol Specification [[!UAFProtocol]] for more
+            information on application and facet identifiers.</p>
+
+	  <p>If the application is explicitly intended to operate as the
+            user's agent in the context of an arbitrary number of remote
+            applications (as when implementing a full web browser)
+            it may set origin to the
+            RFC6454 [[!RFC6454]] Unicode serialization of the remote
+            application's Origin. The application MUST satisfy the
+            necessary conditions described in
+            <a href='#TransportSecurityRequirements'>Transport Security Requirements</a>
+            for authenticating the remote server before
+            setting origin.</p>
+
+	</section>
+	<section class="informative">
+	  <h4>channelBindings</h4>
+
+	  <p>In the DOM API, the browser or browser plugin is responsible for
+            supplying any available channel binding information to the FIDO
+            Client, but an iOS application, as the direct owner of the
+            transport channel, must provide this information itself.</p>
+
+	  <p>The channelBindings data structure is <code>Map&lt;String,String&gt;</code> with
+            the keys as defined for the <code>ChannelBinding</code> structure in the FIDO UAF
+            Protocol Specification. [[!UAFProtocol]]</p>
+
+	  <p>The use of channel bindings for TLS helps assure the server that
+            the channel over which UAF protocol messages are transported is
+            the same channel the legitimate client is using and that
+            messages have not been forwarded through a malicious party. UAF
+            defines support for the <code>tls-unique</code> and <code>tls-server-end-point</code>
+            bindings from [[!RFC5929]], as well as server certificate and
+            <code>ChannelID</code> [[!ChannelID]] bindings. The client should supply all
+            channel binding information available to it.</p>
+	  <p>Missing or invalid channel binding information may cause a relying
+	    party server to reject a transaction.</p>
+	</section>
+
+	<section>
+	  <h4>UAFxType</h4>
+	  <p>This value describes the type of operation for the <code>x-callback-url</code> operations implementing the iOS API.</p>
+	  
+	  <dl title='enum UAFxType' class='idl'>
+            <dt>DISCOVER</dt><dd>Discovery</dd>
+            <dt>DISCOVER_RESULT</dt><dd>Discovery results</dd>
+            <dt>CHECK_POLICY</dt><dd>Perform a no-op check if a message could be processed.</dd>
+            <dt>CHECK_POLICY_RESULT</dt><dd>Check Policy results.</dd>
+            <dt>UAF_OPERATION</dt><dd>The UAF message operation type (for example <code>Registration</code>).</dd>
+            <dt>UAF_OPERATION_RESULT</dt><dd>UAF Operation results.</dd>
+            <dt>UAF_OPERATION_COMPLETION_STATUS</dt><dd>Inform the FIDO UAF Client of 
+	      the completion status of a UAF operation (such as <code>Registration</code>.</dd>
+	  </dl>
+	</section>
+      </section>
+
+      <section>
+	<h3>JSON Values</h3>
+	<p>The specifics of the UAFxType operation are carried by various JSON values 
+	  encoded in the <code>json</code> <code>x-callback-url</code> parameter.
+	  
+	  <table class='tlv'>
+	    <thead>
+	      <tr><th>JSON value</th><th>Type</th><th>Description</th></tr>
+	    </thead>
+	    <tbody>
+	      <tr>
+		<td><code>discoveryData</code></td>
+		<td>String</td>
+		<td><a title='DiscoveryData'>DiscoveryData</a> JSON dictionary.</td>
+	      </tr>
+	      <tr>
+		<td><code>errorCode</code></td>
+		<td>short</td>
+		<td><a title='ErrorCode'>ErrorCode</a> value for operation</td>
+	      </tr>
+	      <tr>
+		<td><code>message</code></td>
+		<td>String</td>
+		<td><a title='UAFMessage'>UAFMessage</a> request to test or process, depending on <a title='UAFxType'>UAFxType</a>.</td>
+	      </tr>
+	      <tr>
+		<td><code>origin</code></td>
+		<td>String</td>
+		<td>An RFC6454 Web Origin [[RFC6454]]
+		  string for the request.</td>
+	      </tr>
+	      <tr>
+		<td><code>channelBindings</code></td>
+		<td>String</td>
+		<td>The channel bindings
+		  JSON dictionary for the operation.</td>
+	      </tr>
+	      <tr>
+		<td><code>responseCode</code></td>
+		<td>short</td>
+		<td>The <code>uafResult</code> field of a <code>ServerResponse</code>. </td>
+	      </tr>
+	    </tbody>
+	  </table>
+
+	  <p>The following table shows what JSON values are expected, depending on the 
+	    value of the <code>UAFxType</code> <code>x-callback-url</code> operation:</p>
+	  <table class='tlv'>
+	    <thead>
+	      <tr>
+		<th>UAFxType operation</th>
+		<th>discoveryData</th>
+		<th>errorCode</th>
+		<th>message</th>
+		<th>origin</th>
+		<th>channelBindings</th>
+		<th>responseCode</th>
+	      </tr>
+	    </thead>
+	    <tbody>
+	      <tr>
+		<td>"DISCOVER"</td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	      </tr>
+	      <tr>
+		<td>"DISCOVER_RESULT"</td>
+		<td>OPTIONAL</td>
+		<td>REQUIRED</td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	      </tr>
+	      <tr>
+		<td>"CHECK_POLICY"</td>
+		<td></td>
+		<td></td>
+		<td>REQUIRED</td>
+		<td>OPTIONAL</td>
+		<td></td>
+		<td></td>
+	      </tr>
+	      <tr>
+		<td>"CHECK_POLICY_RESULT"</td>
+		<td></td>
+		<td>REQUIRED</td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	      </tr>
+	      <tr>
+		<td>"UAF_OPERATION"</td>
+		<td></td>
+		<td></td>
+		<td>REQUIRED</td>
+		<td>OPTIONAL</td>
+		<td>REQUIRED</td>
+		<td></td>
+	      </tr>
+	      <tr>
+		<td>"UAF_OPERATION_RESULT"</td>
+		<td></td>
+		<td>REQUIRED</td>
+		<td>OPTIONAL</td>
+		<td></td>
+		<td></td>
+		<td></td>
+	      </tr>
+	      <tr>
+		<td>"UAF_OPERATION_COMPLETION_STATUS"</td>
+		<td></td>
+		<td></td>
+		<td>REQUIRED</td>
+		<td></td>
+		<td></td>
+		<td>REQUIRED</td>
+	      </tr>
+	    </tbody>
+	  </table>
+	  
+	  <section>
+	    <h3>DISCOVER</h3>      
+	    
+	    <p>This operation invokes the FIDO UAF Client to discover the
+              available authenticators and capabilities. The FIDO UAF
+              Client generally will not show a user interface associated
+              with the handling of this operation, but will simply
+              return the resulting JSON structure.</p>
+	    <p>The calling application cannot depend on this however, as the
+              client MAY show a user interface for privacy
+              purposes, allowing the user to choose whether and which
+              authenticators to disclose to the calling application. </p>
+	    <p class="note">iOS custom URL scheme handlers always require an application switch for every 
+	      request and response, even if no user interface is displayed.</p>
+	  </section>
+
+	  <section>
+	    <h3>DISCOVER_RESULT</h3>
+	    
+	    <p>An operation with this type is returned by the FIDO UAF Client 
+	      in response to receiving an <code>x-callback-url</code>
+	      operation of type <code>DISCOVER</code>.</p>
+
+	    <p>If the <code>resultCode</code> is <code>RESULT_OK</code>,
+              and the JSON value <code>errorCode</code> is <a href='#NO_ERROR'>NO_ERROR</a>,
+              then this operation has a JSON value, <code>discoveryData</code>, containing a <code>String</code>
+              representation of a <a title='DiscoveryData'>DiscoveryData</a> JSON dictionary listing the
+              available authenticators and their capabilities.</p>
+	  </section>
+
+	  <section>
+	    <h3>CHECK_POLICY</h3>
+
+	    <p>This operation invokes the FIDO UAF Client to discover if
+              the client would be able to process the supplied message,
+              without prompting the user.</p>
+	    <p>The related <code>Action</code> handling this
+              operation SHOULD NOT show an interface to the user. </p>
+
+	    <p class="note">iOS custom URL scheme handlers always require an application switch 
+	      for every request and response, even if no UI is displayed.</p>
+	    <p>This x-callback-url operation requires the following JSON values:</p>
+
+	    <ul>
+              <li><code>message</code>, containing a <code>String</code> representation
+		of a <a title='UAFMessage'>UAFMessage</a> representing the request message to test.</li>
+              <li><code>origin</code>, an OPTIONAL JSON value that allows a caller to supply 
+		an RFC6454 Origin [[RFC6454]] string to be used instead of the application's
+		own identity.</li>
+	    </ul>
+
+	  </section>
+
+	  <section>
+	    <h3>CHECK_POLICY_RESULT</h3>
+	    
+	    <p>This operation is returned by the FIDO UAF Client in response to 
+	      receiving a <code>CHECK_POLICY</code> x-callback-url operation.</p>
+	    
+	    <p>In addition to the <code>resultCode</code>,
+              this x-callback-url operation has a JSON value, <code>errorCode</code>, 
+	      containing an <a title='ErrorCode'>ErrorCode</a> value
+              indicating the specific error condition or <a href='#NO_ERROR'>NO_ERROR</a> if the FIDO Cliet could
+              process the message.</p>
+	  </section>
+	  
+	  <section>
+	    <h3>UAF_OPERATION</h3>
+            
+	    <p>This operation invokes the FIDO UAF Client to process the supplied request
+              message and return a result message ready for delivery to the FIDO UAF Server.
+              The sender SHOULD assume that the FIDO UAF Client will display a UI to the user to
+              handle this x-callback-url operation, e.g. prompting the user to complete their verification ceremony.</p>
+	    
+	    <p>This x-callback-url operation requires the following JSON values:</p>
+	    <ul>
+              <li><code>message</code>, containing a <code>String</code> representation
+		of a <a title='UAFMessage'>UAFMessage</a> representing the request message to process.</li>
+              <li><code>channelBindings</code>, containing a <code>String</code> representation
+		of a JSON dictionary as defined by the <code>ChannelBinding</code> structure in the
+		UAF Protocol Specification [[UAFProtocol]].</li>
+              <li><code>origin</code>, an OPTIONAL JSON value that allows a caller
+		to supply an RFC6454 Origin [[RFC6454]] string to be used instead of the application's
+		own identity.</li>
+	    </ul>
+	  </section>
+	  
+	  <section>
+	    <h3>UAF_OPERATION_RESULT</h3>
+	    
+	    <p>This x-callback-url operation is returned by the FIDO UAF Client in 
+	      response to receiving a <code>UAF_OPERATION</code> x-callback-url operation.</p>
+
+	    <p>If the <code>resultCode</code> is <code>RESULT_CANCELLED</code>,
+              this x-callback-url operation has a JSON value, <code>errorCode</code>, 
+	      containing an <a title='ErrorCode'>ErrorCode</a> value
+              indicating the specific error condition.</p>
+
+	    <p>If the <code>resultCode</code> is <code>RESULT_OK</code>,,
+              and the x-callback-url JSON value <code>errorCode</code> is <a href='#NO_ERROR'>NO_ERROR</a>,
+              this x-callback-url operation has a JSON value, <code>message</code>, containing a <code>String</code>
+              representation of a <a title='UAFMessage'>UAFMessage</a>, being the UAF protocol response message
+              to be delivered to the FIDO Server.</p>      
+	  </section>
+	  
+	  <section>
+	    <h3>UAF_OPERATION_COMPLETION_STATUS</h3>
+	    
+	    <p>This x-callback-url operation MUST be delivered to the FIDO UAF Client to indicate the completion status of
+              a FIDO UAF message delivered to the remote server.  This is especially important as, e.g. a new
+              registration may be considered in a pending status until it is known the server accepted it.</p>      
+	  </section>
+      </section>
+
+      <section>
+	<h3>Implementation Guidelines for iOS Implementations</h3>
+	
+	Each iOS Custom URL based request results in a human-noticeable context switch between the App and FIDO UAF Client and vice
+	versa. This will be most noticeable when invoking DISCOVER and CHECK_POLICY requests since typically these requests
+	will be invoked automatically, without user's involvement. Such a context switch impacts the User Experience and
+	therefore it's RECOMMENDED to avoid making these two requests and integrate FIDO without using them.
+      </section>
+
+      <section class="informative">
+	<h3>Security Considerations for iOS Implementations</h3>
+	
+	<p> A security concern with custom URLs under iOS is that any app can register any custom URL.
+	  If multiple applications register the same custom URL, the behavior for handling the URL call in iOS is undefined.</p>
+	
+	<p> On the FIDO UAF Client side, this issue with custom URL scheme handlers is solved by using the
+	  <code>sourceApplication</code> parameter which provides the bundle ID of the URL originator.
+	  This is effective as long as the device has not been jailbroken and as long as Apple has done due diligence
+	  vetting submissions to the app store for malware with faked bundle IDs.
+	  The <code>sourceApplication</code> parameter can be matched with the FacetID list to ensure that
+	  the calling app is approved to use the credentials for the relying party.</p>
+
+	<p> On the relying party app side, encryption is used to prevent a rogue app from spoofing
+	  the relying party app's response URL. The relying party app generates a random encryption key on every request and
+	  sends it to the FIDO client.
+	  The FIDO client then encrypts the response to this key. In this manner, only the relying party app
+	  can decrypt the response. Even in the event that malware is able to spoof the relying party app's URL and
+	  intercept the response, it would not be able to decode it.</p>
+
+	<p> To protect against potentially malicious applications registering
+	  themselves to handle the FIDO UAF Client custom URL scheme, relying party
+	  Applications can obtain the bundle-id of the responding app and utilize it in
+	  risk management decisions around the authentication or transaction
+	  events.  For example, a relying party might maintain a list of
+	  bundle-ids known to belong to malware and refuse to accept operations
+	  completed with such clients, or a list of bundle-ids of known-good
+	  clients that receive preferred risk-scoring.</p>
+      </section>
+    </section>
+
+
+    <section class="normativeDisclaimer">
+      <h2>Transport Binding Profile</h2>
+      
+      <p>This section describes general normative security requirements
+	for how a client application transports FIDO UAF protocol
+	messages, gives specific requirements for Transport Layer
+	Security [TLS], and describes an interoperability profile for
+	using HTTP over TLS [RFC2818] with the FIDO UAF protocol.</p>
+
+      <section id='TransportSecurityRequirements' class="informative certification">
+	<h3>Transport Security Requirements</h3>
+
+	<p>The UAF protocol contains no inherent means of identifying a
+	  relying party server, or for end-to-end protection of UAF
+	  protocol messages. To perform a secure UAF protocol exchange,
+	  the following abstract requirements apply:</p>
+	<ol>
+	  <li>The client application must securely authenticate the server
+	    endpoint as authorized, from that client's viewpoint, to
+	    represent the Web origin [[!RFC6454]] (scheme:host:port tuple)
+	    reported to the FIDO UAF Client by the client
+	    application. Most typically this will be done by using TLS and
+	    verifying the server's certificate is valid, asserts the
+	    correct DNS name, and chains up to a root trusted by the
+	    client platform. Clients MAY also utilize other means to
+	    authenticate a server, such as via a pre-provisioned
+	    certificate or key that is distributed with an application, or
+	    alternative network authentication protocols such as Kerberos
+	    [[RFC4120]].</li>
+	  
+	  <li>The transport mechanism for UAF protocol messages must
+	    provide confidentiality for the message, to prevent disclosure
+	    of their contents to unauthorized third parties. These
+	    protections should be cryptographically bound to proof of the
+	    server's identity as described above.
+	  </li>
+	  
+	  <li>The transport mechanism for UAF protocol messages must protect
+	    the integrity of the message from tampering by unauthorized
+	    third parties. These protections should be cryptographically
+	    bound to proof of the server's identity in as described above.
+	  </li>
+	</ol>
+      </section>
+
+      <section class="informative certification">
+	<h3>TLS Security Requirements</h3>
+	
+	<p>If using HTTP over TLS ([[RFC2246]] [[RFC4346]], [[RFC5246]] or
+	  [[TLS13draft02]]) to transport an UAF protocol exchange, the following
+	  specific requirements apply:</p>
+	<ol>
+	  <li>If there are any TLS errors, whether "warning" or "fatal" or any
+	    other error level with the TLS connection, the HTTP client must
+	    terminate the connection without prompting the user. For
+	    example, this includes any errors found in certificate validity
+	    checking that HTTP clients employ, such as via TLS server
+	    identity checking [[RFC6125]], Certificate Revocation Lists
+	    (CRLs) [[RFC5280]], or via the Online Certificate Status Protocol
+	    (OCSP) [[RFC2560]].</li>
+	  
+	  <li>Whenever comparisons are made between the presented TLS server
+	    identity (as presented during the TLS handshake, typically
+	    within the server certificate) and the intended source TLS
+	    server identity (e.g., as entered by a user, or embedded in a
+	    link), [[!RFC6125]] server identity checking must be employed. The
+	    client must terminate the connection without prompting the user
+	    upon any error condition.</li>
+	  
+	  <li>The TLS server certificate must either be provisioned explicitly
+	    out-of-band (e.g. packaged with an app as a "pinned
+	    certificate") or be trusted by chaining to a root included in
+	    the certificate store of the operating system or a major
+	    browser by virtue of being currently in compliance with their
+	    root store program requirements. The client must terminate the
+	    connection without user recourse if there are any error
+	    conditions when building the chain of trust.</li>
+
+	  <li>The "anon" and "null" crypto suites are not allowed and insecure
+	    cryptographic algorithms in TLS (e.g. MD4, RC4, SHA1) should be
+	    avoided (see NIST SP800-131A [[SP800-131A]]).</li>
+	  
+	  <li>The client and server should use the latest practicable TLS
+	    version.</li>
+	  
+	  <li>The client should supply, and the server should verify whatever
+	    practicable channel binding information is available, including
+	    a ChannelID [[ChannelID]] public key, the <code>tls-unique</code> and
+	    <code>tls-server-end-point</code> bindings [[RFC5929]], and TLS server
+	    certificate binding [[!UAFProtocol]]. This information provides
+	    protection against certain classes of network attackers and the
+	    forwarding of protocol messages, and a server may reject a
+	    message that lacks or has channel binding data that does not
+	    verify correctly.</li>
+	</ol>
+      </section>
+
+      <section id="HttpsTransportInteroperabilityProfile" class='normativeDisclaimer'>
+	<h3>HTTPS Transport Interoperability Profile</h3>
+
+	<p>Conforming applications MAY support this profile.</p>
+	<p>Complex and highly-optimized applications utilizing UAF will
+	  often transport UAF protocol messages in-line with other
+	  application protocol messages. The profile defined here for
+	  transporting UAF protocol messages over HTTPS is intended to:</p>
+	<ul>
+	  <li>Provide an interoperability profile to enable easier composition
+	    of client-side application libraries and server-side
+	    implementations for FIDO UAF-enabled products from different
+	    vendors.</li>
+	  
+	  <li>Provide detailed illustration of specific necessary security
+	    properties for the transport layer and HTTP interfaces,
+	    especially as they may interact with a browser-hosted
+	    application.</li>
+	  
+	  <li>This profile is also utilized in the examples that constitute
+	    the appendices of this document. This profile is OPTIONAL to
+	    implement. RFC 2119 key words are used in this section to
+	    indicate necessary security and other properties for
+	    implementations that intend to use this profile to
+	    interoperate.</li>
+	  
+	  <li><p class="note">Certain FIDO UAF operations, in
+	    particular, transaction confirmation, will always require
+	    an application-specific implementation. This interoperability
+	    profile only provides a skeleton framework suitable for
+	    replacing username/password authentication.</p>
+	  </li>
+	</ul>
+	
+	<section>
+	  <h4>Obtaining a UAF Request message</h4>
+	  
+	  <p>A UAF-enabled web application might typically deliver request
+	    messages as part of a response body containing other
+	    application content, e.g in a script block as such:</p>
+	  <pre class='example highlight'>
+	    ...
+
+	    &lt;script type=”application/json”&gt;
+	    {
+	    “initialRequest”: {
+	    // initial request message here
+	    },
+
+	    “lifetimeMillis”: 60000; // hint: this initial request is valid for 60 seconds
+	    }
+	    &lt;/script&gt;
+
+	    ...
+	  </pre>
+
+	  <p>However, request messages have a limited lifetime, and an
+	    installed application cannot be delivered with a request, so
+	    client applications generally need the ability to retrieve a
+	    fresh request.</p>
+	  
+	  <p>When sending a request message over HTTPS with XMLHttpRequest
+	    [XHR] or another HTTP API:</p>
+	  <ol>
+	    <li>The URI of the server endpoint, and how it is communicated to the
+	      client, is application-specific.</li>
+	    
+	    <li>The client MUST set the HTTP method to POST. [[!RFC7231]]</li>
+	    
+	    <li>The client MUST set the HTTP “Content-Type” header to
+	      <code>“application/fido+uaf; charset=utf-8”.</code> [[!RFC7231]]</li>
+	    
+	    <li>The client SHOULD include <code>“application/fido+uaf”</code> as a media type
+	      in the HTTP “Accept” header. [[!RFC7231]]</li>
+	    
+	    <li>The client MAY need to supply additional headers, such as a
+	      HTTP Cookie [[!RFC6265]], to demonstrate, in an application-specific
+	      manner, their authorization to perform a request.</li>
+	    
+	    <li>The entire POST body MUST consist entirely of a JSON [[!ECMA-404]]
+	      structure described by the <a href="#getuafrequest-dictionary"><code>GetUAFRequest</code> dictionary</a>.</li>
+	    
+	    <li>The server's response SHOULD set the HTTP “Content-Type” to
+	      <code>“application/fido+uaf; charset=utf-8”</code></li>
+	    
+	    <li>The client SHOULD decode the response byte string as UTF-8 with error handling. [[!HTML5]]</li>
+	    
+	    <li>The decoded body of the response MUST consist entirely of a JSON structure described by
+	      the <a href="#returnuafrequest-dictionary"><code>ReturnUAFRequest</code> interface</a>.</li>
+	    
+	  </ol>
+	  
+	</section>
+	<section>
+	  <h3>Operation enum</h3>
+	  
+	  <p>Describes the operation type of a FIDO UAF message or request for a message.
+	    
+	    <dl title='enum Operation' class='idl'>
+	      <dt>Reg</dt><dd>Registration</dd>
+	      <dt>Auth</dt><dd>Authentication or Transaction Confirmation</dd>
+	      <dt>Dereg</dt><dd>Deregistration</dd>
+	    </dl>
+	</section>
+	
+	<section>
+	  <h3>GetUAFRequest dictionary</h3>
+	  
+	  
+	  <dl title='dictionary GetUAFRequest' class='idl'>
+	    
+	    <dt>Operation op</dt>
+	    <dd>
+	      The type of the UAF request message desired. Allowable string
+	      values are defined by the Operation enum. This field is
+	      OPTIONAL but MUST be set if the operation is not known to the
+	      server through other context, e.g. an operation-specific URL
+	      endpoint.
+	    </dd>
+	    
+	    <dt>DOMString previousRequest</dt>
+	    <dd>
+	      If the application is requesting a new UAF request message
+	      because a previous one has expired, this OPTIONAL key can include
+	      the previous one to assist the server in locating any state
+	      that should be re-associated with a new request message, should
+	      one be issued.
+	    </dd>
+	    
+	    <dt>DOMString context</dt>
+	    <dd>
+	      Any additional contextual information that may be useful or
+	      necessary for the server to generate the correct request
+	      message. This key is OPTIONAL and the format and nature of this
+	      data is application-specific.
+	    </dd>
+	  </dl>
+	  
+	</section>
+	<section>
+	  
+	  <h3>ReturnUAFRequest dictionary</h3>
+	  
+	  <dl title='dictionary ReturnUAFRequest' class='idl'>
+	    <dt>required unsigned long statusCode</dt>
+	    <dd>The UAF Status Code for the operation (see section <a href="#uaf-status-codes"></a>).</dd>
+	    <dt>DOMString uafRequest</dt>
+	    <dd>The new UAF Request Message, OPTIONAL, if the server decided to issue one</dd>
+	    <dt>Operation  op</dt>
+	    <dd>An OPTIONAL hint to the client of the operation type of the
+	      message, useful if the server might return a different type
+	      than was requested. For example, a server might return a
+	      deregister message if an authentication request referred to a
+	      key it no longer considers valid. Allowable string values are
+	      defined by the Operation enum.</dd>
+	    <dt>long lifetimeMillis</dt>
+	    <dd>If the server returned a <code>uafRequest</code>, this is an OPTIONAL hint
+	      informing the client application of the lifetime of the message
+	      in milliseconds.</dd>
+	  </dl>
+	  
+	</section>
+
+	<section>
+	  <h3>SendUAFResponse dictionary</h3>
+	  
+	  <dl title='dictionary SendUAFResponse' class='idl'>
+            <dt>required DOMString uafResponse</dt>
+            <dd>The UAF Response Message. It MUST be set to
+              <code>UAFMessage.uafProtocolMessage</code> returned by FIDO UAF Client.</dd>
+            <dt>DOMString context</dt>
+            <dd>Any additional contextual information that may be useful or necessary for the server to process
+              the response message.
+              This key is optional and the format and nature of this data is application-specific.</dd>
+	  </dl>
+
+	</section>
+
+	<section>
+	  
+	  <h3>Delivering a UAF Response</h3>
+	  
+	  <p>Although it is not the only pattern possible, an asynchronous
+	    HTTP request is a useful way of delivering a UAF Response to
+	    the remote server for either web applications or standalone
+	    applications.</p>
+	  
+	  <p>When delivering a response message over HTTPS with
+	    XMLHttpRequest [[XHR]] or another API:</p>
+	  <ol>
+	    <li>The URI of the server endpoint and how it is communicated to the
+	      client is application-specific.</li>
+	    
+	    <li>The client MUST set the HTTP method to POST. [[!RFC7231]]</li>
+	    
+	    <li>The client MUST set the HTTP “Content-Type” header to
+	      <code>“application/fido+uaf; charset=utf-8”</code>. [[!RFC7231]]</li>
+	    
+	    <li>The client SHOULD include <code>“application/fido+uaf”</code> as a media type
+	      in the HTTP “Accept” header. [[!RFC7231]]</li>
+	    
+	    <li>The client MAY need to supply additional headers, such as a
+	      HTTP Cookie [[!RFC6265]], to demonstrate, in an application-specific
+	      manner, their authorization to perform an operation.</li>
+	    
+	    <li>The entire POST body MUST consist entirely of a JSON
+	      [[!ECMA-404]] structure described by the
+	      <code>SendUAFResponse</code>.</li>
+	    
+	    <li>The server's response SHOULD set the “Content-Type” to
+	      <code>“application/fido+uaf; charset=utf-8”</code> and the body of the
+	      response MUST consist entirely of a JSON structure described by
+	      the <code>ServerResponse</code> interface.</li>
+	  </ol>
+	</section>
+	<section>
+	  <h3>ServerResponse Interface</h3>
+	  
+	  <p>The <code>ServerResponse</code> interface represents the completion status
+	    and additional application-specific additional data that
+	    results from successful processing of a Register, Authenticate,
+	    or Transaction Confirmation operation. This message is not
+	    formally part of the UAF protocol, but the <code>statusCode</code> should be
+	    posted to the FIDO UAF Client, for housekeeping, using the
+	    <code>notifyUAFResult()</code> operation.
+	    
+	    <dl title='interface ServerResponse' class='idl'>
+	      <dt>readonly attribute int statusCode</dt>
+	      <dd>The FIDO UAF response status code. Note that this status code
+		describes the result of processing the tunneled UAF operation,
+		not the status code for the outer HTTP transport.</dd>
+	      <dt>[Optional] readonly attribute DOMString description</dt>
+	      <dd>A detailed message describing the status code or providing
+		additional information to the user.</dd>
+	      <dt>[Optional] readonly attribute Token[] additionalTokens</dt>
+	      <dd>This key contains new authentication or authorization token(s)
+		for the client that are not natively handled by the HTTP
+		transport. Tokens SHOULD be processed prior to processing of
+		<code>location</code>.</dd>
+	      <dt>[Optional] readonly attribute DOMString location</dt>
+	      <dd>If present, indicates to the client web application that it
+		should navigate the Document context to the URI contained on
+		this field after processing any tokens.</dd>
+	      <dt>[Optional] readonly attribute DOMString postData</dt>
+	      <dd>If present in combination with <code>location</code>, indicates that the
+		client should POST the contents to the specified location after
+		processing any tokens.</dd>
+	      <dt>[Optional] readonly attribute DOMString newUAFRequest</dt>
+	      <dd>The server may use this to return a new UAF protocol message.
+		This might be used to supply a fresh request to retry an
+		operation in response to a transient failure, to request
+		additional confirmation for a transaction, or to send a
+		deregistration message in response to a permanent failure.</dd>
+	      
+	    </dl>
+	</section>
+	<section>
+	  <h3>Token interface</h3>
+	  <p class='note'>The UAF Server is not responsible for creating
+	    additional tokens returned as part of a UAF response. Such
+	    tokens exist to provide a means for the relying party
+	    application to update the authentication/authorization state
+	    of the client in response to a successful UAF operation. For
+	    example, these fields could be used to allow UAF to serve as
+	    the initial authentication leg of a federation protocol, but
+	    the scope and details of any such federation are outside of
+	    the scope of UAF.</p>
+	  
+	  <dl title='interface Token' class='idl'>
+	    <dt>readonly attribute TokenType type</dt>
+	    <dd>The type of the additional authentication / authorization token.</dd>
+	    <dt>readonly attribute DOMString value</dt>
+	    <dd>The string value of the additional authentication / authorization token.</dd>
+	  </dl>
+	  
+	</section>
+	<section>
+	  <h3>TokenType enum</h3>
+	  
+	  <dl title='enum TokenType' class='idl'>
+	    <dt>HTTP_COOKIE</dt>
+	    <dd>If the user agent is a standard web browser or other HTTP native
+	      client with a cookie store, this TokenType SHOULD NOT be used.
+	      Cookies should be set directly with the Set-Cookie HTTP header
+	      for processing by the user agent. For non-HTTP or non-browser
+	      contexts this indicates a token intended to be set as an HTTP
+	      cookie. [[!RFC6265]] For example, a native VPN client that
+	      authenticates with UAF might use this TokenType to
+	      automatically add a cookie to the browser cookie jar.</dd>
+	    <dt>OAUTH</dt>
+	    <dd>Indicates that the token is of type OAUTH. [[!RFC5849]].</dd>
+	    <dt>OAUTH2</dt>
+	    <dd>Indicates that the token is of type OAUTH2. [[!RFC6749]].</dd>
+	    <dt>SAML1_1</dt>
+	    <dd>Indicates that the token is of type SAML 1.1. [[!SAML11]].</dd>
+	    <dt>SAML2</dt>
+	    <dd>Indicates that the token is of type SAML 2.0. [[!SAML2-CORE]]</dd>
+	    <dt>JWT</dt>
+	    <dd>Indicates that the token is of type JSON Web Token (JWT). [[!JWT]]</dd>
+	    <dt>OPENID_CONNECT</dt>
+	    <dd>Indicates that the token is an OpenID Connect “id_token”.  [[!OpenIDConnect]]</dd>
+	  </dl>
+	</section>
+	
+	<section class="informative certification">
+	  <h3>Security Considerations</h3>
+	  
+	  <p>It is important that the client set, and the server require, the
+	    method be POST and the “Content-Type” HTTP header be the correct
+	    values. Because the response body is valid ECMAScript, to
+	    protect against unauthorized cross-origin access, a server must not
+	    respond to the type of request that can be generated by a
+	    script tag, e.g. <code>&lt;script
+	    src=”https://example.com/fido/uaf/getRequest”&gt;</code>. The request a
+	    user agent generates with this kind of embedding cannot set
+	    custom headers.</p>
+
+	  <p>Likewise, by requiring a custom “Content-Type” header,
+	    cross-origin requests cannot be made with an XMLHttpRequest [[XHR]]
+	    without triggering a CORS preflight access check. [[CORS]]</p>
+	  
+	  <p>As FIDO UAF messages are only valid when used same-origin, servers
+	    should not supply an “Access-Control-Allow-Origin” [[CORS]]
+	    header with responses that would allow them to be read by
+	    non-same-origin content.</p>
+	  
+	  <p>To protect from some classes of cross-origin, browser-based,
+	    distributed denial-of-service attacks, request endpoints should
+	    ignore, without performing additional processing, all requests
+	    with an “Access-Control-Request-Method” [[CORS]] HTTP header or
+	    an incorrect “Content-Type” HTTP header.
+	  </p> 
+	  <p>If a server chooses to respond to requests made with the GET
+	    method and without the custom “Content-Type” header, it should
+	    apply a prefix string such as “<code>while(1);</code>” or
+	    “<code>&amp;&amp;&amp;BEGIN_UAF_RESPONSE&amp;&amp;&amp;</code>” to the body of all replies and so
+	    prevent their being read through cross-origin &lt;script&gt; tag
+	    embedding. Legitimate same-origin callers will need to (and
+	    alone be able to) strip this prefix string before parsing the
+	    JSON content.</p>
+	</section>
+      </section>
+    </section>
+  </body>
+</html>
