@@ -38,7 +38,7 @@ module.exports = function(pathIn) {
 		// sadly, phantomjs doesn't seem to accept opening a page from stdin very well
 		// here we create a temporary file and write out the contents of our file to it so that it can be passed into phantomjs
 		// this destroys some of the efficency of gulp, but the phantomjs processing is an order of magnitude longer than writing the file to disk
-		sourceFile = path.join (srcPath, uuid.v4() + ".html"); 
+		var sourceFile = path.join (srcPath, "rs" + uuid.v4() + ".html"); 
 		fs.writeFileSync(sourceFile, file.contents);
 
 		// call `phantomjs --ignore-ssl-errors=true --ssl-protocol=any respec2html.js <inputfile>`
@@ -48,14 +48,15 @@ module.exports = function(pathIn) {
 
 		
 		var args = [];
-		// console.log ("Calling: `" + command + " --ignore-ssl-errors=true --ssl-protocol=any " + phantom_script + " " + sourceFile + "`");
 		args.push("--ignore-ssl-errors=true");
 		args.push("--ssl-protocol=any");
+		args.push("--local-to-remote-url-access=true"); // required for phantomjs 2.1.x+
 		args.push(phantom_script);
 		args.push(sourceFile);
+		// console.log (command,args);
 		var program = spawn(command, args, {
 			// TODO: cwd here
-			// cwd: srcPath
+			cwd: srcPath
 		});
 
 		// TODO: check for file.dirname + resources/respec-fido-common.js exists

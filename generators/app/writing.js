@@ -16,7 +16,7 @@ var gulpClone = require("gulp-clone");
 var gulpRename = require("gulp-rename");
 var gulpIf = require("gulp-if");
 var through = require("through2");
-// var gulpDebug = require("gulp-debug");
+var gulpDebug = require("gulp-debug");
 var gulpRespec = require("./gulp-respec2html");
 var gulpWkhtmltopdf = require("./gulp-wkhtmltopdf");
 
@@ -24,12 +24,15 @@ var isRespecFile = false;
 
 // release.pl:358-513
 function update_refs() {
+	console.log ("CORE MANIFEST:\n", this.coreManifest);
 	// just work on the fido-refs.js file
 	var refsFilter = gulpFilter("resources/fido-refs.js", {
 		restore: true
 	});
+	this.registerTransformStream(refsFilter);
 
 	var i, fileNames;
+	// make an array of HTML file name strings, and remove their ".html" ending
 	fileNames = this.coreManifest.files
 		.filter (function (element, index, array) {
 			return (element.split('.').pop() === "html");
@@ -84,19 +87,19 @@ function update_refs() {
 
 		// make sure the reference is one from this package -- we don't want to mess with references from other FIDO specs
 		if (new RegExp(fileNames.join("|")).test(found)) {
-			this.log.debug(found, "is one of ours");
+			// this.log.debug(found, "is part of this spec set");
 		} else {
-			this.log.debug("IGNORING: ", found);
+			this.log.debug("IGNORING REFERENCE: ", found);
 			return (found);
 		}
 
 		// replace path with our desired destination path
 		found = found.replace(new RegExp("\\./|(http|https)://fidoalliance\\.org/specs/(fido-[\\w]+-v\\d+\\.\\d+-(wd|rd|id|ps)-\\d{8}/)?", "g"), newPath);
-		this.log.debug("New Path:", found);
+		// this.log.debug("New Path:", found);
 
 		// replace version label with the most recent one
 		found = found.replace(new RegExp(matchVersionLabel, "g"), this.versionLabel);
-		this.log.debug("New Version Label:", found);
+		// this.log.debug("New Version Label:", found);
 
 		// insert tag if not found
 		if (found.match(matchVersionLabel) === null) {

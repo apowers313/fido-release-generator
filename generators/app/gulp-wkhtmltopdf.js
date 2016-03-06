@@ -43,7 +43,7 @@ module.exports = function(opts) {
 		// sadly, wkhtmltopdf doesn't seem to accept opening a page from stdin very well
 		// here we create a temporary file and write out the contents of our file to it so that it can be passed into wkhtmltopdf
 		// this destroys some of the efficency of gulp, but the wkhtmltopdf processing is an order of magnitude longer than writing the file to disk
-		sourceFile = path.join (srcPath, uuid.v4() + ".html"); 
+		var sourceFile = path.join (srcPath, "wk" + uuid.v4() + ".html"); 
 		fs.writeFileSync(sourceFile, file.contents);
 
 		// call `wkhtmltopdf --ignore-ssl-errors=true --ssl-protocol=any respec2html.js <inputfile>`
@@ -82,7 +82,7 @@ module.exports = function(opts) {
 			return function() {
 				file.contents = b;
 				process.chdir (origCwd);
-				// fs.unlinkSync (sourceFile);
+				fs.unlinkSync (sourceFile);
 				return callback(null, file);
 			};
 		})(this));
