@@ -73,12 +73,13 @@ function github_simple_mock(repo, destPath, depth, cb) {
   });
 }
 
-describe.only("simple transforms", function() {
+describe("simple transforms", function() {
   context("creating private files and links", function() {
     before(function(done) {
       mockery.enable({
-        warnOnReplace: false,
-        warnOnUnregistered: false
+        warnOnReplace: true,
+        warnOnUnregistered: false,
+        useCleanCache: true
       });
       mockery.registerMock("gift", {
         clone: github_simple_mock
@@ -197,14 +198,15 @@ describe("full UAF file set", function() {
 
   before(function(done) {
     mockery.enable({
-      warnOnReplace: false,
-      warnOnUnregistered: false
+      warnOnReplace: true,
+      warnOnUnregistered: false,
+      useCleanCache: true
     });
     mockery.registerMock("gift", {
       clone: github_full_mock
     });
     // running the generator will create a lot of PDFs, which is really slow...
-    this.timeout(30000);
+    this.timeout(300000);
     helpers.run(path.join(__dirname, "../generators/app"))
       // .withOptions({})
       .withPrompts(default_prompts)
