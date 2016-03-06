@@ -1,4 +1,3 @@
-//'use strict';
 var yeoman = require('yeoman-generator');
 var chalk = require('chalk');
 var yosay = require('yosay');
@@ -11,6 +10,14 @@ var yosay = require('yosay');
  * Each part of our generator has been broken out into a separate file to help with read-ability
  */
 module.exports = yeoman.generators.Base.extend({
+  constructor: function() {
+    yeoman.generators.Base.apply(this, arguments);
+      this.option("debug", {
+        desc: "Display debug messages",
+        type: Boolean,
+        defaults: false
+      });
+    },
 
   initializing: require("./initializing"),
 
