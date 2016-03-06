@@ -62,6 +62,12 @@ function create_complete_pdf() {
 		this.log  ("wkhtmltopdf completed with code:", code);
 		done();
 	}.bind(this));
+	child.stdout.on('data', function(data) {
+		console.log(data);
+	}.bind(this));
+	child.stderr.on('data', function(data) {
+		console.log(data);
+	}.bind(this));
 }
 
 // create a new directory of the release dir, like fido-uaf-v1.0-wd-20160229.zip
