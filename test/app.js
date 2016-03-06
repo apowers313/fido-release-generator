@@ -73,7 +73,7 @@ function github_simple_mock(repo, destPath, depth, cb) {
   });
 }
 
-describe("simple transforms", function() {
+describe.only("simple transforms", function() {
   context("creating private files and links", function() {
     before(function(done) {
       mockery.enable({
@@ -83,7 +83,6 @@ describe("simple transforms", function() {
       mockery.registerMock("gift", {
         clone: github_simple_mock
       });
-      // running the generator will do a `git clone` which may be slow, based on your location and connection speed
       this.timeout(30000);
       helpers.run(path.join(__dirname, "../generators/app"))
         // .withOptions({})
@@ -111,7 +110,7 @@ describe("simple transforms", function() {
     it("has manifests", function() {
       fsassert.file([
         path.join(templateFolderPath, ".fido-manifest.json"),
-        path.join(templateFolderPath, "common/.fido-manifest.json"),
+        // path.join(templateFolderPath, "common/.fido-manifest.json"),
         path.join(templateFolderPath, "resources/.fido-manifest.json")
       ]);
     });
@@ -174,6 +173,10 @@ describe("simple transforms", function() {
 
     it("created combined PDF");
 
+    it("doesn't create conditional manifest files");
+
+    it("does create conditional manifest files");
+
     it("created zip", function() {
       fsassert.file([
         path.join(expectedFolderPath + ".zip")
@@ -190,7 +193,7 @@ describe("simple transforms", function() {
   });
 });
 
-describe.only("full UAF file set", function() {
+describe("full UAF file set", function() {
 
   before(function(done) {
     mockery.enable({
@@ -200,8 +203,8 @@ describe.only("full UAF file set", function() {
     mockery.registerMock("gift", {
       clone: github_full_mock
     });
-    // running the generator will do a `git clone` which may be slow, based on your location and connection speed
-    this.timeout(240000);
+    // running the generator will create a lot of PDFs, which is really slow...
+    this.timeout(30000);
     helpers.run(path.join(__dirname, "../generators/app"))
       // .withOptions({})
       .withPrompts(default_prompts)
@@ -224,8 +227,6 @@ describe.only("full UAF file set", function() {
     // fse.removeSync(expectedFolderPath + ".zip");
   });
 
-  this.timeout(2000);
-
   it("creates folder" + expectedFolder, function() {
     fsassert.file([
       expectedFolderPath
@@ -238,4 +239,8 @@ describe.only("full UAF file set", function() {
       path.join(expectedFolderPath, "fido-uaf-overview-v1.0-wd-20160202.pdf")
     ]);
   });
+
+  it("creates PDFs");
+
+  it("has right-sized PDFs");
 });
