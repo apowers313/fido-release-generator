@@ -53,8 +53,8 @@ function create_complete_pdf() {
 	args.push(this.destinationPath() + "/FIDO-" + this.answers.specset.toUpperCase() + "-COMPLETE" + this.versionLabel + ".pdf");
 
 	// wkhtml to pdf
-	// this.log.debug (command);
-	// this.log.debug (args);
+	this.log.debug (command);
+	this.log.debug (args);
 	var program = spawn(command, args, {});
 
 	// exit? done? close?
