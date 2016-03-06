@@ -5,13 +5,15 @@ var gitConfig = require("git-config");
 
 module.exports = {
   debug: function() {
-    if (this.options.debug) {
-      this.log.debug = this.log;
-    } else {
-      this.log.debug = function() {};
-    }
-    this.log.warn = this.log;
-    this.log.error = this.log;
+    this.log = console.log;
+    this.log.debug = console.log;
+    // if (this.options.debug) {
+    //   this.log.debug = this.log;
+    // } else {
+    //   this.log.debug = function() {};
+    // }
+    // this.log.warn = this.log;
+    // this.log.error = this.log;
     this.log.debug("Initializing...");
   },
 
