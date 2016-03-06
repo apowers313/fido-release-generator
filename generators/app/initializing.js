@@ -1,6 +1,3 @@
-var gitConfig = require("git-config");
-
-// TODO: read manifest file
 // TODO: require ("update-notifier");
 
 module.exports = {
@@ -15,28 +12,6 @@ module.exports = {
     // this.log.warn = this.log;
     // this.log.error = this.log;
     this.log.debug("Initializing...");
-  },
-
-  // TODO: remove gitConfig?
-  gitConfig: function() {
-    var done = this.async();
-
-    // check local directory for a git repo, use those settings if available
-    var pathToRepo = require("path").resolve("./.git");
-    this.log.debug("Path to repo: ", pathToRepo);
-
-    // get info from the local git config file
-    gitConfig(function(err, config) {
-      if (err) {
-        if (err instanceof Error) throw err;
-        this.log.error("Git config error: " + err);
-      }
-      this.default_git_username = config.user.name;
-      this.log.debug("Default Git Username: " + this.default_git_username);
-      this.default_git_email = config.user.email;
-      this.log.debug("Default Git Email: ", this.default_git_email);
-      done();
-    }.bind(this));
   },
 
   dateTag: function() {

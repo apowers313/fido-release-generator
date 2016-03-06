@@ -19,7 +19,6 @@
     "chalk": "^1.0.0",
     "fs-extra": "^0.26.4",
     "gift": "^0.7.0",
-    "git-config": "0.0.7",
     "gulp-clone": "^1.0.0",
     "gulp-filter": "^3.0.1",
     "gulp-if": "^2.0.0",
