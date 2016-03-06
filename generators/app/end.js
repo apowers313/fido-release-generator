@@ -55,18 +55,18 @@ function create_complete_pdf() {
 	// wkhtml to pdf
 	this.log.debug (command);
 	this.log.debug (args);
-	var program = spawn(command, args, {});
+	var program = spawn(command, args);
 
 	// exit? done? close?
 	program.on("exit", function(code) {
 		this.log  ("wkhtmltopdf completed with code:", code);
 		done();
 	}.bind(this));
-	child.stdout.on('data', function(data) {
-		console.log(data);
+	program.stdout.on('data', function(data) {
+		console.log(data.toString());
 	}.bind(this));
-	child.stderr.on('data', function(data) {
-		console.log(data);
+	program.stderr.on('data', function(data) {
+		console.log(data.toString());
 	}.bind(this));
 }
 
