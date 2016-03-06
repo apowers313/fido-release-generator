@@ -32,7 +32,7 @@ function create_derived_vars() {
     "fido" + "-" +
     this.answers.specset +
     this.versionLabel;
-  this.log.debug("Config Tag:", this.tag);
+  this.log.debug("Release Directory:", this.releaseDirectory);
 
   switch (this.answers.specstatus) {
     case "wd":
@@ -54,7 +54,7 @@ function create_derived_vars() {
 function set_paths() {
   this.sourceRoot(this.defaultSourcePath);
 
-  var path = this.destinationPath(this.tag);
+  var path = this.destinationPath(this.releaseDirectory);
   this.log("Removing", path);
   fse.removeSync(path);
   this.destinationRoot(path); // will be created automatically
