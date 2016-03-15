@@ -134,7 +134,7 @@ describe("simple transforms", function() {
     it("copied files", function() {
       fsassert.file([
         path.join(expectedFolderPath, "simple-v1.0-wd-20160202.html"),
-        path.join(expectedFolderPath, "README.txt")
+        path.join(expectedFolderPath, "README-v1.0-wd-20160202.txt")
       ]);
       fsassert.noFile([
         path.join(expectedFolderPath, ".fido-manifest.json"),
@@ -155,7 +155,7 @@ describe("simple transforms", function() {
       fsassert.fileContent(path.join(expectedFolderPath, "respec-v1.0-wd-20160202.html"), expectedRespecFile);
     });
 
-    it.skip("didn't modify URLs in README.txt", function() {
+    it("didn't modify URLs in README.txt", function() {
       var expectedReadmeFile = fs.readFileSync(path.join(fixturesPath, "simple-results/README.txt"), {
         encoding: "utf8"
       });

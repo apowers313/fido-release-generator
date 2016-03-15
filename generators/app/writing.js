@@ -1,8 +1,9 @@
 module.exports = {
+	order: order_files,
 	refs: update_refs,
 	html: modify_html_files,
 	pdf: create_pdfs,
-	// txt: modify_text_files,
+	txt: modify_text_files,
 	copy: copy_files,
 	commit: github_commit
 };
@@ -10,6 +11,7 @@ module.exports = {
 // TODO: there are probably some dead modules in here
 var fse = require("fs-extra");
 var path = require("path");
+var gulpOrder = require("gulp-order");
 var gulpFilter = require("gulp-filter");
 var gulpReplace = require("gulp-replace");
 var gulpClone = require("gulp-clone");
@@ -17,10 +19,19 @@ var gulpRename = require("gulp-rename");
 var gulpIf = require("gulp-if");
 var through = require("through2");
 var gulpDebug = require("gulp-debug");
+var gulpSavefile = require("gulp-savefile");
 var gulpRespec = require("./gulp-respec2html");
 var gulpWkhtmltopdf = require("./gulp-wkhtmltopdf");
 
 var isRespecFile = false;
+
+function order_files() {
+	this.registerTransformStream (gulpOrder([
+		"**/*.js", // process fido-refs.js first
+		"**/*.html", // then process HTML files
+		"**/*.txt" // process text files last
+		]));
+}
 
 // release.pl:358-513
 function update_refs() {
@@ -126,6 +137,21 @@ function update_refs() {
 		return (found);
 	}.bind(this)));
 
+	// duplicate fido-refs.js to save a copy of it over the original in the templates dir
+	// that way the modified file gets picked up by phantomjs later
+	var cloneSink = gulpClone.sink();
+	this.registerTransformStream(cloneSink);
+	this.registerTransformStream(gulpRename({
+		dirname: this.templatePath ("resources")
+	}));
+	this.registerTransformStream(gulpDebug({title: "saving"}));
+	this.registerTransformStream(gulpSavefile());
+	this.registerTransformStream(gulpFilter("!**/fido-refs.js"));
+
+	// // back to working with the original fido-refs.js
+	this.registerTransformStream(cloneSink.tap());
+	this.registerTransformStream(gulpDebug({title: "passing-on"}));
+
 	// go back to working on all files
 	this.registerTransformStream(refsFilter.restore);
 }
@@ -182,12 +208,22 @@ function modify_html_files() {
 
 function modify_text_files() {
 	// only work on text files
-	var filter = gulpFilter("**/*.txt", {
+	var txtFilter = gulpFilter("**/*.txt", {
 		restore: true
 	});
+	this.registerTransformStream(txtFilter);
+
+	this.registerTransformStream(gulpDebug({title: "txt-in"}));
+
+	// Rename file
+	this.registerTransformStream(gulpRename({
+		suffix: this.versionLabel
+	}));
+
+	this.registerTransformStream(gulpDebug({title: "txt-out"}));
 
 	// go back to working on all files
-	this.registerTransformStream(filter.restore);
+	this.registerTransformStream(txtFilter.restore);
 }
 
 function copy_manifest_files(manifest, path) {
